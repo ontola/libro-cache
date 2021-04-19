@@ -1,0 +1,290 @@
+package io.ontola.features
+
+import io.ktor.application.ApplicationCall
+import io.ktor.application.ApplicationCallPipeline
+import io.ktor.application.ApplicationFeature
+import io.ktor.application.call
+import io.ktor.application.feature
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.features.ClientRequestException
+import io.ktor.client.features.json.JsonFeature
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.headers
+import io.ktor.client.utils.*
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.Url
+import io.ktor.http.fullPath
+import io.ktor.request.ApplicationRequest
+import io.ktor.request.header
+import io.ktor.request.path
+import io.ktor.util.AttributeKey
+import io.ktor.util.KtorExperimentalAPI
+import io.ktor.util.pipeline.PipelineContext
+import io.ontola.BadGatewayException
+import io.ontola.Services
+import io.ontola.TenantNotFoundException
+import io.ontola.services
+import io.ontola.util.copy
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class OntolaManifest(
+    @SerialName("allowed_external_sources")
+    val allowedExternalSources: Set<String>,
+    @SerialName("css_class")
+    val cssClass: String,
+    @SerialName("header_background")
+    val headerBackground: String,
+    @SerialName("header_text")
+    val headerText: String,
+    @SerialName("matomo_hostname")
+    val matomoHostname: String? = null,
+    val preconnect: Set<String> = emptySet(),
+    val preload: Set<String>,
+    @SerialName("matomo_site_id")
+    val matomoSiteId: String? = null,
+    @SerialName("primary_color")
+    val primaryColor: String,
+    val scope: String,
+    @SerialName("secondary_color")
+    val secondaryColor: String,
+    @SerialName("styled_headers")
+    val styledHeaders: String? = null,
+    val theme: String,
+    @SerialName("theme_options")
+    val themeOptions: String? = null,
+)
+
+@Serializable
+data class ServiceWorker(
+    val src: String,
+    val scope: String,
+)
+
+@Serializable
+data class Icon(
+    val src: String,
+    val sizes: String,
+    val type: String,
+)
+
+@Serializable
+data class Manifest(
+    @SerialName("rdf_type")
+    val rdfType: String,
+    @SerialName("canonical_iri")
+    val canonicalIri: String? = null,
+    @SerialName("background_color")
+    val backgroundColor: String,
+    val dir: String,
+    val display: String,
+    val icons: List<Icon>,
+    val lang: String,
+    val name: String,
+    val ontola: OntolaManifest,
+    val serviceworker: ServiceWorker,
+    @SerialName("short_name")
+    val shortName: String,
+    @SerialName("start_url")
+    val startUrl: String,
+    @SerialName("scope")
+    val scope: String,
+    @SerialName("theme_color")
+    val themeColor: String,
+)
+
+@Serializable
+data class TenantFinderRequest(
+    @SerialName("iri")
+    val iri: String
+)
+
+@Serializable
+data class TenantFinderResponse(
+    val uuid: String?,
+    @SerialName("all_shortnames")
+    val allShortnames: List<String> = emptyList(),
+    @SerialName("iri_prefix")
+    var iriPrefix: String,
+    @SerialName("header_background")
+    val headerBackground: String? = null,
+    @SerialName("header_text")
+    val headerText: String? = null,
+    @SerialName("secondary_color")
+    val secondaryColor: String? = null,
+    @SerialName("primary_color")
+    val primaryColor: String? = null,
+    @SerialName("database_schema")
+    val databaseSchema: String? = null,
+    @SerialName("display_name")
+    val displayName: String? = null,
+)
+
+data class TenantData(
+    val isBlackListed: Boolean,
+    val websiteIRI: Url,
+    val iriPrefix: Url,
+    val currentIRI: Url,
+)
+
+private val TenantizationKey = AttributeKey<TenantData>("TenantizationKey")
+private val BlacklistedKey = AttributeKey<Boolean>("BlacklistedKey")
+
+internal val ApplicationCall.tenant: TenantData
+    get() = attributes.getOrNull(TenantizationKey) ?: reportMissingTenantization()
+
+internal val ApplicationCall.blacklisted: Boolean
+    get() = attributes.getOrNull(BlacklistedKey) ?: reportMissingTenantization()
+
+private fun ApplicationCall.reportMissingTenantization(): Nothing {
+    application.feature(Tenantization) // ensure the feature is installed
+    throw TenantizationNotYetConfiguredException()
+}
+
+class TenantizationNotYetConfiguredException :
+    IllegalStateException("Libro tenantization are not yet ready: you are asking it to early before the Tenantizations feature.")
+
+class Tenantization(private val configuration: Configuration) {
+    class Configuration {
+        /**
+         * List of IRI prefixes which aren't subject to tenantization.
+         */
+        var blacklist: List<String> = emptyList()
+    }
+
+    private fun closeToWebsiteIRI(originalReq: ApplicationRequest): String {
+        val path = originalReq.path()
+        val authority = listOf("authority", "X-Forwarded-Host", "origin", "host", "accept")
+            .find { header -> originalReq.header(header) != null }
+            ?.let { header -> originalReq.header(header)!! }
+            ?: throw Exception("No header usable for authority present")
+
+//        if (authority.contains(':')) {
+//            return "$authority$path"
+//        }
+
+        val proto = originalReq.header("X-Forwarded-Proto")
+            ?: originalReq.header("X-Forwarded-Proto")
+            ?: throw Exception("No Forwarded host nor authority scheme")
+
+        val authoritativeOrigin = if (authority.contains(':')) {
+            authority
+        } else {
+            "$proto://$authority/"
+        }
+
+        return originalReq.header("Website-IRI")
+            ?.let { websiteIRI ->
+                if (!websiteIRI.startsWith(authoritativeOrigin)) {
+                    throw Exception("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")
+                }
+                websiteIRI
+            } ?: "${authoritativeOrigin.dropLast(1)}$path"
+    }
+
+    private suspend fun getTenant(originalReq: ApplicationRequest, services: Services): TenantFinderResponse {
+        val client = HttpClient(CIO) {
+            install(JsonFeature)
+        }
+
+        val response = client.get<TenantFinderResponse>(services.route("/_public/spi/find_tenant")) {
+            headers {
+                header("Accept", ContentType.Application.Json)
+                header("Content-Type", ContentType.Application.Json)
+                copy("Accept-Language", originalReq)
+                header("X-Forwarded-Host", originalReq.header("Host"))
+                copy("X-Forwarded-Proto", originalReq)
+                copy("X-Forwarded-Ssl", originalReq)
+                copy("X-Request-Id", originalReq)
+            }
+            body = TenantFinderRequest(closeToWebsiteIRI(originalReq))
+        }
+
+        val proto = originalReq.header("X-Forwarded-Proto") ?: originalReq.header("scheme") ?: "http"
+        response.iriPrefix = "$proto://${response.iriPrefix}"
+
+        return response
+    }
+
+    @KtorExperimentalAPI
+    private suspend fun getManifest(iriPrefix: Url, originalReq: ApplicationRequest, services: Services): Manifest {
+        val client = HttpClient(CIO) {
+            install(JsonFeature)
+        }
+
+        return client.get(services.route("${iriPrefix.fullPath}/manifest")) {
+            headers {
+                header("Accept", ContentType.Application.Json)
+                header("Content-Type", ContentType.Application.Json)
+                copy("Accept-Language", originalReq)
+                header("X-Forwarded-Host", originalReq.header("Host"))
+                copy("X-Forwarded-Proto", originalReq)
+                copy("X-Forwarded-Ssl", originalReq)
+                copy("X-Request-Id", originalReq)
+            }
+        }
+    }
+
+    @KtorExperimentalAPI
+    private suspend fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
+        try {
+            val originalReq = context.call.request
+            val tenantResponse = getTenant(originalReq, context.call.services)
+            val iriPrefix = Url(tenantResponse.iriPrefix)
+            val baseOrigin = iriPrefix.copy(encodedPath = "")
+            val currentIRI = Url("$baseOrigin${context.call.request.path()}")
+
+            context.call.attributes.put(
+                TenantizationKey,
+                TenantData(
+                    isBlackListed = false,
+                    websiteIRI = Url(tenantResponse.iriPrefix),
+                    iriPrefix = iriPrefix,
+                    currentIRI = currentIRI
+                )
+            )
+        } catch (e: ClientRequestException) {
+            when (e.response.status) {
+                HttpStatusCode.NotFound -> throw TenantNotFoundException()
+                HttpStatusCode.BadGateway -> throw BadGatewayException()
+                else -> {
+                    println("What happened? $e")
+                    throw e // TODO: Reporting}
+                }
+            }
+        }
+    }
+
+    // Implements ApplicationFeature as a companion object.
+    companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, Tenantization> {
+        // Creates a unique key for the feature.
+        override val key = AttributeKey<Tenantization>("Tenantization")
+
+        // Code to execute when installing the feature.
+        @KtorExperimentalAPI
+        override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Tenantization {
+
+            // It is responsibility of the install code to call the `configure` method with the mutable configuration.
+            val configuration = Configuration().apply(configure)
+
+            // Create the feature, providing the mutable configuration so the feature reads it keeping an immutable copy of the properties.
+            val feature = Tenantization(configuration)
+
+            // Intercept a pipeline.
+            pipeline.intercept(ApplicationCallPipeline.Features) {
+                val path = this.call.request.path()
+                if (configuration.blacklist.any { fragment -> path.startsWith(fragment) }) {
+                    this.call.attributes.put(BlacklistedKey, true)
+                } else {
+                    this.call.attributes.put(BlacklistedKey, false)
+                    feature.intercept(this)
+                }
+            }
+            return feature
+        }
+    }
+}
