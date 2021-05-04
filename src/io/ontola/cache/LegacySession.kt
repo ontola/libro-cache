@@ -1,4 +1,4 @@
-package io.ontola
+package io.ontola.cache
 
 import kotlinx.serialization.Serializable
 

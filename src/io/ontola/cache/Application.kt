@@ -1,4 +1,4 @@
-package io.ontola
+package io.ontola.cache
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -7,21 +7,20 @@ import io.ktor.response.*
 import io.ktor.request.*
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.features.*
 import io.ktor.client.features.auth.*
 import io.ktor.client.features.json.*
 import io.ktor.client.request.*
 import io.ktor.client.features.logging.*
-import io.ktor.client.features.BrowserUserAgent
 import io.ktor.routing.*
 import io.ktor.http.*
 import io.ktor.locations.*
 import io.ktor.features.*
 import io.lettuce.core.FlushMode
 import io.lettuce.core.RedisClient
-import io.lettuce.core.RedisURI
 import io.lettuce.core.api.coroutines
-import io.ontola.features.*
-import io.ontola.features.tenant
+import io.ontola.cache.features.*
+import io.ontola.cache.features.tenant
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -56,44 +55,29 @@ fun HeadersBuilder.copy(header: String, req: ApplicationRequest) {
     }
 }
 
-@OptIn(KtorExperimentalLocationsAPI::class, io.lettuce.core.ExperimentalLettuceCoroutinesApi::class)
+@OptIn(KtorExperimentalLocationsAPI::class, io.lettuce.core.ExperimentalLettuceCoroutinesApi::class,
+    io.ktor.util.KtorExperimentalAPI::class
+)
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
 fun Application.module(testing: Boolean = false) {
-    val cacheConfig = environment.config.config("cache")
-    val services = cacheConfig.config("services")
-    val cacheSession = cacheConfig.config("session")
+    val config = CacheConfig.fromEnvironment(environment.config, testing)
 
-
-    val redisConfig = services.config("redis")
-    val redisHost = redisConfig.property("host").getString()
-    val redisPort = redisConfig.property("port").getString().toInt()
-    val redisDb = redisConfig.property("db").getString().toInt()
-    val libroRedisDb = redisConfig.property("libroDb").getString().toInt()
-
-    val redisUri = RedisURI.create(redisHost, redisPort).apply {
-        database = redisDb
-    }
-    val libroRedisUri = RedisURI.create(redisHost, redisPort).apply {
-        database = libroRedisDb
-    }
-    val cacheRedis = RedisClient.create(redisUri)
+    val cacheRedis = RedisClient.create(config.redis.uri)
     val cacheRedisConn = cacheRedis.connect().coroutines()
 
-    val libroRedis = RedisClient.create(libroRedisUri)
+    val libroRedis = RedisClient.create(config.libroRedisURI)
     val libroRedisConn = libroRedis.connect().coroutines()
 
     val client = HttpClient(CIO) {
-        install(Auth) {
-        }
+        install(Auth) {}
         install(JsonFeature) {
             serializer = GsonSerializer()
         }
         install(Logging) {
             level = LogLevel.HEADERS
         }
-        BrowserUserAgent() // install default browser-like user-agent
-        // install(UserAgent) { agent = "some user agent" }
+        install(UserAgent) { agent = "cache" }
     }
 
     suspend fun authorizeBulk(call: ApplicationCall, lang: String, resources: List<String>): List<SPIResourceResponseItem> {
@@ -101,9 +85,10 @@ fun Application.module(testing: Boolean = false) {
         val authorization = call.session.legacySession()
         val websiteIRI = call.tenant.websiteIRI
         val originalReq = call.request
+        val prefix = websiteIRI.encodedPath.split("/").getOrNull(1)?.let { "/$it" } ?: ""
 
         val res: String = client.post {
-            url("http://argu.svc.cluster.local:2999/argu/spi/bulk")
+            url(call.services.route("$prefix/spi/bulk"))
             contentType(ContentType.Application.Json)
             headers {
                 if (!authorization?.userToken.isNullOrBlank()) {
@@ -150,20 +135,23 @@ fun Application.module(testing: Boolean = false) {
     }
 
     install(CacheConfiguration) {
-        config = environment.config
+        this.config = config
     }
 
     install(ServiceRegistry) {
-        initFrom(services)
+        if (testing) {
+            initFromTest(config.services)
+        } else {
+            initFrom(config.services)
+        }
     }
 
     install(LibroSession) {
-        sessionSecret = cacheSession.propertyOrNull("secret")?.getString() ?: ""
-        cookieNameLegacy = "koa:sess"
-        signatureNameLegacy = "koa:sess.sig"
+        cookieNameLegacy = config.sessions.cookieNameLegacy
+        signatureNameLegacy = config.sessions.signatureNameLegacy
         this.libroRedisConn = libroRedisConn
-        jwtValidator = JWT.require(Algorithm.HMAC512(cacheSession.propertyOrNull("jwtEncryptionToken")?.getString()))
-            .withClaim("application_id", services.config("oidc").property("clientId").getString().toInt())
+        jwtValidator = JWT.require(Algorithm.HMAC512(config.sessions.jwtEncryptionToken))
+            .withClaim("application_id", config.sessions.clientId)
             .build()
     }
 
@@ -196,10 +184,10 @@ fun Application.module(testing: Boolean = false) {
     }
 
     install(StatusPages) {
-        exception<AuthenticationException> { _ ->
+        exception<AuthenticationException> {
             call.respond(HttpStatusCode.Unauthorized)
         }
-        exception<AuthorizationException> { _ ->
+        exception<AuthorizationException> {
             call.respond(HttpStatusCode.Forbidden)
         }
     }
@@ -227,8 +215,8 @@ fun Application.module(testing: Boolean = false) {
 //    }
 
     routing {
-        get("/") {
-            call.respondText("HELLO WORLD!", contentType = ContentType.Text.Plain)
+        get("/link-lib/cache/status") {
+            call.respondText("UP", contentType = ContentType.Text.Plain)
         }
 
         get("/link-lib/cache/clear") {
@@ -237,30 +225,37 @@ fun Application.module(testing: Boolean = false) {
             call.respondText(test ?: "no message given", ContentType.Text.Plain, HttpStatusCode.OK)
         }
 
-
         post<Bulk> {
             var redisUpdate: Map<String, Map<String, String>>? = null
 
             val hotMillis = measureTimeMillis {
                 val params = call.receiveParameters()
                 val resources = params.getAll("resource[]")
-                val requested = resources?.map { r -> CacheRequest(URLDecoder.decode(r, Charset.defaultCharset())) } ?: emptyList()
+                val requested = resources?.map { r -> CacheRequest(URLDecoder.decode(r, Charset.defaultCharset().name())) } ?: emptyList()
                 // TODO: handle empty request
 
                 println("Fetching ${requested.size} resources from cache")
-                val lang = call.session.language() ?: cacheConfig.property("defaultLanguage").getString()
-                val cacheItemPrefix = "helix.cache.resource."
-                val cacheItemSuffix = ".${lang}"
+                val lang = call.session.language() ?: config.defaultLanguage
+                val prefixes = listOfNotNull(
+                    config.redis.rootPrefix,
+                    config.redis.cachePrefix,
+                    config.redis.cacheEntryPrefix,
+                ).toTypedArray()
+
+                fun toCacheKey(iri: String): String = listOfNotNull(*prefixes, iri, lang).joinToString(config.redis.separator)
+                fun fromCacheKey(key: String): String = key.split(config.redis.separator)[prefixes.size + 1]
 
                 val entries = requested
-                    .map { e -> e.iri }
+                    .map { e -> toCacheKey(e.iri) }
                     .asFlow()
-                    .map { key -> key to cacheRedisConn.hmget("$cacheItemPrefix${key}$cacheItemSuffix", "iri", "status", "cacheControl", "contents") }
+                    .map { key -> key to cacheRedisConn.hmget(key, "iri", "status", "cacheControl", "contents") }
                     .map { (key, hash) ->
-                        key.split(cacheItemPrefix).last().split(cacheItemSuffix).first() to hash.fold(mutableMapOf<String, String>()) { e, h ->
+                        val test = hash.fold(mutableMapOf<String, String>()) { e, h ->
                             h.ifHasValue { e[h.key] = it }
                             e
                         }
+
+                        fromCacheKey(key) to test
                     }
                     .toList()
                     .filter { (_, hash) -> hash.containsKey("iri") }
@@ -297,7 +292,7 @@ fun Application.module(testing: Boolean = false) {
                             entry
                         }
                         .filter { it.cacheControl != CacheControl.Private }
-                        .associateBy({"$cacheItemPrefix${it.iri}$cacheItemSuffix"}, {
+                        .associateBy({ toCacheKey(it.iri) }, {
                             mapOf(
                                 "iri" to it.iri,
                                 "status" to it.status.value.toString(10),
@@ -380,8 +375,6 @@ data class SPIResourceRequestItem(
 data class SPIAuthorizeRequest(
     val resources: List<SPIResourceRequestItem>,
 )
-
-data class JsonSampleClass(val hello: String)
 
 @Location("/link-lib/bulk")
 class Bulk

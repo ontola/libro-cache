@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+val bugsnag_version: String by project
 val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
@@ -5,8 +8,8 @@ val logback_version: String by project
 plugins {
     application
 
-    kotlin("jvm") version "1.4.32"
-    kotlin("plugin.serialization") version "1.4.32"
+    kotlin("jvm") version "1.5.0-RC"
+    kotlin("plugin.serialization") version "1.5.0-RC"
 }
 
 group = "io.ontola"
@@ -32,6 +35,9 @@ sourceSets["test"].resources.srcDirs("testresources")
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_version")
+
     implementation("io.ktor:ktor-server-cio:$ktor_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-auth-jwt:$ktor_version")
@@ -40,6 +46,7 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:$ktor_version")
     implementation("io.ktor:ktor-client-auth-jvm:$ktor_version")
     implementation("io.ktor:ktor-client-json-jvm:$ktor_version")
+    implementation("io.ktor:ktor-client-serialization:$ktor_version")
     implementation("io.ktor:ktor-client-gson:$ktor_version")
     implementation("io.ktor:ktor-client-logging-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-core:$ktor_version")
@@ -53,6 +60,14 @@ dependencies {
     implementation("commons-codec:commons-codec:1.15")
 
     implementation("io.lettuce:lettuce-core:6.1.1.RELEASE")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.4.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlin_version")
+
+    implementation("com.bugsnag:bugsnag:$bugsnag_version")
 }
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    freeCompilerArgs = listOf("-Xinline-classes")
+}
+
+task("stage").dependsOn("installDist")

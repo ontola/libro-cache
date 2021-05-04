@@ -1,4 +1,4 @@
-package io.ontola
+package io.ontola.cache.features
 
 import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
@@ -57,6 +57,21 @@ class ServiceRegistry(private val configuration: Configuration) {
         lateinit var tokenServiceUrl: String
         lateinit var tokenServiceName: String
         lateinit var tokenServiceMatcher: Regex
+
+
+        fun initFromTest(config: ApplicationConfig) {
+            this.config = config
+
+            dataServiceUrl = "https://data"
+            dataServiceName = "data"
+            dataServiceMatcher = Regex(".*")
+            emailServiceUrl = "https://email"
+            emailServiceName = "email"
+            emailServiceMatcher = Regex("^/email/")
+            tokenServiceUrl = "https://token"
+            tokenServiceName = "token"
+            tokenServiceMatcher = Regex("^(/\\w+)?/tokens")
+        }
 
         fun initFrom(config: ApplicationConfig) {
             this.config = config

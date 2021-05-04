@@ -1,4 +1,4 @@
-package io.ontola
+package io.ontola.cache.features
 
 import com.auth0.jwt.interfaces.JWTVerifier
 import io.ktor.application.ApplicationCall
@@ -11,13 +11,14 @@ import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
+import io.ontola.cache.Session
 
 fun getCookieWithInvalidName(call: ApplicationCall, cookieName: String): String? {
     return call.request
         .header("Cookie")
         ?.split(";")
         ?.map { it.split("=").map { it.trim() } }
-        ?.first { it[0] == cookieName }
+        ?.firstOrNull { it[0] == cookieName }
         ?.last()
 }
 
@@ -51,7 +52,12 @@ class LibroSession(private val configuration: Configuration) {
 
         // Code to execute when installing the feature.
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): LibroSession {
-            val configuration = Configuration().apply(configure)
+            val cacheConfig = pipeline.cacheConfig
+            val configuration = Configuration()
+                .apply {
+                    this.sessionSecret = cacheConfig.sessions.sessionSecret
+                }
+                .apply(configure)
             val feature = LibroSession(configuration)
             pipeline.intercept(ApplicationCallPipeline.Features) {
                 feature.intercept(this)

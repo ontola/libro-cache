@@ -1,4 +1,4 @@
-package io.ontola
+package io.ontola.cache
 
 //class AuthenticationException(msg: String? = null) : RuntimeException(msg)
 class TenantNotFoundException : RuntimeException() {

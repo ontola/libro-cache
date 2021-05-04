@@ -1,4 +1,4 @@
-package io.ontola.util
+package io.ontola.cache.util
 
 import io.ktor.http.HeadersBuilder
 import io.ktor.request.ApplicationRequest

@@ -1,4 +1,4 @@
-package io.ontola.features
+package io.ontola.cache.features
 
 import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
@@ -9,25 +9,21 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.features.ClientRequestException
 import io.ktor.client.features.json.JsonFeature
+import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
-import io.ktor.client.utils.*
-import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.Url
-import io.ktor.http.fullPath
+import io.ktor.http.*
 import io.ktor.request.ApplicationRequest
 import io.ktor.request.header
 import io.ktor.request.path
 import io.ktor.util.AttributeKey
 import io.ktor.util.KtorExperimentalAPI
 import io.ktor.util.pipeline.PipelineContext
-import io.ontola.BadGatewayException
-import io.ontola.Services
-import io.ontola.TenantNotFoundException
-import io.ontola.services
-import io.ontola.util.copy
+import io.ontola.cache.BadGatewayException
+import io.ontola.cache.TenantNotFoundException
+import io.ontola.cache.util.copy
+import io.ontola.cache.util.origin
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -105,7 +101,7 @@ data class TenantFinderRequest(
 
 @Serializable
 data class TenantFinderResponse(
-    val uuid: String?,
+    val uuid: String? = null,
     @SerialName("all_shortnames")
     val allShortnames: List<String> = emptyList(),
     @SerialName("iri_prefix")
@@ -174,12 +170,12 @@ class Tenantization(private val configuration: Configuration) {
         val authoritativeOrigin = if (authority.contains(':')) {
             authority
         } else {
-            "$proto://$authority/"
+            "$proto://$authority"
         }
 
         return originalReq.header("Website-IRI")
             ?.let { websiteIRI ->
-                if (!websiteIRI.startsWith(authoritativeOrigin)) {
+                if (Url(websiteIRI).origin() != authoritativeOrigin) {
                     throw Exception("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")
                 }
                 websiteIRI
@@ -188,7 +184,12 @@ class Tenantization(private val configuration: Configuration) {
 
     private suspend fun getTenant(originalReq: ApplicationRequest, services: Services): TenantFinderResponse {
         val client = HttpClient(CIO) {
-            install(JsonFeature)
+            install(JsonFeature) {
+                serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
+                    isLenient = false
+                    ignoreUnknownKeys = false
+                })
+            }
         }
 
         val response = client.get<TenantFinderResponse>(services.route("/_public/spi/find_tenant")) {
