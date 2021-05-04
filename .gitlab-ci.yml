@@ -1,0 +1,10 @@
+include:
+  - template: Auto-DevOps.gitlab-ci.yml
+
+test:
+  services:
+    - redis:latest
+
+spotbugs-sast:
+  services:
+    - redis:latest

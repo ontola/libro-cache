@@ -62,13 +62,13 @@ class ServiceRegistry(private val configuration: Configuration) {
         fun initFromTest(config: ApplicationConfig) {
             this.config = config
 
-            dataServiceUrl = "https://data"
+            dataServiceUrl = "https://data.local"
             dataServiceName = "data"
             dataServiceMatcher = Regex(".*")
-            emailServiceUrl = "https://email"
+            emailServiceUrl = "https://email.local"
             emailServiceName = "email"
             emailServiceMatcher = Regex("^/email/")
-            tokenServiceUrl = "https://token"
+            tokenServiceUrl = "https://token.local"
             tokenServiceName = "token"
             tokenServiceMatcher = Regex("^(/\\w+)?/tokens")
         }

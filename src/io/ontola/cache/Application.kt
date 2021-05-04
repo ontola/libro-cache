@@ -5,13 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.application.*
 import io.ktor.response.*
 import io.ktor.request.*
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.features.*
-import io.ktor.client.features.auth.*
-import io.ktor.client.features.json.*
 import io.ktor.client.request.*
-import io.ktor.client.features.logging.*
 import io.ktor.routing.*
 import io.ktor.http.*
 import io.ktor.locations.*
@@ -69,16 +63,7 @@ fun Application.module(testing: Boolean = false) {
     val libroRedis = RedisClient.create(config.libroRedisURI)
     val libroRedisConn = libroRedis.connect().coroutines()
 
-    val client = HttpClient(CIO) {
-        install(Auth) {}
-        install(JsonFeature) {
-            serializer = GsonSerializer()
-        }
-        install(Logging) {
-            level = LogLevel.HEADERS
-        }
-        install(UserAgent) { agent = "cache" }
-    }
+    val client = createClient(testing)
 
     suspend fun authorizeBulk(call: ApplicationCall, lang: String, resources: List<String>): List<SPIResourceResponseItem> {
         // TODO: Support direct bearer header for API requests
@@ -190,6 +175,10 @@ fun Application.module(testing: Boolean = false) {
         exception<AuthorizationException> {
             call.respond(HttpStatusCode.Forbidden)
         }
+        exception<Exception> { cause ->
+            config.notify(cause)
+            call.respond(HttpStatusCode.InternalServerError)
+        }
     }
 
     install(Tenantization) {
@@ -202,6 +191,7 @@ fun Application.module(testing: Boolean = false) {
             "/f_assets/",
             "/__webpack_hmr"
         )
+        this.client = client
     }
 
     // https://ktor.io/servers/features/https-redirect.html#testing

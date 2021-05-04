@@ -80,8 +80,7 @@ class Session(
             val jwt = configuration.jwtValidator.verify(userToken)
             Json.decodeFromString<Claims>(Base64().decode(jwt.payload).decodeToString())
         } catch (e: JWTVerificationException) {
-            println(e)
-            // TODO: bugsnag
+            configuration.cacheConfig.notify(e)
             null
         }
     }

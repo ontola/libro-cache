@@ -1,11 +1,13 @@
 package io.ontola.cache.features
 
+import com.bugsnag.Bugsnag
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature
 import io.ktor.application.call
 import io.ktor.config.ApplicationConfig
 import io.ktor.util.AttributeKey
 import io.ktor.util.KtorExperimentalAPI
+import io.ktor.utils.io.*
 import io.lettuce.core.RedisURI
 
 data class SessionsConfig(
@@ -92,7 +94,18 @@ data class CacheConfig(
      * Whether the invalidator should be running.
      */
     val enableInvalidator: Boolean,
+    /**
+     * Key of the error reporting service.
+     */
+    val reportingKey: String? = null,
 ) {
+    private val reportingService: Bugsnag? = if (reportingKey.isNullOrBlank()) {
+        println("No reporting key")
+        null
+    } else {
+        Bugsnag(reportingKey)
+    }
+
     companion object {
         @KtorExperimentalAPI
         fun fromEnvironment(config: ApplicationConfig, testing: Boolean): CacheConfig {
@@ -169,7 +182,22 @@ data class CacheConfig(
                 services = services,
                 defaultLanguage = defaultLanguage,
                 enableInvalidator = true, // TODO
+                reportingKey = cacheConfig.propertyOrNull("reportingKey")?.toString(),
             )
+        }
+    }
+
+    /**
+     * Prints the message and notifies the reporting service if available.
+     */
+    fun notify(e: Exception) {
+        if (reportingService == null) {
+            println("No reporting service")
+            println(e.message)
+            e.printStack()
+        } else {
+            println(e.message)
+            reportingService.notify(e)
         }
     }
 }

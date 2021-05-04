@@ -26,6 +26,8 @@ import io.ontola.cache.util.copy
 import io.ontola.cache.util.origin
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import kotlinx.serialization.json.Json
 
 @Serializable
 data class OntolaManifest(
@@ -104,8 +106,11 @@ data class TenantFinderResponse(
     val uuid: String? = null,
     @SerialName("all_shortnames")
     val allShortnames: List<String> = emptyList(),
+    /**
+     * The host and possible path of the website.
+     */
     @SerialName("iri_prefix")
-    var iriPrefix: String,
+    val iriPrefix: String,
     @SerialName("header_background")
     val headerBackground: String? = null,
     @SerialName("header_text")
@@ -118,12 +123,15 @@ data class TenantFinderResponse(
     val databaseSchema: String? = null,
     @SerialName("display_name")
     val displayName: String? = null,
-)
+) {
+    @Transient
+    lateinit var websiteBase: String
+}
 
 data class TenantData(
     val isBlackListed: Boolean,
     val websiteIRI: Url,
-    val iriPrefix: Url,
+    val websiteOrigin: Url,
     val currentIRI: Url,
 )
 
@@ -141,6 +149,8 @@ private fun ApplicationCall.reportMissingTenantization(): Nothing {
     throw TenantizationNotYetConfiguredException()
 }
 
+private fun Boolean.toInt(): Int = if (this) 1 else 0
+
 class TenantizationNotYetConfiguredException :
     IllegalStateException("Libro tenantization are not yet ready: you are asking it to early before the Tenantizations feature.")
 
@@ -150,6 +160,14 @@ class Tenantization(private val configuration: Configuration) {
          * List of IRI prefixes which aren't subject to tenantization.
          */
         var blacklist: List<String> = emptyList()
+        var client: HttpClient = HttpClient(CIO) {
+            install(JsonFeature) {
+                serializer = KotlinxSerializer(Json {
+                    isLenient = false
+                    ignoreUnknownKeys = false
+                })
+            }
+        }
     }
 
     private fun closeToWebsiteIRI(originalReq: ApplicationRequest): String {
@@ -179,20 +197,11 @@ class Tenantization(private val configuration: Configuration) {
                     throw Exception("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")
                 }
                 websiteIRI
-            } ?: "${authoritativeOrigin.dropLast(1)}$path"
+            } ?: "${authoritativeOrigin.dropLast(authoritativeOrigin.endsWith('/').toInt())}$path"
     }
 
     private suspend fun getTenant(originalReq: ApplicationRequest, services: Services): TenantFinderResponse {
-        val client = HttpClient(CIO) {
-            install(JsonFeature) {
-                serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
-                    isLenient = false
-                    ignoreUnknownKeys = false
-                })
-            }
-        }
-
-        val response = client.get<TenantFinderResponse>(services.route("/_public/spi/find_tenant")) {
+        val response = configuration.client.get<TenantFinderResponse>(services.route("/_public/spi/find_tenant")) {
             headers {
                 header("Accept", ContentType.Application.Json)
                 header("Content-Type", ContentType.Application.Json)
@@ -204,20 +213,15 @@ class Tenantization(private val configuration: Configuration) {
             }
             body = TenantFinderRequest(closeToWebsiteIRI(originalReq))
         }
-
         val proto = originalReq.header("X-Forwarded-Proto") ?: originalReq.header("scheme") ?: "http"
-        response.iriPrefix = "$proto://${response.iriPrefix}"
+        response.websiteBase = "$proto://${response.iriPrefix}"
 
         return response
     }
 
     @KtorExperimentalAPI
-    private suspend fun getManifest(iriPrefix: Url, originalReq: ApplicationRequest, services: Services): Manifest {
-        val client = HttpClient(CIO) {
-            install(JsonFeature)
-        }
-
-        return client.get(services.route("${iriPrefix.fullPath}/manifest")) {
+    private suspend fun getManifest(websiteBase: Url, originalReq: ApplicationRequest, services: Services): Manifest {
+        return configuration.client.get(services.route("${websiteBase.fullPath}/manifest")) {
             headers {
                 header("Accept", ContentType.Application.Json)
                 header("Content-Type", ContentType.Application.Json)
@@ -235,16 +239,16 @@ class Tenantization(private val configuration: Configuration) {
         try {
             val originalReq = context.call.request
             val tenantResponse = getTenant(originalReq, context.call.services)
-            val iriPrefix = Url(tenantResponse.iriPrefix)
-            val baseOrigin = iriPrefix.copy(encodedPath = "")
+            val websiteBase = Url(tenantResponse.websiteBase)
+            val baseOrigin = websiteBase.copy(encodedPath = "")
             val currentIRI = Url("$baseOrigin${context.call.request.path()}")
 
             context.call.attributes.put(
                 TenantizationKey,
                 TenantData(
                     isBlackListed = false,
-                    websiteIRI = Url(tenantResponse.iriPrefix),
-                    iriPrefix = iriPrefix,
+                    websiteIRI = Url(tenantResponse.websiteBase),
+                    websiteOrigin = baseOrigin,
                     currentIRI = currentIRI
                 )
             )

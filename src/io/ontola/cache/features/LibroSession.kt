@@ -30,6 +30,7 @@ class LibroSession(private val configuration: Configuration) {
         lateinit var signatureNameLegacy: String
         lateinit var cookieNameLegacy: String
         lateinit var jwtValidator: JWTVerifier
+        lateinit var cacheConfig: CacheConfig
     }
 
     private fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
@@ -56,6 +57,7 @@ class LibroSession(private val configuration: Configuration) {
             val configuration = Configuration()
                 .apply {
                     this.sessionSecret = cacheConfig.sessions.sessionSecret
+                    this.cacheConfig = cacheConfig
                 }
                 .apply(configure)
             val feature = LibroSession(configuration)

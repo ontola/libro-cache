@@ -9,8 +9,8 @@ class ApplicationTest {
     @Test
     fun testRoot() {
         withTestApplication({ module(testing = true) }) {
-            handleRequest(HttpMethod.Get, "/") {
-                addHeader("authority", "localhost")
+            handleRequest(HttpMethod.Get, "/link-lib/cache/status") {
+                addHeader("authority", "mysite.local")
                 addHeader("X-Forwarded-Proto", "https")
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
