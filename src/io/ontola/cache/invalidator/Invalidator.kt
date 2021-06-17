@@ -1,15 +1,17 @@
 package io.ontola.cache.invalidator
 
-import io.ktor.application.*
-import io.ktor.util.*
-import io.lettuce.core.*
+import io.ktor.application.Application
+import io.ktor.util.KtorExperimentalAPI
+import io.lettuce.core.Consumer
+import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.lettuce.core.RedisClient
+import io.lettuce.core.XGroupCreateArgs
+import io.lettuce.core.XReadArgs
 import io.lettuce.core.api.coroutines
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.ontola.cache.features.CacheConfig
 import io.ontola.cache.features.RedisConfig
-import io.ontola.transactions.Created
-import io.ontola.transactions.Deleted
-import io.ontola.transactions.Updated
+import io.ontola.cache.util.KeyManager
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
@@ -58,9 +60,8 @@ suspend fun ensureConsumer(redisConn: RedisCoroutinesCommands<String, String>, c
 @kotlin.jvm.JvmOverloads
 fun Application.module(testing: Boolean = false) {
     thread {
-        println("Invalidator called")
+        println("Invalidator started")
         val config = CacheConfig.fromEnvironment(environment.config, testing)
-        println("Config: $config")
 
         val redis = RedisClient.create(config.libroRedisURI)
         val redisConn = redis.connect().coroutines()
@@ -70,7 +71,7 @@ fun Application.module(testing: Boolean = false) {
 
         runBlocking {
             if (!streamAndGroupExist(redisConn, config.redis)) {
-               createGroupAndStream(redisConn, config.redis)
+                createGroupAndStream(redisConn, config.redis)
             }
 
             try {
@@ -79,32 +80,19 @@ fun Application.module(testing: Boolean = false) {
                 val args = XReadArgs().apply {
                     block(Long.MAX_VALUE)
                 }
-                while(true) {
+                val keyManager = KeyManager(config)
+
+                while (true) {
                     redisConn
                         .xreadgroup(consumer, args, stream)
                         .collect { msg ->
-                            println("msg: $msg")
                             val resource = msg.body["resource"] ?: throw SerializationException("Message missing key 'resource'")
-                            val resourceType = msg.body["resourceType"] ?: throw SerializationException("Message missing key 'resourceType'")
 
                             when (msg.body["type"]) {
-                                "io.ontola.transactions.Created" -> {
-                                    Created(
-                                        resource = resource,
-                                        resourceType = resourceType,
-                                    )
-                                }
-                                "io.ontola.transactions.Updated" -> {
-                                    Updated(
-                                        resource = resource,
-                                        resourceType = resourceType,
-                                    )
-                                }
+                                "io.ontola.transactions.Updated",
                                 "io.ontola.transactions.Deleted" -> {
-                                    Deleted(
-                                        resource = resource,
-                                        resourceType = resourceType,
-                                    )
+                                    redisConn.del(keyManager.toKey(resource, "en"))
+                                    redisConn.del(keyManager.toKey(resource, "nl"))
                                 }
                             }
                         }
@@ -112,8 +100,6 @@ fun Application.module(testing: Boolean = false) {
             } finally {
                 redisConn.xgroupDelconsumer(config.redis.invalidationChannel, consumer)
             }
-
-            println("quit?? T.T")
         }
     }
 }

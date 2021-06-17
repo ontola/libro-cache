@@ -48,6 +48,7 @@ import io.ontola.cache.features.Tenantization
 import io.ontola.cache.features.services
 import io.ontola.cache.features.session
 import io.ontola.cache.features.tenant
+import io.ontola.cache.util.KeyManager
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
@@ -265,17 +266,10 @@ fun Application.module(testing: Boolean = false) {
 
                 println("Fetching ${requested.size} resources from cache")
                 val lang = call.session.language() ?: config.defaultLanguage
-                val prefixes = listOfNotNull(
-                    config.redis.rootPrefix,
-                    config.redis.cachePrefix,
-                    config.redis.cacheEntryPrefix,
-                ).toTypedArray()
-
-                fun toCacheKey(iri: String): String = listOfNotNull(*prefixes, iri, lang).joinToString(config.redis.separator)
-                fun fromCacheKey(key: String): String = key.split(config.redis.separator)[prefixes.size + 1]
+                val keyManager = KeyManager(config)
 
                 val entries = requested
-                    .map { e -> toCacheKey(e.iri) }
+                    .map { e -> keyManager.toKey(e.iri, lang) }
                     .asFlow()
                     .map { key -> key to cacheRedisConn.hmget(key, "iri", "status", "cacheControl", "contents") }
                     .map { (key, hash) ->
@@ -284,7 +278,7 @@ fun Application.module(testing: Boolean = false) {
                             e
                         }
 
-                        fromCacheKey(key) to test
+                        keyManager.fromKey(key) to test
                     }
                     .toList()
                     .filter { (_, hash) -> hash.containsKey("iri") }
@@ -322,7 +316,7 @@ fun Application.module(testing: Boolean = false) {
                         }
                         .filter { it.cacheControl != CacheControl.Private }
                         .associateBy(
-                            { toCacheKey(it.iri) },
+                            { keyManager.toKey(it.iri, lang) },
                             {
                                 mapOf(
                                     "iri" to it.iri,
