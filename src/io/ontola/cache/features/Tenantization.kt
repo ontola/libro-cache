@@ -9,11 +9,14 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.features.ClientRequestException
 import io.ktor.client.features.json.JsonFeature
-import io.ktor.client.features.json.serializer.*
+import io.ktor.client.features.json.serializer.KotlinxSerializer
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
-import io.ktor.http.*
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.Url
+import io.ktor.http.fullPath
 import io.ktor.request.ApplicationRequest
 import io.ktor.request.header
 import io.ktor.request.path
@@ -162,10 +165,12 @@ class Tenantization(private val configuration: Configuration) {
         var blacklist: List<String> = emptyList()
         var client: HttpClient = HttpClient(CIO) {
             install(JsonFeature) {
-                serializer = KotlinxSerializer(Json {
-                    isLenient = false
-                    ignoreUnknownKeys = false
-                })
+                serializer = KotlinxSerializer(
+                    Json {
+                        isLenient = false
+                        ignoreUnknownKeys = false
+                    }
+                )
             }
         }
     }

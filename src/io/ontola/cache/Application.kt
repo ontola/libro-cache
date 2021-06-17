@@ -2,20 +2,56 @@ package io.ontola.cache
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import io.ktor.application.*
-import io.ktor.response.*
-import io.ktor.request.*
-import io.ktor.client.request.*
-import io.ktor.routing.*
-import io.ktor.http.*
-import io.ktor.locations.*
-import io.ktor.features.*
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
+import io.ktor.application.install
+import io.ktor.client.request.header
+import io.ktor.client.request.headers
+import io.ktor.client.request.post
+import io.ktor.client.request.url
+import io.ktor.features.CallLogging
+import io.ktor.features.Compression
+import io.ktor.features.ContentNegotiation
+import io.ktor.features.DefaultHeaders
+import io.ktor.features.ForwardedHeaderSupport
+import io.ktor.features.StatusPages
+import io.ktor.features.XForwardedHeaderSupport
+import io.ktor.features.deflate
+import io.ktor.features.gzip
+import io.ktor.features.minimumSize
+import io.ktor.http.ContentType
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.locations.KtorExperimentalLocationsAPI
+import io.ktor.locations.Location
+import io.ktor.locations.Locations
+import io.ktor.locations.post
+import io.ktor.request.ApplicationRequest
+import io.ktor.request.header
+import io.ktor.request.path
+import io.ktor.request.receiveParameters
+import io.ktor.response.respond
+import io.ktor.response.respondText
+import io.ktor.routing.get
+import io.ktor.routing.routing
 import io.lettuce.core.FlushMode
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
-import io.ontola.cache.features.*
+import io.ontola.cache.features.CacheConfig
+import io.ontola.cache.features.CacheConfiguration
+import io.ontola.cache.features.LibroSession
+import io.ontola.cache.features.ServiceRegistry
+import io.ontola.cache.features.Tenantization
+import io.ontola.cache.features.services
+import io.ontola.cache.features.session
 import io.ontola.cache.features.tenant
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.fold
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -25,6 +61,7 @@ import kotlinx.serialization.json.buildJsonArray
 import org.slf4j.event.Level
 import java.net.URLDecoder
 import java.nio.charset.Charset
+import kotlin.collections.set
 import kotlin.system.measureTimeMillis
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
@@ -42,14 +79,14 @@ fun statusCode(iri: String, status: HttpStatusCode): String {
     return statment.toString()
 }
 
-
 fun HeadersBuilder.copy(header: String, req: ApplicationRequest) {
     req.header(header)?.let {
         set(header, it)
     }
 }
 
-@OptIn(KtorExperimentalLocationsAPI::class, io.lettuce.core.ExperimentalLettuceCoroutinesApi::class,
+@OptIn(
+    KtorExperimentalLocationsAPI::class, io.lettuce.core.ExperimentalLettuceCoroutinesApi::class,
     io.ktor.util.KtorExperimentalAPI::class
 )
 @Suppress("unused") // Referenced in application.conf
@@ -108,12 +145,14 @@ fun Application.module(testing: Boolean = false) {
                 copy("Forwarded", originalReq)
             }
 
-            body = SPIAuthorizeRequest(resources = resources.map { r ->
-                SPIResourceRequestItem(
-                    iri = r,
-                    include = true,
-                )
-            })
+            body = SPIAuthorizeRequest(
+                resources = resources.map { r ->
+                    SPIResourceRequestItem(
+                        iri = r,
+                        include = true,
+                    )
+                }
+            )
         }
 
         return Json.decodeFromString(res)
@@ -257,7 +296,7 @@ fun Application.module(testing: Boolean = false) {
                             contents = hash["contents"],
                         )
                     }
-                    .associateBy({it.first}, {it.second})
+                    .associateBy({ it.first }, { it.second })
                     .toMutableMap()
                 println("Fetched ${entries.size} resources from cache")
 
@@ -282,14 +321,17 @@ fun Application.module(testing: Boolean = false) {
                             entry
                         }
                         .filter { it.cacheControl != CacheControl.Private }
-                        .associateBy({ toCacheKey(it.iri) }, {
-                            mapOf(
-                                "iri" to it.iri,
-                                "status" to it.status.value.toString(10),
-                                "cacheControl" to it.cacheControl.toString(),
-                                "contents" to it.contents.orEmpty(),
-                            )
-                        })
+                        .associateBy(
+                            { toCacheKey(it.iri) },
+                            {
+                                mapOf(
+                                    "iri" to it.iri,
+                                    "status" to it.status.value.toString(10),
+                                    "cacheControl" to it.cacheControl.toString(),
+                                    "contents" to it.contents.orEmpty(),
+                                )
+                            }
+                        )
                 } else {
                     println("All ${requested.size} resources in cache")
                 }
@@ -314,6 +356,9 @@ fun Application.module(testing: Boolean = false) {
                     println("Updating redis after responding (${redisUpdate!!.size} entries)")
                     redisUpdate!!.forEach {
                         cacheRedisConn.hset(it.key, it.value)
+                        config.cacheExpiration?.let { cacheExpiration ->
+                            cacheRedisConn.expire(it.key, cacheExpiration)
+                        }
                     }
                 }
             }
@@ -375,4 +420,3 @@ data class BulkRequest(
 
 class AuthenticationException : RuntimeException()
 class AuthorizationException : RuntimeException()
-

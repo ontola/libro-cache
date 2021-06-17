@@ -58,7 +58,6 @@ class ServiceRegistry(private val configuration: Configuration) {
         lateinit var tokenServiceName: String
         lateinit var tokenServiceMatcher: Regex
 
-
         fun initFromTest(config: ApplicationConfig) {
             this.config = config
 

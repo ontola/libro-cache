@@ -7,7 +7,7 @@ import io.ktor.application.call
 import io.ktor.config.ApplicationConfig
 import io.ktor.util.AttributeKey
 import io.ktor.util.KtorExperimentalAPI
-import io.ktor.utils.io.*
+import io.ktor.utils.io.printStack
 import io.lettuce.core.RedisURI
 
 data class SessionsConfig(
@@ -98,6 +98,11 @@ data class CacheConfig(
      * Key of the error reporting service.
      */
     val reportingKey: String? = null,
+    /**
+     * The amount of time after which cache entries should expire in seconds.
+     * Omit to disable expiration.
+     */
+    val cacheExpiration: Long? = null,
 ) {
     private val reportingService: Bugsnag? = if (reportingKey.isNullOrBlank()) {
         println("No reporting key")
@@ -183,6 +188,7 @@ data class CacheConfig(
                 defaultLanguage = defaultLanguage,
                 enableInvalidator = true, // TODO
                 reportingKey = cacheConfig.propertyOrNull("reportingKey")?.toString(),
+                cacheExpiration = cacheConfig.propertyOrNull("cacheExpiration")?.toString()?.toLongOrNull(),
             )
         }
     }
