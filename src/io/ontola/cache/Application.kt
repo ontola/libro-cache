@@ -278,7 +278,7 @@ fun Application.module(testing: Boolean = false) {
                             e
                         }
 
-                        keyManager.fromKey(key) to test
+                        keyManager.fromKey(key).first to test
                     }
                     .toList()
                     .filter { (_, hash) -> hash.containsKey("iri") }
