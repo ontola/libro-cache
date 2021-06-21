@@ -22,7 +22,7 @@ data class SessionsConfig(
     /**
      * The client id to accept requests from.
      */
-    val clientId: Int,
+    val clientId: String,
     /**
      * Name of the legacy koa cookie that holds the session id
      */
@@ -124,13 +124,13 @@ data class CacheConfig(
                 SessionsConfig(
                     sessionSecret = "",
                     jwtEncryptionToken = "",
-                    clientId = 0,
+                    clientId = "0",
                 )
             } else {
                 SessionsConfig(
                     sessionSecret = cacheSession.property("secret").getString(),
                     jwtEncryptionToken = cacheSession.property("jwtEncryptionToken").getString(),
-                    clientId = services.config("oidc").property("clientId").getString().toInt(),
+                    clientId = services.config("oidc").property("clientId").getString(),
                 )
             }
 

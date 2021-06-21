@@ -25,7 +25,7 @@ data class UserData(
 @Serializable
 data class Claims(
     @SerialName("application_id")
-    val applicationId: Long,
+    val applicationId: String,
     val exp: Long,
     val iat: Long,
     val scopes: List<String>,
