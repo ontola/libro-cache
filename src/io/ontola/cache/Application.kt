@@ -225,6 +225,7 @@ fun Application.module(testing: Boolean = false) {
         blacklist = listOf(
             "/favicon.ico",
             "/link-lib/cache/clear",
+            "/link-lib/cache/status",
             "/metrics",
             "/static/",
             "/assets/",
