@@ -6,10 +6,14 @@ import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.application.install
+import io.ktor.client.call.receive
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.url
+import io.ktor.client.statement.HttpResponse
 import io.ktor.features.CallLogging
 import io.ktor.features.Compression
 import io.ktor.features.ContentNegotiation
@@ -86,6 +90,46 @@ fun HeadersBuilder.copy(header: String, req: ApplicationRequest) {
     }
 }
 
+suspend fun HttpRequestBuilder.initHeaders(call: ApplicationCall, lang: String) {
+    // TODO: Support direct bearer header for API requests
+    val authorization = call.session.legacySession()
+    val websiteIRI = call.tenant.websiteIRI
+    val originalReq = call.request
+
+    headers {
+        if (!authorization?.userToken.isNullOrBlank()) {
+            header(HttpHeaders.Authorization, "Bearer ${authorization!!.userToken}")
+        }
+
+        header("Accept-Language", lang)
+        header("Website-IRI", websiteIRI)
+
+        header("Accept", ContentType.Application.Json)
+        header("Content-Type", ContentType.Application.Json)
+        copy("Accept-Language", originalReq)
+        header("X-Forwarded-Host", originalReq.header("Host"))
+        copy("X-Forwarded-Proto", originalReq)
+        copy("X-Forwarded-Ssl", originalReq)
+        copy("X-Request-Id", originalReq)
+
+//                copy("Accept-Language", originalReq)
+        copy("Origin", originalReq)
+        copy("Referer", originalReq)
+        copy("User-Agent", originalReq)
+        copy("X-Forwarded-Host", originalReq)
+        copy("X-Forwarded-Proto", originalReq)
+        copy("X-Forwarded-Ssl", originalReq)
+        copy("X-Real-Ip", originalReq)
+        copy("X-Requested-With", originalReq)
+        copy("X-Request-Id", originalReq)
+
+        copy("X-Client-Ip", originalReq)
+        copy("Client-Ip", originalReq)
+        copy("Host", originalReq)
+        copy("Forwarded", originalReq)
+    }
+}
+
 @OptIn(
     KtorExperimentalLocationsAPI::class, io.lettuce.core.ExperimentalLettuceCoroutinesApi::class,
     io.ktor.util.KtorExperimentalAPI::class
@@ -104,47 +148,12 @@ fun Application.module(testing: Boolean = false) {
     val client = createClient(testing)
 
     suspend fun authorizeBulk(call: ApplicationCall, lang: String, resources: List<String>): List<SPIResourceResponseItem> {
-        // TODO: Support direct bearer header for API requests
-        val authorization = call.session.legacySession()
-        val websiteIRI = call.tenant.websiteIRI
-        val originalReq = call.request
-        val prefix = websiteIRI.encodedPath.split("/").getOrNull(1)?.let { "/$it" } ?: ""
+        val prefix = call.tenant.websiteIRI.encodedPath.split("/").getOrNull(1)?.let { "/$it" } ?: ""
 
         val res: String = client.post {
             url(call.services.route("$prefix/spi/bulk"))
             contentType(ContentType.Application.Json)
-            headers {
-                if (!authorization?.userToken.isNullOrBlank()) {
-                    header(HttpHeaders.Authorization, "Bearer ${authorization!!.userToken}")
-                }
-
-                header("Accept-Language", lang)
-                header("Website-IRI", websiteIRI)
-
-                header("Accept", ContentType.Application.Json)
-                header("Content-Type", ContentType.Application.Json)
-                copy("Accept-Language", originalReq)
-                header("X-Forwarded-Host", originalReq.header("Host"))
-                copy("X-Forwarded-Proto", originalReq)
-                copy("X-Forwarded-Ssl", originalReq)
-                copy("X-Request-Id", originalReq)
-
-//                copy("Accept-Language", originalReq)
-                copy("Origin", originalReq)
-                copy("Referer", originalReq)
-                copy("User-Agent", originalReq)
-                copy("X-Forwarded-Host", originalReq)
-                copy("X-Forwarded-Proto", originalReq)
-                copy("X-Forwarded-Ssl", originalReq)
-                copy("X-Real-Ip", originalReq)
-                copy("X-Requested-With", originalReq)
-                copy("X-Request-Id", originalReq)
-
-                copy("X-Client-Ip", originalReq)
-                copy("Client-Ip", originalReq)
-                copy("Host", originalReq)
-                copy("Forwarded", originalReq)
-            }
+            initHeaders(call, lang)
 
             body = SPIAuthorizeRequest(
                 resources = resources.map { r ->
@@ -157,6 +166,26 @@ fun Application.module(testing: Boolean = false) {
         }
 
         return Json.decodeFromString(res)
+    }
+
+    suspend fun authorizePlain(call: ApplicationCall, lang: String, resources: List<String>): List<SPIResourceResponseItem> {
+        return resources
+            .asFlow()
+            .map {
+                it to client.get<HttpResponse> {
+                    url(call.services.route(it))
+                    contentType(ContentType.Application.Json)
+                    initHeaders(call, lang)
+                }
+            }.map { (iri, response) ->
+                SPIResourceResponseItem(
+                    iri = iri,
+                    status = response.status.value,
+                    cache = CacheControl.Private,
+                    language = lang,
+                    body = response.receive()
+                )
+            }.toList()
     }
 
     install(CacheConfiguration) {
@@ -303,7 +332,16 @@ fun Application.module(testing: Boolean = false) {
                 if (toRequest.isNotEmpty()) {
                     println("Requesting ${toRequest.size} resources")
                     println("Requesting ${toRequest.joinToString(", ") { it.iri }}")
-                    redisUpdate = authorizeBulk(call, lang, toRequest.map { e -> e.iri })
+
+                    redisUpdate = toRequest
+                        .groupBy { call.services.resolve(it.iri) }
+                        .flatMap { (service, resources) ->
+                            if (service.bulk) {
+                                authorizeBulk(call, lang, toRequest.map { e -> e.iri })
+                            } else {
+                                authorizePlain(call, lang, toRequest.map { e -> e.iri })
+                            }
+                        }
                         .map {
                             val entry = CacheEntry(
                                 iri = it.iri,
