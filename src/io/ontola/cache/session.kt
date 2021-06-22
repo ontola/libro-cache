@@ -61,6 +61,7 @@ class Session(
             .replace("=", "")
 
         if (sessionSig != final) {
+            configuration.cacheConfig.notify(Exception("Invalid session signature"))
             return LegacySession() // TODO: Throw security exception?
         }
 
