@@ -7,6 +7,7 @@ import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.client.call.receive
+import io.ktor.client.features.*
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -24,11 +25,7 @@ import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.features.deflate
 import io.ktor.features.gzip
 import io.ktor.features.minimumSize
-import io.ktor.http.ContentType
-import io.ktor.http.HeadersBuilder
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
+import io.ktor.http.*
 import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Location
 import io.ktor.locations.Locations
@@ -104,8 +101,6 @@ suspend fun HttpRequestBuilder.initHeaders(call: ApplicationCall, lang: String) 
         header("Accept-Language", lang)
         header("Website-IRI", websiteIRI)
 
-        header("Accept", ContentType.Application.Json)
-        header("Content-Type", ContentType.Application.Json)
         copy("Accept-Language", originalReq)
         header("X-Forwarded-Host", originalReq.header("Host"))
         copy("X-Forwarded-Proto", originalReq)
@@ -154,7 +149,10 @@ fun Application.module(testing: Boolean = false) {
             url(call.services.route("$prefix/spi/bulk"))
             contentType(ContentType.Application.Json)
             initHeaders(call, lang)
-
+            headers {
+                header("Accept", ContentType.Application.Json)
+                header("Content-Type", ContentType.Application.Json)
+            }
             body = SPIAuthorizeRequest(
                 resources = resources.map { r ->
                     SPIResourceRequestItem(
@@ -173,9 +171,12 @@ fun Application.module(testing: Boolean = false) {
             .asFlow()
             .map {
                 it to client.get<HttpResponse> {
-                    url(call.services.route(it))
-                    contentType(ContentType.Application.Json)
+                    url(call.services.route(Url(it).fullPath))
                     initHeaders(call, lang)
+                    headers {
+                        header("Accept", "application/hex+x-ndjson")
+                    }
+                    expectSuccess = false
                 }
             }.map { (iri, response) ->
                 SPIResourceResponseItem(
@@ -334,12 +335,12 @@ fun Application.module(testing: Boolean = false) {
                     println("Requesting ${toRequest.joinToString(", ") { it.iri }}")
 
                     redisUpdate = toRequest
-                        .groupBy { call.services.resolve(it.iri) }
+                        .groupBy { call.services.resolve(Url(it.iri).fullPath) }
                         .flatMap { (service, resources) ->
                             if (service.bulk) {
-                                authorizeBulk(call, lang, toRequest.map { e -> e.iri })
+                                authorizeBulk(call, lang, resources.map { e -> e.iri })
                             } else {
-                                authorizePlain(call, lang, toRequest.map { e -> e.iri })
+                                authorizePlain(call, lang, resources.map { e -> e.iri })
                             }
                         }
                         .map {
