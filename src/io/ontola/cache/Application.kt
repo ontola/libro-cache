@@ -7,7 +7,7 @@ import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.client.call.receive
-import io.ktor.client.features.*
+import io.ktor.client.features.expectSuccess
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -25,7 +25,13 @@ import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.features.deflate
 import io.ktor.features.gzip
 import io.ktor.features.minimumSize
-import io.ktor.http.*
+import io.ktor.http.ContentType
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.Url
+import io.ktor.http.contentType
+import io.ktor.http.fullPath
 import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Location
 import io.ktor.locations.Locations
@@ -50,6 +56,7 @@ import io.ontola.cache.features.services
 import io.ontola.cache.features.session
 import io.ontola.cache.features.tenant
 import io.ontola.cache.util.KeyManager
+import io.ontola.cache.util.scopeBlankNodes
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
@@ -348,7 +355,7 @@ fun Application.module(testing: Boolean = false) {
                                 iri = it.iri,
                                 status = HttpStatusCode.fromValue(it.status),
                                 cacheControl = it.cache,
-                                contents = it.body,
+                                contents = scopeBlankNodes(it.body),
                             )
                             entries[it.iri] = entry
 
