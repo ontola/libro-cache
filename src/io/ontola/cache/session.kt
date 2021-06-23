@@ -67,6 +67,10 @@ class Session(
 
         session = configuration.libroRedisConn.get(sessionId)?.let { Json.decodeFromString(it) }
 
+        if (session == null) {
+            println("Session not found")
+        }
+
         return session
     }
 
