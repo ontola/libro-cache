@@ -83,6 +83,10 @@ data class CacheConfig(
      */
     val libroRedisURI: RedisURI,
     /**
+     * The redis uri used for streaming between services.
+     */
+    val streamRedisURI: RedisURI,
+    /**
      * Properties for other services in the environment
      */
     val services: ApplicationConfig,
@@ -134,14 +138,19 @@ data class CacheConfig(
                 )
             }
 
-            val (libroRedisURI, redisConfig) = if (testing) {
+            val (libroRedisURI, streamRedisURI, redisConfig) = if (testing) {
                 // TODO: in-memory redis
 
-                val libroRedisDb = 0
                 val testRedisURI = RedisURI.create("redis://redis")
 
+                val libroRedisDb = 0
                 val libroRedisURI = testRedisURI.apply {
                     database = libroRedisDb
+                }
+
+                val streamRedisDb = 0
+                val streamRedisURI = testRedisURI.apply {
+                    database = streamRedisDb
                 }
 
                 val redisConfig = RedisConfig(
@@ -150,19 +159,23 @@ data class CacheConfig(
                     invalidationGroup = "testGroup",
                 )
 
-                Pair(libroRedisURI, redisConfig)
+                Triple(libroRedisURI, streamRedisURI, redisConfig)
             } else {
                 val redisConfigProp = services.config("redis")
                 val redisHost = redisConfigProp.property("host").getString()
                 val redisPort = redisConfigProp.property("port").getString().toInt()
                 val redisDb = redisConfigProp.property("db").getString().toInt()
                 val libroRedisDb = redisConfigProp.property("libroDb").getString().toInt()
+                val streamRedisDb = redisConfigProp.property("streamDb").getString().toInt()
 
                 val redisURI = RedisURI.create(redisHost, redisPort).apply {
                     database = redisDb
                 }
                 val libroRedisURI = RedisURI.create(redisHost, redisPort).apply {
                     database = libroRedisDb
+                }
+                val streamRedisURI = RedisURI.create(redisHost, redisPort).apply {
+                    database = streamRedisDb
                 }
 
                 val redisConfig = RedisConfig(
@@ -171,7 +184,7 @@ data class CacheConfig(
                     invalidationGroup = redisConfigProp.property("invalidationGroup").getString(),
                 )
 
-                Pair(libroRedisURI, redisConfig)
+                Triple(libroRedisURI, streamRedisURI, redisConfig)
             }
 
             val defaultLanguage = if (testing) {
@@ -183,6 +196,7 @@ data class CacheConfig(
             return CacheConfig(
                 sessions = sessionsConfig,
                 libroRedisURI = libroRedisURI,
+                streamRedisURI = streamRedisURI,
                 redis = redisConfig,
                 services = services,
                 defaultLanguage = defaultLanguage,

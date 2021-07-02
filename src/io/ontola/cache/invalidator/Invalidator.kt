@@ -63,19 +63,21 @@ fun Application.module(testing: Boolean = false) {
         println("Invalidator started")
         val config = CacheConfig.fromEnvironment(environment.config, testing)
 
-        val redis = RedisClient.create(config.libroRedisURI)
-        val redisConn = redis.connect().coroutines()
+        val streamRedis = RedisClient.create(config.streamRedisURI)
+        val streamRedisConn = streamRedis.connect().coroutines()
+        val cacheRedis = RedisClient.create(config.redis.uri)
+        val cacheRedisConn = cacheRedis.connect().coroutines()
 
         val consumer = Consumer.from(config.redis.invalidationGroup, InetAddress.getLocalHost().hostName)
         val stream = XReadArgs.StreamOffset.lastConsumed(config.redis.invalidationChannel)
 
         runBlocking {
-            if (!streamAndGroupExist(redisConn, config.redis)) {
-                createGroupAndStream(redisConn, config.redis)
+            if (!streamAndGroupExist(streamRedisConn, config.redis)) {
+                createGroupAndStream(streamRedisConn, config.redis)
             }
 
             try {
-                ensureConsumer(redisConn, config.redis, consumer)
+                ensureConsumer(streamRedisConn, config.redis, consumer)
 
                 val args = XReadArgs().apply {
                     block(Long.MAX_VALUE)
@@ -83,7 +85,7 @@ fun Application.module(testing: Boolean = false) {
                 val keyManager = KeyManager(config)
 
                 while (true) {
-                    redisConn
+                    streamRedisConn
                         .xreadgroup(consumer, args, stream)
                         .collect { msg ->
                             val resource = msg.body["resource"] ?: throw SerializationException("Message missing key 'resource'")
@@ -91,14 +93,14 @@ fun Application.module(testing: Boolean = false) {
                             when (msg.body["type"]) {
                                 "io.ontola.transactions.Updated",
                                 "io.ontola.transactions.Deleted" -> {
-                                    redisConn.del(keyManager.toKey(resource, "en"))
-                                    redisConn.del(keyManager.toKey(resource, "nl"))
+                                    cacheRedisConn.del(keyManager.toKey(resource, "en"))
+                                    cacheRedisConn.del(keyManager.toKey(resource, "nl"))
                                 }
                             }
                         }
                 }
             } finally {
-                redisConn.xgroupDelconsumer(config.redis.invalidationChannel, consumer)
+                streamRedisConn.xgroupDelconsumer(config.redis.invalidationChannel, consumer)
             }
         }
     }
