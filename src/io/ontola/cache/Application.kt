@@ -246,6 +246,9 @@ fun Application.module(testing: Boolean = false) {
     }
 
     install(StatusPages) {
+        exception<TenantNotFoundException> {
+            call.respond(HttpStatusCode.NotFound)
+        }
         exception<AuthenticationException> {
             call.respond(HttpStatusCode.Unauthorized)
         }
