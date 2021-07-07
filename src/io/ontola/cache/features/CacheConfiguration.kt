@@ -165,18 +165,30 @@ data class CacheConfig(
                 val redisHost = redisConfigProp.property("host").getString()
                 val redisPort = redisConfigProp.property("port").getString().toInt()
                 val redisDb = redisConfigProp.property("db").getString().toInt()
+                val redisUsername = redisConfigProp.propertyOrNull("username")?.getString()
+                val redisPassword = redisConfigProp.propertyOrNull("password")?.getString()?.toCharArray()
+                val redisSsl = redisConfigProp.propertyOrNull("ssl")?.getString()?.toBoolean()
                 val libroRedisDb = redisConfigProp.property("libroDb").getString().toInt()
                 val streamRedisDb = redisConfigProp.property("streamDb").getString().toInt()
+                fun redisUrl(db: Int) = RedisURI
+                    .builder()
+                    .withHost(redisHost)
+                    .withPort(redisPort)
+                    .withDatabase(db)
+                    .withSsl(redisSsl ?: false)
+                    .apply {
+                        if (redisPassword !== null) {
+                            withPassword(redisPassword)
+                        }
+                        if (redisUsername !== null && redisPassword !== null) {
+                            withAuthentication(redisUsername, redisPassword)
+                        }
+                    }
+                    .build()
 
-                val redisURI = RedisURI.create(redisHost, redisPort).apply {
-                    database = redisDb
-                }
-                val libroRedisURI = RedisURI.create(redisHost, redisPort).apply {
-                    database = libroRedisDb
-                }
-                val streamRedisURI = RedisURI.create(redisHost, redisPort).apply {
-                    database = streamRedisDb
-                }
+                val redisURI = redisUrl(redisDb)
+                val libroRedisURI = redisUrl(libroRedisDb)
+                val streamRedisURI = redisUrl(streamRedisDb)
 
                 val redisConfig = RedisConfig(
                     uri = redisURI,
