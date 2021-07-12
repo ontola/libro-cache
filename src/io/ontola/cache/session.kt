@@ -29,7 +29,11 @@ data class Claims(
     val applicationId: String,
     val exp: Long,
     val iat: Long,
+    @SerialName("profile_id")
+    val profileId: String? = null,
     val scopes: List<String>,
+    @SerialName("session_id")
+    val sessionId: String? = null,
     val user: UserData,
 )
 
