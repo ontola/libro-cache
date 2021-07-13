@@ -177,7 +177,7 @@ class Tenantization(private val configuration: Configuration) {
 
     private fun closeToWebsiteIRI(originalReq: ApplicationRequest): String {
         val path = originalReq.path()
-        val authority = listOf("authority", "X-Forwarded-Host", "origin", "host", "accept")
+        val authority = listOf("X-Forwarded-Host", "origin", "host", "authority")
             .find { header -> originalReq.header(header) != null }
             ?.let { header -> originalReq.header(header)!! }
             ?: throw Exception("No header usable for authority present")
@@ -199,7 +199,7 @@ class Tenantization(private val configuration: Configuration) {
         return originalReq.header("Website-IRI")
             ?.let { websiteIRI ->
                 if (Url(websiteIRI).origin() != authoritativeOrigin) {
-                    throw Exception("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")
+                    println("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")
                 }
                 websiteIRI
             } ?: "${authoritativeOrigin.dropLast(authoritativeOrigin.endsWith('/').toInt())}$path"
