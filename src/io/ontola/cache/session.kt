@@ -1,6 +1,7 @@
 package io.ontola.cache
 
 import com.auth0.jwt.exceptions.JWTVerificationException
+import com.auth0.jwt.exceptions.TokenExpiredException
 import io.ktor.util.hex
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.ontola.cache.features.LibroSession
@@ -29,6 +30,7 @@ data class Claims(
     val applicationId: String,
     val exp: Long,
     val iat: Long,
+    val iss: String? = null,
     @SerialName("profile_id")
     val profileId: String? = null,
     val scopes: List<String>,
@@ -39,6 +41,7 @@ data class Claims(
 
 class Session(
     private val configuration: LibroSession.Configuration,
+    private val refresher: SessionRefresher,
     private val sessionId: String? = null,
     private val sessionSig: String? = null,
     private var session: LegacySession? = null,
@@ -76,6 +79,9 @@ class Session(
 
         if (session == null) {
             logger.warn("Session not found")
+        } else if (isExpired()) {
+            logger.debug("Refresh session")
+            session = refresher.refresh(sessionId, session!!)
         }
 
         return session
@@ -94,5 +100,17 @@ class Session(
             configuration.cacheConfig.notify(e)
             null
         }
+    }
+
+    private fun isExpired(): Boolean {
+        val userToken = session?.userToken ?: return false
+
+        try {
+            configuration.jwtValidator.verify(userToken)
+        } catch (e: TokenExpiredException) {
+            return true
+        }
+
+        return false
     }
 }

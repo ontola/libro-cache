@@ -212,15 +212,6 @@ fun Application.module(testing: Boolean = false) {
         }
     }
 
-    install(LibroSession) {
-        cookieNameLegacy = config.sessions.cookieNameLegacy
-        signatureNameLegacy = config.sessions.signatureNameLegacy
-        this.libroRedisConn = libroRedisConn
-        jwtValidator = JWT.require(Algorithm.HMAC512(config.sessions.jwtEncryptionToken))
-            .withClaim("application_id", config.sessions.clientId)
-            .build()
-    }
-
     install(Locations) {
     }
 
@@ -277,6 +268,18 @@ fun Application.module(testing: Boolean = false) {
             "/__webpack_hmr"
         )
         this.client = client
+    }
+
+    install(LibroSession) {
+        cookieNameLegacy = config.sessions.cookieNameLegacy
+        oidcUrl = config.sessions.oidcUrl
+        oidcClientId = config.sessions.clientId
+        oidcClientSecret = config.sessions.clientSecret
+        signatureNameLegacy = config.sessions.signatureNameLegacy
+        this.libroRedisConn = libroRedisConn
+        jwtValidator = JWT.require(Algorithm.HMAC512(config.sessions.jwtEncryptionToken))
+            .withClaim("application_id", config.sessions.clientId)
+            .build()
     }
 
     // https://ktor.io/servers/features/https-redirect.html#testing

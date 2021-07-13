@@ -12,6 +12,7 @@ import io.ktor.util.pipeline.PipelineContext
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.ontola.cache.Session
+import io.ontola.cache.SessionRefresher
 
 fun getCookieWithInvalidName(call: ApplicationCall, cookieName: String): String? {
     return call.request
@@ -31,11 +32,15 @@ class LibroSession(private val configuration: Configuration) {
         lateinit var cookieNameLegacy: String
         lateinit var jwtValidator: JWTVerifier
         lateinit var cacheConfig: CacheConfig
+        lateinit var oidcClientId: String
+        lateinit var oidcClientSecret: String
+        lateinit var oidcUrl: String
     }
 
     private fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
         val sessionId = getCookieWithInvalidName(context.call, configuration.cookieNameLegacy)
         val sessionSig = getCookieWithInvalidName(context.call, configuration.signatureNameLegacy)
+        val refresher = SessionRefresher(configuration)
 
         context.call.logger.debug {
             sessionId?.let { "sessionId $it" } ?: "No sessionId"
@@ -43,6 +48,7 @@ class LibroSession(private val configuration: Configuration) {
 
         val sessionData = Session(
             configuration = configuration,
+            refresher = refresher,
             sessionId = sessionId,
             sessionSig = sessionSig
         )

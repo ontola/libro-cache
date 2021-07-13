@@ -21,9 +21,13 @@ data class SessionsConfig(
      */
     val jwtEncryptionToken: String,
     /**
-     * The client id to accept requests from.
+     * The id to identify this client.
      */
     val clientId: String,
+    /**
+     * The secret to identify this client.
+     */
+    val clientSecret: String,
     /**
      * Name of the legacy koa cookie that holds the session id
      */
@@ -32,6 +36,10 @@ data class SessionsConfig(
      * Name of the legacy koa cookie that holds the session signature
      */
     val signatureNameLegacy: String = "koa:sess.sig",
+    /**
+     * The url of the OIDC identity provider
+     */
+    val oidcUrl: String,
 )
 
 data class RedisConfig(
@@ -132,12 +140,16 @@ data class CacheConfig(
                     sessionSecret = "",
                     jwtEncryptionToken = "",
                     clientId = "0",
+                    clientSecret = "",
+                    oidcUrl = "",
                 )
             } else {
                 SessionsConfig(
                     sessionSecret = cacheSession.property("secret").getString(),
                     jwtEncryptionToken = cacheSession.property("jwtEncryptionToken").getString(),
                     clientId = services.config("oidc").property("clientId").getString(),
+                    clientSecret = services.config("oidc").property("clientSecret").getString(),
+                    oidcUrl = services.config("oidc").property("url").getString(),
                 )
             }
 
