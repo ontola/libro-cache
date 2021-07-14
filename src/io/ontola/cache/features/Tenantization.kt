@@ -31,6 +31,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 
 @Serializable
 data class OntolaManifest(
@@ -158,6 +159,8 @@ class TenantizationNotYetConfiguredException :
     IllegalStateException("Libro tenantization are not yet ready: you are asking it to early before the Tenantizations feature.")
 
 class Tenantization(private val configuration: Configuration) {
+    private val logger = KotlinLogging.logger {}
+
     class Configuration {
         /**
          * List of IRI prefixes which aren't subject to tenantization.
@@ -199,7 +202,7 @@ class Tenantization(private val configuration: Configuration) {
         return originalReq.header("Website-IRI")
             ?.let { websiteIRI ->
                 if (Url(websiteIRI).origin() != authoritativeOrigin) {
-                    println("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")
+                    logger.warn("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")
                 }
                 websiteIRI
             } ?: "${authoritativeOrigin.dropLast(authoritativeOrigin.endsWith('/').toInt())}$path"
@@ -258,33 +261,25 @@ class Tenantization(private val configuration: Configuration) {
                 )
             )
         } catch (e: ClientRequestException) {
-            when (e.response.status) {
+            when (val status = e.response.status) {
                 HttpStatusCode.NotFound -> throw TenantNotFoundException()
                 HttpStatusCode.BadGateway -> throw BadGatewayException()
                 else -> {
-                    println("What happened? $e")
-                    throw e // TODO: Reporting}
+                    logger.debug { "Unexpected status $status while getting tenant ($e)" }
+                    throw e
                 }
             }
         }
     }
 
-    // Implements ApplicationFeature as a companion object.
     companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, Tenantization> {
-        // Creates a unique key for the feature.
         override val key = AttributeKey<Tenantization>("Tenantization")
 
-        // Code to execute when installing the feature.
         @KtorExperimentalAPI
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Tenantization {
-
-            // It is responsibility of the install code to call the `configure` method with the mutable configuration.
             val configuration = Configuration().apply(configure)
-
-            // Create the feature, providing the mutable configuration so the feature reads it keeping an immutable copy of the properties.
             val feature = Tenantization(configuration)
 
-            // Intercept a pipeline.
             pipeline.intercept(ApplicationCallPipeline.Features) {
                 val path = this.call.request.path()
                 if (configuration.blacklist.any { fragment -> path.startsWith(fragment) }) {

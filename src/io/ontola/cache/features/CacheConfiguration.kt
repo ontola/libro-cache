@@ -9,6 +9,7 @@ import io.ktor.util.AttributeKey
 import io.ktor.util.KtorExperimentalAPI
 import io.ktor.utils.io.printStack
 import io.lettuce.core.RedisURI
+import mu.KotlinLogging
 
 data class SessionsConfig(
     /**
@@ -108,8 +109,10 @@ data class CacheConfig(
      */
     val cacheExpiration: Long? = null,
 ) {
+    private val logger = KotlinLogging.logger {}
+
     private val reportingService: Bugsnag? = if (reportingKey.isNullOrBlank()) {
-        println("No reporting key")
+        logger.warn("No reporting key")
         null
     } else {
         Bugsnag(reportingKey)
@@ -223,12 +226,12 @@ data class CacheConfig(
      * Prints the message and notifies the reporting service if available.
      */
     fun notify(e: Exception) {
+        logger.error(e.message)
+
         if (reportingService == null) {
-            println("No reporting service")
-            println(e.message)
+            logger.warn("No reporting service")
             e.printStack()
         } else {
-            println(e.message)
             reportingService.notify(e)
         }
     }

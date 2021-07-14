@@ -8,6 +8,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.digest.HmacAlgorithms
 import org.apache.commons.codec.digest.HmacUtils
@@ -39,6 +40,8 @@ class Session(
     private var session: LegacySession? = null,
     private var language: String? = null,
 ) {
+    private val logger = KotlinLogging.logger {}
+
     /**
      * Retrieves session information from redis referenced by a libro koa server cookie.
      */
@@ -68,14 +71,13 @@ class Session(
         session = configuration.libroRedisConn.get(sessionId)?.let { Json.decodeFromString(it) }
 
         if (session == null) {
-            println("Session not found")
+            logger.warn("Session not found")
         }
 
         return session
     }
 
     suspend fun language(): String? = claimsFromJWT()?.user?.language
-
 
     private suspend fun claimsFromJWT(): Claims? {
         val sess = legacySession() ?: return null

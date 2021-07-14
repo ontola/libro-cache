@@ -15,6 +15,7 @@ import io.ontola.cache.util.KeyManager
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
+import mu.KotlinLogging
 import java.net.InetAddress
 import kotlin.concurrent.thread
 
@@ -59,8 +60,10 @@ suspend fun ensureConsumer(redisConn: RedisCoroutinesCommands<String, String>, c
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
 fun Application.module(testing: Boolean = false) {
+    val logger = KotlinLogging.logger {}
+
     thread {
-        println("Invalidator started")
+        logger.info("Invalidator started")
         val config = CacheConfig.fromEnvironment(environment.config, testing)
 
         val streamRedis = RedisClient.create(config.streamRedisURI)
@@ -90,12 +93,13 @@ fun Application.module(testing: Boolean = false) {
                         .collect { msg ->
                             val resource = msg.body["resource"] ?: throw SerializationException("Message missing key 'resource'")
 
-                            when (msg.body["type"]) {
+                            when (val type = msg.body["type"]) {
                                 "io.ontola.transactions.Updated",
                                 "io.ontola.transactions.Deleted" -> {
                                     cacheRedisConn.del(keyManager.toKey(resource, "en"))
                                     cacheRedisConn.del(keyManager.toKey(resource, "nl"))
                                 }
+                                else -> logger.warn("Ignored message with type '$type'")
                             }
                         }
                 }

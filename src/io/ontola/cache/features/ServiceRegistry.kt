@@ -107,7 +107,6 @@ class ServiceRegistry(private val configuration: Configuration) {
             tokenServiceName = config.config("token").property("name").getString()
             tokenServiceMatcher = Regex(config.config("token").property("matcher").getString())
             tokenServiceBulk = config.config("token").property("bulk").getString().toBoolean()
-
         }
     }
 

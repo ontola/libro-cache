@@ -50,8 +50,10 @@ import io.lettuce.core.api.coroutines
 import io.ontola.cache.features.CacheConfig
 import io.ontola.cache.features.CacheConfiguration
 import io.ontola.cache.features.LibroSession
+import io.ontola.cache.features.Logging
 import io.ontola.cache.features.ServiceRegistry
 import io.ontola.cache.features.Tenantization
+import io.ontola.cache.features.logger
 import io.ontola.cache.features.services
 import io.ontola.cache.features.session
 import io.ontola.cache.features.tenant
@@ -196,6 +198,8 @@ fun Application.module(testing: Boolean = false) {
             }.toList()
     }
 
+    install(Logging)
+
     install(CacheConfiguration) {
         this.config = config
     }
@@ -305,7 +309,7 @@ fun Application.module(testing: Boolean = false) {
                 val requested = resources?.map { r -> CacheRequest(URLDecoder.decode(r, Charset.defaultCharset().name())) } ?: emptyList()
                 // TODO: handle empty request
 
-                println("Fetching ${requested.size} resources from cache")
+                call.logger.debug { "Fetching ${requested.size} resources from cache" }
                 val lang = call.session.language() ?: config.defaultLanguage
                 val keyManager = KeyManager(config)
 
@@ -333,7 +337,7 @@ fun Application.module(testing: Boolean = false) {
                     }
                     .associateBy({ it.first }, { it.second })
                     .toMutableMap()
-                println("Fetched ${entries.size} resources from cache")
+                call.logger.debug { "Fetched ${entries.size} resources from cache" }
 
                 val toRequest = requested.filter {
                     val entry = entries[it.iri]
@@ -341,8 +345,8 @@ fun Application.module(testing: Boolean = false) {
                 }
 
                 if (toRequest.isNotEmpty()) {
-                    println("Requesting ${toRequest.size} resources")
-                    println("Requesting ${toRequest.joinToString(", ") { it.iri }}")
+                    call.logger.debug { "Requesting ${toRequest.size} resources" }
+                    call.logger.trace { "Requesting ${toRequest.joinToString(", ") { it.iri }}" }
 
                     redisUpdate = toRequest
                         .groupBy { call.services.resolve(Url(it.iri).fullPath) }
@@ -377,14 +381,14 @@ fun Application.module(testing: Boolean = false) {
                             }
                         )
                 } else {
-                    println("All ${requested.size} resources in cache")
+                    call.logger.debug("All ${requested.size} resources in cache")
                 }
                 if (entries.size != requested.size) {
-                    println("Requested ${requested.size}, serving ${entries.size}")
+                    call.logger.warn("Requested ${requested.size}, serving ${entries.size}")
                 } else {
                     val diffPos = requested.map { it.iri } - entries.map { it.key }
                     val diffNeg = entries.map { it.key } - requested.map { it.iri }
-                    println("Request / serve diff ${diffPos + diffNeg}")
+                    call.logger.warn("Request / serve diff ${diffPos + diffNeg}")
                 }
 
                 call.respondText(
@@ -392,21 +396,23 @@ fun Application.module(testing: Boolean = false) {
                     ContentType.parse("application/hex+x-ndjson"),
                 )
             }
-            println("Request took $hotMillis ms")
+            call.logger.info("Request took $hotMillis ms")
 
             val coldMillis = measureTimeMillis {
                 // Write to cache
-                if (redisUpdate !== null && redisUpdate!!.isNotEmpty()) {
-                    println("Updating redis after responding (${redisUpdate!!.size} entries)")
-                    redisUpdate!!.forEach {
-                        cacheRedisConn.hset(it.key, it.value)
-                        config.cacheExpiration?.let { cacheExpiration ->
-                            cacheRedisConn.expire(it.key, cacheExpiration)
+                redisUpdate?.let {
+                    if (it.isNotEmpty()) {
+                        call.logger.debug { "Updating redis after responding (${it.size} entries)" }
+                        it.forEach { (key, value) ->
+                            cacheRedisConn.hset(key, value)
+                            config.cacheExpiration?.let { cacheExpiration ->
+                                cacheRedisConn.expire(key, cacheExpiration)
+                            }
                         }
                     }
                 }
             }
-            println("Request took $coldMillis ms")
+            call.logger.info("Request took $coldMillis ms")
         }
     }
 }

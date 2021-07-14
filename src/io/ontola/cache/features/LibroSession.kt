@@ -6,7 +6,7 @@ import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature
 import io.ktor.application.call
 import io.ktor.application.feature
-import io.ktor.request.*
+import io.ktor.request.header
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
@@ -37,7 +37,10 @@ class LibroSession(private val configuration: Configuration) {
         val sessionId = getCookieWithInvalidName(context.call, configuration.cookieNameLegacy)
         val sessionSig = getCookieWithInvalidName(context.call, configuration.signatureNameLegacy)
 
-        // Perform things in that interception point.
+        context.call.logger.debug {
+            sessionId?.let { "sessionId $it" } ?: "No sessionId"
+        }
+
         val sessionData = Session(
             configuration = configuration,
             sessionId = sessionId,
@@ -46,12 +49,9 @@ class LibroSession(private val configuration: Configuration) {
         context.call.attributes.put(LibroSessionKey, sessionData)
     }
 
-    // Implements ApplicationFeature as a companion object.
     companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, LibroSession> {
-        // Creates a unique key for the feature.
         override val key = AttributeKey<LibroSession>("LibroSession")
 
-        // Code to execute when installing the feature.
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): LibroSession {
             val cacheConfig = pipeline.cacheConfig
             val configuration = Configuration()
