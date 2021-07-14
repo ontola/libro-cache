@@ -3,13 +3,15 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 val bugsnag_version: String by project
 val ktor_version: String by project
 val kotlin_version: String by project
+val coroutines_version: String by project
 val logback_version: String by project
+val serialization_version: String by project
 
 plugins {
     application
 
-    kotlin("jvm") version "1.5.0-RC"
-    kotlin("plugin.serialization") version "1.5.0-RC"
+    kotlin("jvm") version "1.5.21"
+    kotlin("plugin.serialization") version "1.5.21"
 }
 
 group = "io.ontola"
@@ -34,8 +36,9 @@ sourceSets["test"].resources.srcDirs("testresources")
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$coroutines_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties:$serialization_version")
 
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.github.microutils:kotlin-logging:1.12.5")
@@ -61,10 +64,12 @@ dependencies {
     implementation("commons-codec:commons-codec:1.15")
 
     implementation("io.lettuce:lettuce-core:6.1.1.RELEASE")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_version")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlin_version")
 
     implementation("com.bugsnag:bugsnag:$bugsnag_version")
+
+    testImplementation("io.mockk:mockk:1.12.0")
+    testImplementation("org.jetbrains.kotlin:kotlin-test")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 }
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.kotlinOptions {
