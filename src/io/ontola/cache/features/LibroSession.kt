@@ -11,8 +11,8 @@ import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
-import io.ontola.cache.Session
-import io.ontola.cache.SessionRefresher
+import io.ontola.cache.sessions.Session
+import io.ontola.cache.sessions.SessionRefresher
 
 fun getCookieWithInvalidName(call: ApplicationCall, cookieName: String): String? {
     return call.request

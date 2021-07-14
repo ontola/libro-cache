@@ -1,18 +1,16 @@
-package io.ontola.cache
+package io.ontola.cache.sessions
 
 import com.auth0.jwt.exceptions.JWTVerificationException
-import com.auth0.jwt.exceptions.TokenExpiredException
-import io.ktor.util.hex
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.ontola.cache.features.LibroSession
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.properties.Properties
+import kotlinx.serialization.properties.encodeToMap
 import mu.KotlinLogging
-import org.apache.commons.codec.binary.Base64
-import org.apache.commons.codec.digest.HmacAlgorithms
-import org.apache.commons.codec.digest.HmacUtils
 
 @Serializable
 data class UserData(
@@ -22,7 +20,10 @@ data class UserData(
     val id: String,
     val email: String? = null,
     val language: String,
-)
+) {
+    @OptIn(ExperimentalSerializationApi::class)
+    val asMap: Map<String, Any> by lazy { Properties.encodeToMap(this) }
+}
 
 @Serializable
 data class Claims(
@@ -45,7 +46,6 @@ class Session(
     private val sessionId: String? = null,
     private val sessionSig: String? = null,
     private var session: LegacySession? = null,
-    private var language: String? = null,
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -62,24 +62,16 @@ class Session(
             return null
         }
 
-        val checkInput = "${configuration.cookieNameLegacy}=$sessionId".toByteArray()
-        val commo = HmacUtils(HmacAlgorithms.HMAC_SHA_1, configuration.sessionSecret).hmacHex(checkInput)
-        // https://github.com/tj/node-cookie-signature/blob/master/index.js#L23
-        val final = Base64().encodeAsString(hex(commo))
-            .replace('/', '_')
-            .replace('+', '-')
-            .replace("=", "")
-
-        if (sessionSig != final) {
-            configuration.cacheConfig.notify(Exception("Invalid session signature"))
-            return LegacySession() // TODO: Throw security exception?
+        if (!verifySignature(configuration.cookieNameLegacy, configuration.sessionSecret, sessionId, sessionSig)) {
+            configuration.cacheConfig.notify(Exception("Invalid sessions signature"))
+            return LegacySession()
         }
 
         session = configuration.libroRedisConn.get(sessionId)?.let { Json.decodeFromString(it) }
 
         if (session == null) {
             logger.warn("Session not found")
-        } else if (isExpired()) {
+        } else if (session!!.isExpired(configuration.jwtValidator)) {
             logger.debug("Refresh session")
             session = refresher.refresh(sessionId, session!!)
         }
@@ -89,28 +81,10 @@ class Session(
 
     suspend fun language(): String? = claimsFromJWT()?.user?.language
 
-    private suspend fun claimsFromJWT(): Claims? {
-        val sess = legacySession() ?: return null
-        val userToken = sess.userToken ?: return null
-
-        return try {
-            val jwt = configuration.jwtValidator.verify(userToken)
-            Json.decodeFromString<Claims>(Base64().decode(jwt.payload).decodeToString())
-        } catch (e: JWTVerificationException) {
-            configuration.cacheConfig.notify(e)
-            null
-        }
-    }
-
-    private fun isExpired(): Boolean {
-        val userToken = session?.userToken ?: return false
-
-        try {
-            configuration.jwtValidator.verify(userToken)
-        } catch (e: TokenExpiredException) {
-            return true
-        }
-
-        return false
+    private suspend fun claimsFromJWT(): Claims? = try {
+        legacySession()?.claims(configuration.jwtValidator)
+    } catch (e: JWTVerificationException) {
+        configuration.cacheConfig.notify(e)
+        null
     }
 }

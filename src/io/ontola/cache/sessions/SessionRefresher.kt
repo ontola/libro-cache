@@ -1,4 +1,4 @@
-package io.ontola.cache
+package io.ontola.cache.sessions
 
 import com.auth0.jwt.JWT
 import io.ktor.client.HttpClient
@@ -63,6 +63,7 @@ class SessionRefresher(private val configuration: LibroSession.Configuration) {
         }
         val issuer = JWT.decode(userToken).issuer
         val url = Url("$issuer/oauth/token")
+
         return client.request("${configuration.oidcUrl}${url.fullPath}") {
             method = HttpMethod.Post
             headers {

@@ -1,7 +1,5 @@
 package io.ontola.cache
 
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -57,6 +55,7 @@ import io.ontola.cache.features.logger
 import io.ontola.cache.features.services
 import io.ontola.cache.features.session
 import io.ontola.cache.features.tenant
+import io.ontola.cache.sessions.createJWTVerifier
 import io.ontola.cache.util.KeyManager
 import io.ontola.cache.util.scopeBlankNodes
 import kotlinx.coroutines.flow.asFlow
@@ -277,9 +276,7 @@ fun Application.module(testing: Boolean = false) {
         oidcClientSecret = config.sessions.clientSecret
         signatureNameLegacy = config.sessions.signatureNameLegacy
         this.libroRedisConn = libroRedisConn
-        jwtValidator = JWT.require(Algorithm.HMAC512(config.sessions.jwtEncryptionToken))
-            .withClaim("application_id", config.sessions.clientId)
-            .build()
+        jwtValidator = createJWTVerifier(config.sessions.jwtEncryptionToken, config.sessions.clientId)
     }
 
     // https://ktor.io/servers/features/https-redirect.html#testing
