@@ -11,6 +11,8 @@ import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.ontola.cache.features.CacheConfig
 import io.ontola.cache.features.RedisConfig
 import io.ontola.cache.util.KeyManager
+import io.ontola.transactions.Deleted
+import io.ontola.transactions.Updated
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
@@ -93,8 +95,8 @@ fun Application.module(testing: Boolean = false) {
                             val resource = msg.body["resource"] ?: throw SerializationException("Message missing key 'resource'")
 
                             when (val type = msg.body["type"]) {
-                                "io.ontola.transactions.Updated",
-                                "io.ontola.transactions.Deleted" -> {
+                                Updated::class.qualifiedName,
+                                Deleted::class.qualifiedName -> {
                                     cacheRedisConn.del(keyManager.toKey(resource, "en"))
                                     cacheRedisConn.del(keyManager.toKey(resource, "nl"))
                                 }
