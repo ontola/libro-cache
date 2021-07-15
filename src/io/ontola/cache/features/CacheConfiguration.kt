@@ -7,10 +7,7 @@ import io.ktor.application.call
 import io.ktor.config.ApplicationConfig
 import io.ktor.util.AttributeKey
 import io.ktor.utils.io.printStack
-import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI
-import io.lettuce.core.api.coroutines
 import io.ontola.cache.createClient
 import mu.KotlinLogging
 
@@ -124,12 +121,6 @@ data class CacheConfig(
      */
     val cacheExpiration: Long? = null,
 ) {
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    val cacheRedisConn by lazy { RedisClient.create(redis.uri).connect().coroutines() }
-
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    val libroRedisConn by lazy { RedisClient.create(libroRedisURI).connect().coroutines() }
-
     val client by lazy { createClient(testing) }
 
     private val logger = KotlinLogging.logger {}

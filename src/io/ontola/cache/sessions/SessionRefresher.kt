@@ -85,6 +85,6 @@ class SessionRefresher(private val configuration: LibroSession.Configuration) {
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     private suspend fun storeSession(sessionId: String, session: LegacySession) {
-        configuration.libroRedisConn.set(sessionId, Json.encodeToString(session))
+        configuration.adapter.set(sessionId, Json.encodeToString(session))
     }
 }

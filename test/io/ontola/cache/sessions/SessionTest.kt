@@ -6,6 +6,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.ontola.cache.features.LibroSession
+import io.ontola.cache.features.RedisAdapter
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -79,7 +80,7 @@ class SessionTest {
         val client = mockk<RedisCoroutinesCommands<String, String>>()
         val storedSession = LegacySession(userToken = userToken(true))
         coEvery { client.get(sessionId) } returns Json.encodeToString(storedSession)
-        every { conf.libroRedisConn } returns client
+        every { conf.adapter } returns RedisAdapter(client)
 
         val refresher = mockk<SessionRefresher>(relaxed = true)
         val refreshed = mockk<LegacySession>(relaxed = true)

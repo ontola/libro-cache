@@ -23,15 +23,19 @@ import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.get
 import io.ktor.routing.routing
-import io.lettuce.core.FlushMode
+import io.lettuce.core.RedisClient
+import io.lettuce.core.api.coroutines
 import io.ontola.cache.bulk.bulkHandler
 import io.ontola.cache.features.CacheConfig
 import io.ontola.cache.features.CacheConfiguration
 import io.ontola.cache.features.LibroSession
 import io.ontola.cache.features.Logging
+import io.ontola.cache.features.RedisAdapter
 import io.ontola.cache.features.ServiceRegistry
+import io.ontola.cache.features.Storage
+import io.ontola.cache.features.StorageAdapter
 import io.ontola.cache.features.Tenantization
-import io.ontola.cache.features.cacheConfig
+import io.ontola.cache.features.storage
 import io.ontola.cache.sessions.createJWTVerifier
 import org.slf4j.event.Level
 
@@ -40,7 +44,7 @@ fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 @OptIn(KtorExperimentalLocationsAPI::class, io.lettuce.core.ExperimentalLettuceCoroutinesApi::class)
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
-fun Application.module(testing: Boolean = false) {
+fun Application.module(testing: Boolean = false, storage: StorageAdapter<String, String>? = null) {
     val config = CacheConfig.fromEnvironment(environment.config, testing)
 
     install(Logging)
@@ -55,6 +59,11 @@ fun Application.module(testing: Boolean = false) {
         } else {
             initFrom(config.services)
         }
+    }
+
+    install(Storage) {
+        this.adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
+        this.expiration = config.cacheExpiration
     }
 
     install(Locations)
@@ -118,12 +127,12 @@ fun Application.module(testing: Boolean = false) {
     }
 
     install(LibroSession) {
+        adapter = RedisAdapter(RedisClient.create(config.libroRedisURI).connect().coroutines())
         cookieNameLegacy = config.sessions.cookieNameLegacy
         oidcUrl = config.sessions.oidcUrl
         oidcClientId = config.sessions.clientId
         oidcClientSecret = config.sessions.clientSecret
         signatureNameLegacy = config.sessions.signatureNameLegacy
-        this.libroRedisConn = config.libroRedisConn
         jwtValidator = createJWTVerifier(config.sessions.jwtEncryptionToken, config.sessions.clientId)
     }
 
@@ -133,7 +142,7 @@ fun Application.module(testing: Boolean = false) {
         }
 
         get("/link-lib/cache/clear") {
-            val test = call.application.cacheConfig.cacheRedisConn.flushdb(FlushMode.ASYNC)
+            val test = call.application.storage.clear()
 
             call.respondText(test ?: "no message given", ContentType.Text.Plain, HttpStatusCode.OK)
         }

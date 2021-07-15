@@ -7,8 +7,9 @@ import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Location
 import io.ktor.response.respondText
 import io.ktor.util.pipeline.PipelineContext
-import io.ontola.cache.features.cacheConfig
 import io.ontola.cache.features.logger
+import io.ontola.cache.features.session
+import io.ontola.cache.features.storage
 import kotlin.system.measureTimeMillis
 
 @OptIn(KtorExperimentalLocationsAPI::class)
@@ -16,15 +17,15 @@ import kotlin.system.measureTimeMillis
 class Bulk
 
 fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit = {
-    var redisUpdate: Map<String, Map<String, String>>? = null
+    var updatedEntries: List<CacheEntry>? = null
 
     val hotMillis = measureTimeMillis {
         // TODO: handle empty request
         val requested = requestedResources()
         call.logger.debug { "Fetching ${requested.size} resources from cache" }
 
-        val (entries, updates) = retrieveOrFetch(requested)
-        redisUpdate = updates
+        val (entries, updates) = readOrFetch(requested)
+        updatedEntries = updates
         if (entries.size != requested.size) {
             call.logger.warn("Requested ${requested.size}, serving ${entries.size}")
         } else {
@@ -41,16 +42,10 @@ fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit
     call.logger.info("Request took $hotMillis ms")
 
     val coldMillis = measureTimeMillis {
-        // Write to cache
-        redisUpdate?.let {
+        updatedEntries?.let {
             if (it.isNotEmpty()) {
                 call.logger.debug { "Updating redis after responding (${it.size} entries)" }
-                it.forEach { (key, value) ->
-                    call.application.cacheConfig.cacheRedisConn.hset(key, value)
-                    call.application.cacheConfig.cacheExpiration?.let { cacheExpiration ->
-                        call.application.cacheConfig.cacheRedisConn.expire(key, cacheExpiration)
-                    }
-                }
+                call.application.storage.setCacheEntries(it, call.session.language())
             }
         }
     }

@@ -67,7 +67,7 @@ class Session(
             return LegacySession()
         }
 
-        session = configuration.libroRedisConn.get(sessionId)?.let { Json.decodeFromString(it) }
+        session = configuration.adapter.get(sessionId)?.let { Json.decodeFromString(it) }
 
         if (session == null) {
             logger.warn("Session not found")

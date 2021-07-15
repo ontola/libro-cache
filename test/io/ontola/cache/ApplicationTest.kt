@@ -1,9 +1,11 @@
-package io.ontola
+package io.ontola.cache
 
-import io.ktor.http.*
-import kotlin.test.*
-import io.ktor.server.testing.*
-import io.ontola.cache.module
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.testing.handleRequest
+import io.ktor.server.testing.withTestApplication
+import org.junit.Test
+import kotlin.test.assertEquals
 
 class ApplicationTest {
     @Test

@@ -10,7 +10,6 @@ import io.ktor.request.header
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.ontola.cache.sessions.Session
 import io.ontola.cache.sessions.SessionRefresher
 
@@ -26,7 +25,7 @@ fun getCookieWithInvalidName(call: ApplicationCall, cookieName: String): String?
 class LibroSession(private val configuration: Configuration) {
     class Configuration {
         @OptIn(ExperimentalLettuceCoroutinesApi::class)
-        lateinit var libroRedisConn: RedisCoroutinesCommands<String, String>
+        lateinit var adapter: StorageAdapter<String, String>
         lateinit var sessionSecret: String
         lateinit var signatureNameLegacy: String
         lateinit var cookieNameLegacy: String

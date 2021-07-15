@@ -6,24 +6,17 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.util.pipeline.PipelineContext
-import io.ontola.cache.features.cacheConfig
 import io.ontola.cache.features.logger
 import io.ontola.cache.features.services
-import io.ontola.cache.features.session
-import io.ontola.cache.util.KeyManager
 import io.ontola.cache.util.scopeBlankNodes
 
 private fun CacheEntry?.isEmptyOrNotPublic() =
     this == null || cacheControl != CacheControl.Public || contents.isNullOrEmpty()
 
-internal suspend fun PipelineContext<Unit, ApplicationCall>.retrieveOrFetch(
+internal suspend fun PipelineContext<Unit, ApplicationCall>.readOrFetch(
     requested: List<CacheRequest>
-): Pair<MutableMap<String, CacheEntry>, Map<String, Map<String, String>>?> {
-    val config = call.application.cacheConfig
-    val lang = call.session.language()
-    val keyManager = KeyManager(config)
-
-    val entries = retrieveFromStorage(requested, keyManager)
+): Pair<MutableMap<String, CacheEntry>, List<CacheEntry>?> {
+    val entries = readFromStorage(requested)
     call.logger.debug { "Fetched ${entries.size} resources from storage" }
 
     val toRequest = requested.filter { entries[it.iri].isEmptyOrNotPublic() }
@@ -58,17 +51,6 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.retrieveOrFetch(
             entry
         }
         .filter { it.cacheControl != CacheControl.Private }
-        .associateBy(
-            { keyManager.toKey(it.iri, lang) },
-            {
-                mapOf(
-                    "iri" to it.iri,
-                    "status" to it.status.value.toString(10),
-                    "cacheControl" to it.cacheControl.toString(),
-                    "contents" to it.contents.orEmpty(),
-                )
-            }
-        )
 
     return Pair(entries, redisUpdate)
 }

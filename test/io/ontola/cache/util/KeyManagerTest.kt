@@ -1,8 +1,7 @@
-package io.ontola.io.ontola.cache.util
+package io.ontola.cache.util
 
 import io.ktor.server.testing.withTestApplication
 import io.ontola.cache.features.CacheConfig
-import io.ontola.cache.util.KeyManager
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -13,7 +12,7 @@ class KeyManagerTest {
             val config = CacheConfig.fromEnvironment(environment.config, true)
             val man = KeyManager(config)
 
-            val key = man.toKey("https://example.com/resource/1")
+            val key = man.toKey("https://example.com/resource/1", "en")
 
             assertEquals("cache:entry:https%3A//example.com/resource/1:en", key)
         }
