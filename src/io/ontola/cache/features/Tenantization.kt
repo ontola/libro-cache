@@ -7,7 +7,7 @@ import io.ktor.application.call
 import io.ktor.application.feature
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
-import io.ktor.client.features.ClientRequestException
+import io.ktor.client.features.ResponseException
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.features.json.serializer.KotlinxSerializer
 import io.ktor.client.request.get
@@ -242,7 +242,7 @@ class Tenantization(private val configuration: Configuration) {
                     currentIRI = currentIRI
                 )
             )
-        } catch (e: ClientRequestException) {
+        } catch (e: ResponseException) {
             when (val status = e.response.status) {
                 HttpStatusCode.NotFound -> throw TenantNotFoundException()
                 HttpStatusCode.BadGateway -> throw BadGatewayException()

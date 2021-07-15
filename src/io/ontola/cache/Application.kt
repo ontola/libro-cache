@@ -88,6 +88,9 @@ fun Application.module(testing: Boolean = false) {
         exception<TenantNotFoundException> {
             call.respond(HttpStatusCode.NotFound)
         }
+        exception<BadGatewayException> {
+            call.respond(HttpStatusCode.BadGateway)
+        }
         exception<AuthenticationException> {
             call.respond(HttpStatusCode.Unauthorized)
         }
