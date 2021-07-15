@@ -13,12 +13,13 @@ import io.ontola.cache.features.cacheConfig
 import io.ontola.cache.features.services
 import io.ontola.cache.features.session
 import io.ontola.cache.features.tenant
+import io.ontola.cache.util.measured
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
     resources: List<String>,
-): List<SPIResourceResponseItem> {
+): List<SPIResourceResponseItem> = measured("authorizeBulk(${resources.size})") {
     val lang = call.session.language()
     val prefix = call.tenant.websiteIRI.encodedPath.split("/").getOrNull(1)?.let { "/$it" } ?: ""
 
@@ -40,5 +41,5 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
         )
     }
 
-    return Json.decodeFromString(res)
+    Json.decodeFromString(res)
 }

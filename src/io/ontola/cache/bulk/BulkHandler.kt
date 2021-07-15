@@ -10,7 +10,7 @@ import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.features.logger
 import io.ontola.cache.features.session
 import io.ontola.cache.features.storage
-import kotlin.system.measureTimeMillis
+import io.ontola.cache.util.measured
 
 @OptIn(KtorExperimentalLocationsAPI::class)
 @Location("/link-lib/bulk")
@@ -19,7 +19,7 @@ class Bulk
 fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit = {
     var updatedEntries: List<CacheEntry>? = null
 
-    val hotMillis = measureTimeMillis {
+    measured("handler hot") {
         // TODO: handle empty request
         val requested = requestedResources()
         call.logger.debug { "Fetching ${requested.size} resources from cache" }
@@ -39,9 +39,8 @@ fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit
             ContentType.parse("application/hex+x-ndjson"),
         )
     }
-    call.logger.info("Request took $hotMillis ms")
 
-    val coldMillis = measureTimeMillis {
+    measured("handler cold") {
         updatedEntries?.let {
             if (it.isNotEmpty()) {
                 call.logger.debug { "Updating redis after responding (${it.size} entries)" }
@@ -49,5 +48,4 @@ fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit
             }
         }
     }
-    call.logger.info("Request took $coldMillis ms")
 }

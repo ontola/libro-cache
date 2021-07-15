@@ -15,25 +15,28 @@ import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.features.cacheConfig
 import io.ontola.cache.features.services
 import io.ontola.cache.features.session
+import io.ontola.cache.util.measured
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 
 internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizePlain(
     resources: List<String>,
-): List<SPIResourceResponseItem> {
+): List<SPIResourceResponseItem> = measured("authorizePlain(${resources.size})") {
     val lang = call.session.language()
 
-    return resources
+    resources
         .asFlow()
         .map {
-            it to call.application.cacheConfig.client.get<HttpResponse> {
-                url(call.services.route(Url(it).fullPath))
-                initHeaders(call, lang)
-                headers {
-                    header("Accept", "application/hex+x-ndjson")
+            it to measured("authorizePlain - $it") {
+                call.application.cacheConfig.client.get<HttpResponse> {
+                    url(call.services.route(Url(it).fullPath))
+                    initHeaders(call, lang)
+                    headers {
+                        header("Accept", "application/hex+x-ndjson")
+                    }
+                    expectSuccess = false
                 }
-                expectSuccess = false
             }
         }.map { (iri, response) ->
             SPIResourceResponseItem(

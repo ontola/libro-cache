@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.features.json.JsonFeature
+import io.ktor.client.features.logging.Logging
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.request
@@ -12,6 +13,7 @@ import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.ontola.cache.features.LibroSession
+import io.ontola.cache.util.configureClientLogging
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -59,6 +61,9 @@ class SessionRefresher(private val configuration: LibroSession.Configuration) {
 
     private suspend fun refreshToken(userToken: String, refreshToken: String): OIDCTokenResponse {
         val client = HttpClient(CIO) {
+            install(Logging) {
+                configureClientLogging()
+            }
             install(JsonFeature)
         }
         val issuer = JWT.decode(userToken).issuer

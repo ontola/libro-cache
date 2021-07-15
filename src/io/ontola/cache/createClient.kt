@@ -10,7 +10,6 @@ import io.ktor.client.features.UserAgent
 import io.ktor.client.features.auth.Auth
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.features.json.serializer.KotlinxSerializer
-import io.ktor.client.features.logging.LogLevel
 import io.ktor.client.features.logging.Logging
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -20,6 +19,7 @@ import io.ktor.http.headersOf
 import io.ktor.http.hostWithPort
 import io.ontola.cache.features.TenantFinderRequest
 import io.ontola.cache.features.TenantFinderResponse
+import io.ontola.cache.util.configureClientLogging
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -35,7 +35,7 @@ fun createClient(testing: Boolean): HttpClient {
             serializer = KotlinxSerializer()
         }
         install(Logging) {
-            level = LogLevel.HEADERS
+            configureClientLogging()
         }
         install(UserAgent) { agent = "cache" }
     }

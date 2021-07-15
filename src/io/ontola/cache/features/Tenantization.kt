@@ -10,6 +10,7 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.features.ResponseException
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.features.json.serializer.KotlinxSerializer
+import io.ktor.client.features.logging.Logging
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
@@ -23,12 +24,15 @@ import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.BadGatewayException
 import io.ontola.cache.TenantNotFoundException
+import io.ontola.cache.util.configureClientLogging
 import io.ontola.cache.util.copy
+import io.ontola.cache.util.measured
 import io.ontola.cache.util.origin
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
+import mu.KLogger
 import mu.KotlinLogging
 
 @Serializable
@@ -160,11 +164,15 @@ class Tenantization(private val configuration: Configuration) {
     private val logger = KotlinLogging.logger {}
 
     class Configuration {
+        val logger = KotlinLogging.logger {}
         /**
          * List of IRI prefixes which aren't subject to tenantization.
          */
         var blacklist: List<String> = emptyList()
         var client: HttpClient = HttpClient(CIO) {
+            install(Logging) {
+                configureClientLogging()
+            }
             install(JsonFeature) {
                 serializer = KotlinxSerializer(
                     Json {
@@ -176,59 +184,10 @@ class Tenantization(private val configuration: Configuration) {
         }
     }
 
-    private fun closeToWebsiteIRI(originalReq: ApplicationRequest): String {
-        val path = originalReq.path()
-        val authority = listOf("X-Forwarded-Host", "origin", "host", "authority")
-            .find { header -> originalReq.header(header) != null }
-            ?.let { header -> originalReq.header(header)!! }
-            ?: throw Exception("No header usable for authority present")
-
-//        if (authority.contains(':')) {
-//            return "$authority$path"
-//        }
-
-        val proto = originalReq.header("X-Forwarded-Proto")
-            ?: originalReq.header("X-Forwarded-Proto")
-            ?: throw Exception("No Forwarded host nor authority scheme")
-
-        val authoritativeOrigin = if (authority.contains(':')) {
-            authority
-        } else {
-            "$proto://$authority"
-        }
-
-        return originalReq.header("Website-IRI")
-            ?.let { websiteIRI ->
-                if (Url(websiteIRI).origin() != authoritativeOrigin) {
-                    logger.warn("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")
-                }
-                websiteIRI
-            } ?: "${authoritativeOrigin.dropLast(authoritativeOrigin.endsWith('/').toInt())}$path"
-    }
-
-    private suspend fun getTenant(originalReq: ApplicationRequest, services: Services): TenantFinderResponse {
-        val response = configuration.client.get<TenantFinderResponse>(services.route("/_public/spi/find_tenant")) {
-            headers {
-                header("Accept", ContentType.Application.Json)
-                header("Content-Type", ContentType.Application.Json)
-                copy("Accept-Language", originalReq)
-                header("X-Forwarded-Host", originalReq.header("Host"))
-                copy("X-Forwarded-Proto", originalReq)
-                copy("X-Forwarded-Ssl", originalReq)
-                copy("X-Request-Id", originalReq)
-            }
-            body = TenantFinderRequest(closeToWebsiteIRI(originalReq))
-        }
-        val proto = originalReq.header("X-Forwarded-Proto") ?: originalReq.header("scheme") ?: "http"
-        response.websiteBase = "$proto://${response.iriPrefix}"
-
-        return response
-    }
-
     private suspend fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
         try {
             val originalReq = context.call.request
-            val tenantResponse = getTenant(originalReq, context.call.services)
+            val tenantResponse = context.getTenant(originalReq, configuration)
             val websiteBase = Url(tenantResponse.websiteBase)
             val baseOrigin = websiteBase.copy(encodedPath = "")
             val currentIRI = Url("$baseOrigin${context.call.request.path()}")
@@ -273,4 +232,56 @@ class Tenantization(private val configuration: Configuration) {
             return feature
         }
     }
+}
+
+private suspend fun PipelineContext<Unit, ApplicationCall>.getTenant(
+    originalReq: ApplicationRequest,
+    configuration: Tenantization.Configuration,
+): TenantFinderResponse = measured("getTenant") {
+    val response = configuration.client.get<TenantFinderResponse>(call.services.route("/_public/spi/find_tenant")) {
+        headers {
+            header("Accept", ContentType.Application.Json)
+            header("Content-Type", ContentType.Application.Json)
+            copy("Accept-Language", originalReq)
+            header("X-Forwarded-Host", originalReq.header("Host"))
+            copy("X-Forwarded-Proto", originalReq)
+            copy("X-Forwarded-Ssl", originalReq)
+            copy("X-Request-Id", originalReq)
+        }
+        body = TenantFinderRequest(closeToWebsiteIRI(originalReq, configuration.logger))
+    }
+    val proto = originalReq.header("X-Forwarded-Proto") ?: originalReq.header("scheme") ?: "http"
+    response.websiteBase = "$proto://${response.iriPrefix}"
+
+    response
+}
+
+private fun closeToWebsiteIRI(originalReq: ApplicationRequest, logger: KLogger): String {
+    val path = originalReq.path()
+    val authority = listOf("X-Forwarded-Host", "origin", "host", "authority")
+        .find { header -> originalReq.header(header) != null }
+        ?.let { header -> originalReq.header(header)!! }
+        ?: throw Exception("No header usable for authority present")
+
+//        if (authority.contains(':')) {
+//            return "$authority$path"
+//        }
+
+    val proto = originalReq.header("X-Forwarded-Proto")
+        ?: originalReq.header("X-Forwarded-Proto")
+        ?: throw Exception("No Forwarded host nor authority scheme")
+
+    val authoritativeOrigin = if (authority.contains(':')) {
+        authority
+    } else {
+        "$proto://$authority"
+    }
+
+    return originalReq.header("Website-IRI")
+        ?.let { websiteIRI ->
+            if (Url(websiteIRI).origin() != authoritativeOrigin) {
+                logger.warn("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")
+            }
+            websiteIRI
+        } ?: "${authoritativeOrigin.dropLast(authoritativeOrigin.endsWith('/').toInt())}$path"
 }

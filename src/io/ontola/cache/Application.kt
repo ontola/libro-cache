@@ -13,7 +13,9 @@ import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.features.deflate
 import io.ktor.features.gzip
 import io.ktor.features.minimumSize
+import io.ktor.features.toLogString
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Locations
@@ -35,9 +37,10 @@ import io.ontola.cache.features.ServiceRegistry
 import io.ontola.cache.features.Storage
 import io.ontola.cache.features.StorageAdapter
 import io.ontola.cache.features.Tenantization
+import io.ontola.cache.features.requestTimings
 import io.ontola.cache.features.storage
 import io.ontola.cache.sessions.createJWTVerifier
-import org.slf4j.event.Level
+import io.ontola.cache.util.configureCallLogging
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
@@ -79,8 +82,17 @@ fun Application.module(testing: Boolean = false, storage: StorageAdapter<String,
     }
 
     install(CallLogging) {
-        level = Level.INFO
+        configureCallLogging()
         filter { call -> call.request.path().startsWith("/") }
+        format { call ->
+            when (val status = call.response.status()) {
+                HttpStatusCode.Found -> "$status: ${call.request.toLogString()} -> ${call.response.headers[HttpHeaders.Location]}"
+                else -> {
+                    val timings = call.requestTimings.joinToString { (name, time) -> "$name: ${time}ms" }
+                    "$status - ${call.request.toLogString()} - timings: ($timings)"
+                }
+            }
+        }
     }
 
     install(DefaultHeaders) {
