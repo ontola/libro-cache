@@ -12,7 +12,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.ontola.cache.features.LibroSession
+import io.ontola.cache.plugins.LibroSession
 import io.ontola.cache.util.configureClientLogging
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString

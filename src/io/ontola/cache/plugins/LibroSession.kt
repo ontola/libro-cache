@@ -1,4 +1,4 @@
-package io.ontola.cache.features
+package io.ontola.cache.plugins
 
 import com.auth0.jwt.interfaces.JWTVerifier
 import io.ktor.application.ApplicationCall

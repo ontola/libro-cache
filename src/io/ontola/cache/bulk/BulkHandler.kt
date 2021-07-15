@@ -7,9 +7,9 @@ import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Location
 import io.ktor.response.respondText
 import io.ktor.util.pipeline.PipelineContext
-import io.ontola.cache.features.logger
-import io.ontola.cache.features.session
-import io.ontola.cache.features.storage
+import io.ontola.cache.plugins.logger
+import io.ontola.cache.plugins.session
+import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.measured
 
 @OptIn(KtorExperimentalLocationsAPI::class)

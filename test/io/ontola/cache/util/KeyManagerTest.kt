@@ -1,7 +1,7 @@
 package io.ontola.cache.util
 
 import io.ktor.server.testing.withTestApplication
-import io.ontola.cache.features.CacheConfig
+import io.ontola.cache.plugins.CacheConfig
 import org.junit.Test
 import kotlin.test.assertEquals
 

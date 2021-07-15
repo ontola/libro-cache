@@ -6,8 +6,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.util.pipeline.PipelineContext
-import io.ontola.cache.features.logger
-import io.ontola.cache.features.services
+import io.ontola.cache.plugins.logger
+import io.ontola.cache.plugins.services
 import io.ontola.cache.util.scopeBlankNodes
 
 private fun CacheEntry?.isEmptyOrNotPublic() =

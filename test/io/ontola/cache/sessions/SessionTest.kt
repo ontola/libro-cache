@@ -5,8 +5,8 @@ import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import io.ontola.cache.features.LibroSession
-import io.ontola.cache.features.RedisAdapter
+import io.ontola.cache.plugins.LibroSession
+import io.ontola.cache.plugins.RedisAdapter
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

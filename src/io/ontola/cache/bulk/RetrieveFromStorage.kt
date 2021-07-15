@@ -4,8 +4,8 @@ import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.util.pipeline.PipelineContext
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.ontola.cache.features.session
-import io.ontola.cache.features.storage
+import io.ontola.cache.plugins.session
+import io.ontola.cache.plugins.storage
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
 internal suspend fun PipelineContext<Unit, ApplicationCall>.readFromStorage(

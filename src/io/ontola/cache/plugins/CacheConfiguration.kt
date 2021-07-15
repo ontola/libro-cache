@@ -1,4 +1,4 @@
-package io.ontola.cache.features
+package io.ontola.cache.plugins
 
 import com.bugsnag.Bugsnag
 import io.ktor.application.ApplicationCallPipeline

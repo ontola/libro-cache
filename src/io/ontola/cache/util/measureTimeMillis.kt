@@ -3,7 +3,7 @@ package io.ontola.cache.util
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.util.pipeline.PipelineContext
-import io.ontola.cache.features.requestTimings
+import io.ontola.cache.plugins.requestTimings
 import mu.KotlinLogging
 
 private val kLogger = KotlinLogging.logger {}

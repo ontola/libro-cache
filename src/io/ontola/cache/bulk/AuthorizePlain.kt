@@ -12,9 +12,9 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.util.pipeline.PipelineContext
-import io.ontola.cache.features.cacheConfig
-import io.ontola.cache.features.services
-import io.ontola.cache.features.session
+import io.ontola.cache.plugins.cacheConfig
+import io.ontola.cache.plugins.services
+import io.ontola.cache.plugins.session
 import io.ontola.cache.util.measured
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map

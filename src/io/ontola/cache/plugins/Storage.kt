@@ -1,4 +1,4 @@
-package io.ontola.cache.features
+package io.ontola.cache.plugins
 
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature

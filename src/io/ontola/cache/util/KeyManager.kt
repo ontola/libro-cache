@@ -1,6 +1,6 @@
 package io.ontola.cache.util
 
-import io.ontola.cache.features.CacheConfig
+import io.ontola.cache.plugins.CacheConfig
 import java.net.URLEncoder
 
 class KeyManager(

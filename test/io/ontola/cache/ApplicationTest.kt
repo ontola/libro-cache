@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 
 class ApplicationTest {
     @Test
-    fun testRoot() {
+    fun testStatus() {
         withTestApplication({ module(testing = true) }) {
             handleRequest(HttpMethod.Get, "/link-lib/cache/status") {
                 addHeader("authority", "mysite.local")

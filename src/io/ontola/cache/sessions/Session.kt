@@ -2,7 +2,7 @@ package io.ontola.cache.sessions
 
 import com.auth0.jwt.exceptions.JWTVerificationException
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.ontola.cache.features.LibroSession
+import io.ontola.cache.plugins.LibroSession
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

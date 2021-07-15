@@ -9,10 +9,10 @@ import io.ktor.client.request.url
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.util.pipeline.PipelineContext
-import io.ontola.cache.features.cacheConfig
-import io.ontola.cache.features.services
-import io.ontola.cache.features.session
-import io.ontola.cache.features.tenant
+import io.ontola.cache.plugins.cacheConfig
+import io.ontola.cache.plugins.services
+import io.ontola.cache.plugins.session
+import io.ontola.cache.plugins.tenant
 import io.ontola.cache.util.measured
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json

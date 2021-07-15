@@ -8,8 +8,8 @@ import io.lettuce.core.XGroupCreateArgs
 import io.lettuce.core.XReadArgs
 import io.lettuce.core.api.coroutines
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
-import io.ontola.cache.features.CacheConfig
-import io.ontola.cache.features.RedisConfig
+import io.ontola.cache.plugins.CacheConfig
+import io.ontola.cache.plugins.RedisConfig
 import io.ontola.cache.util.KeyManager
 import io.ontola.transactions.Deleted
 import io.ontola.transactions.Updated

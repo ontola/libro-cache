@@ -17,8 +17,8 @@ import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.http.headersOf
 import io.ktor.http.hostWithPort
-import io.ontola.cache.features.TenantFinderRequest
-import io.ontola.cache.features.TenantFinderResponse
+import io.ontola.cache.plugins.TenantFinderRequest
+import io.ontola.cache.plugins.TenantFinderResponse
 import io.ontola.cache.util.configureClientLogging
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString

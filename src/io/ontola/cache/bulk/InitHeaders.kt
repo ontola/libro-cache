@@ -8,8 +8,8 @@ import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
 import io.ktor.request.ApplicationRequest
 import io.ktor.request.header
-import io.ontola.cache.features.session
-import io.ontola.cache.features.tenant
+import io.ontola.cache.plugins.session
+import io.ontola.cache.plugins.tenant
 
 suspend fun HttpRequestBuilder.initHeaders(call: ApplicationCall, lang: String) {
     // TODO: Support direct bearer header for API requests
