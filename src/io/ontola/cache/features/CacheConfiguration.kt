@@ -6,7 +6,6 @@ import io.ktor.application.ApplicationFeature
 import io.ktor.application.call
 import io.ktor.config.ApplicationConfig
 import io.ktor.util.AttributeKey
-import io.ktor.util.KtorExperimentalAPI
 import io.ktor.utils.io.printStack
 import io.lettuce.core.RedisURI
 import mu.KotlinLogging
@@ -127,7 +126,6 @@ data class CacheConfig(
     }
 
     companion object {
-        @KtorExperimentalAPI
         fun fromEnvironment(config: ApplicationConfig, testing: Boolean): CacheConfig {
 
             val cacheConfig = config.config("cache")
@@ -257,18 +255,14 @@ class CacheConfiguration {
         lateinit var config: CacheConfig
     }
 
-    // Implements ApplicationFeature as a companion object.
     companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, CacheConfiguration> {
         override val key = AttributeKey<CacheConfiguration>("CacheConfiguration")
 
-        // Code to execute when installing the feature.
-        @KtorExperimentalAPI
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): CacheConfiguration {
             val configuration = Configuration().apply(configure)
             val feature = CacheConfiguration()
             pipeline.attributes.put(CacheConfigurationKey, configuration.config)
 
-            // Intercept a pipeline.
             pipeline.intercept(ApplicationCallPipeline.Features) {
                 this.call.attributes.put(CacheConfigurationKey, configuration.config)
             }

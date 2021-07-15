@@ -133,10 +133,7 @@ suspend fun HttpRequestBuilder.initHeaders(call: ApplicationCall, lang: String) 
     }
 }
 
-@OptIn(
-    KtorExperimentalLocationsAPI::class, io.lettuce.core.ExperimentalLettuceCoroutinesApi::class,
-    io.ktor.util.KtorExperimentalAPI::class
-)
+@OptIn(KtorExperimentalLocationsAPI::class, io.lettuce.core.ExperimentalLettuceCoroutinesApi::class)
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
 fun Application.module(testing: Boolean = false) {

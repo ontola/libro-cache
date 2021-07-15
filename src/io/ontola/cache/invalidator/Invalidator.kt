@@ -1,7 +1,6 @@
 package io.ontola.cache.invalidator
 
 import io.ktor.application.Application
-import io.ktor.util.KtorExperimentalAPI
 import io.lettuce.core.Consumer
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
@@ -56,7 +55,7 @@ suspend fun ensureConsumer(redisConn: RedisCoroutinesCommands<String, String>, c
     }
 }
 
-@OptIn(KtorExperimentalAPI::class, ExperimentalLettuceCoroutinesApi::class)
+@OptIn(ExperimentalLettuceCoroutinesApi::class)
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
 fun Application.module(testing: Boolean = false) {

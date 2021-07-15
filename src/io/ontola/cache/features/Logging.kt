@@ -5,7 +5,6 @@ import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature
 import io.ktor.application.call
 import io.ktor.util.AttributeKey
-import io.ktor.util.KtorExperimentalAPI
 import mu.KLogger
 import mu.KotlinLogging
 
@@ -16,7 +15,6 @@ class Logging {
     companion object Feature : ApplicationFeature<ApplicationCallPipeline, Unit, KLogger> {
         override val key = AttributeKey<KLogger>("KLogger")
 
-        @KtorExperimentalAPI
         override fun install(pipeline: ApplicationCallPipeline, configure: Unit.() -> Unit): KLogger {
             val feature = KotlinLogging.logger {}
             pipeline.attributes.put(KLoggerKey, feature)

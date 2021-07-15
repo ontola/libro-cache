@@ -16,12 +16,10 @@ import io.ktor.client.request.headers
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
-import io.ktor.http.fullPath
 import io.ktor.request.ApplicationRequest
 import io.ktor.request.header
 import io.ktor.request.path
 import io.ktor.util.AttributeKey
-import io.ktor.util.KtorExperimentalAPI
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.BadGatewayException
 import io.ontola.cache.TenantNotFoundException
@@ -227,22 +225,6 @@ class Tenantization(private val configuration: Configuration) {
         return response
     }
 
-    @KtorExperimentalAPI
-    private suspend fun getManifest(websiteBase: Url, originalReq: ApplicationRequest, services: Services): Manifest {
-        return configuration.client.get(services.route("${websiteBase.fullPath}/manifest")) {
-            headers {
-                header("Accept", ContentType.Application.Json)
-                header("Content-Type", ContentType.Application.Json)
-                copy("Accept-Language", originalReq)
-                header("X-Forwarded-Host", originalReq.header("Host"))
-                copy("X-Forwarded-Proto", originalReq)
-                copy("X-Forwarded-Ssl", originalReq)
-                copy("X-Request-Id", originalReq)
-            }
-        }
-    }
-
-    @KtorExperimentalAPI
     private suspend fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
         try {
             val originalReq = context.call.request
@@ -275,7 +257,6 @@ class Tenantization(private val configuration: Configuration) {
     companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, Tenantization> {
         override val key = AttributeKey<Tenantization>("Tenantization")
 
-        @KtorExperimentalAPI
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Tenantization {
             val configuration = Configuration().apply(configure)
             val feature = Tenantization(configuration)

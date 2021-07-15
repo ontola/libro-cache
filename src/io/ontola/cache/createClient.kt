@@ -18,7 +18,6 @@ import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.http.headersOf
 import io.ktor.http.hostWithPort
-import io.ktor.util.KtorExperimentalAPI
 import io.ontola.cache.features.TenantFinderRequest
 import io.ontola.cache.features.TenantFinderResponse
 import kotlinx.serialization.decodeFromString
@@ -29,7 +28,6 @@ import java.nio.charset.Charset
 private val Url.hostWithPortIfRequired: String get() = if (port == protocol.defaultPort) host else hostWithPort
 private val Url.fullUrl: String get() = "${protocol.name}://$hostWithPortIfRequired$fullPath"
 
-@OptIn(KtorExperimentalAPI::class)
 fun createClient(testing: Boolean): HttpClient {
     val configure: HttpClientConfig<*>.() -> Unit = {
         install(Auth) {}

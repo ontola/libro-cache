@@ -7,7 +7,6 @@ import io.ktor.application.call
 import io.ktor.application.feature
 import io.ktor.config.ApplicationConfig
 import io.ktor.util.AttributeKey
-import io.ktor.util.KtorExperimentalAPI
 import kotlin.properties.Delegates
 
 data class Service(
@@ -33,9 +32,7 @@ data class Services(val services: List<Service>) {
     companion object {
         fun default(config: ServiceRegistry.Configuration): Services = Services(defaultServices(config))
 
-        @KtorExperimentalAPI
         private fun defaultServices(c: ServiceRegistry.Configuration): List<Service> = listOf(
-//            Service(c.cacheServiceName, c.cacheServiceMatcher, c.cacheServiceUrl),
             Service(c.emailServiceName, c.emailServiceMatcher, c.emailServiceUrl, c.emailServiceBulk),
             Service(c.tokenServiceName, c.tokenServiceMatcher, c.tokenServiceUrl, c.tokenServiceBulk),
             // Default goes last
@@ -45,7 +42,6 @@ data class Services(val services: List<Service>) {
 }
 
 class ServiceRegistry(private val configuration: Configuration) {
-    @KtorExperimentalAPI
     class Configuration {
         lateinit var config: ApplicationConfig
 
@@ -110,18 +106,14 @@ class ServiceRegistry(private val configuration: Configuration) {
         }
     }
 
-    // Implements ApplicationFeature as a companion object.
     companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, ServiceRegistry> {
         override val key = AttributeKey<ServiceRegistry>("ServiceRegistry")
 
-        // Code to execute when installing the feature.
-        @KtorExperimentalAPI
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): ServiceRegistry {
             val configuration = Configuration().apply(configure)
             val feature = ServiceRegistry(configuration)
             val services = Services.default(configuration)
 
-            // Intercept a pipeline.
             pipeline.intercept(ApplicationCallPipeline.Features) {
                 this.call.attributes.put(ServiceRegistryKey, services)
             }
