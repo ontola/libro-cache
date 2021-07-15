@@ -7,7 +7,11 @@ import io.ktor.application.call
 import io.ktor.config.ApplicationConfig
 import io.ktor.util.AttributeKey
 import io.ktor.utils.io.printStack
+import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI
+import io.lettuce.core.api.coroutines
+import io.ontola.cache.createClient
 import mu.KotlinLogging
 
 data class SessionsConfig(
@@ -79,11 +83,15 @@ data class RedisConfig(
 
 data class CacheConfig(
     /**
-     * Configuration relating to session management
+     * Whether the application is running in test mode.
+     */
+    val testing: Boolean,
+    /**
+     * Configuration relating to session management.
      */
     val sessions: SessionsConfig,
     /**
-     * Configuration relating to cache data storage
+     * Configuration relating to cache data storage.
      */
     val redis: RedisConfig,
     /**
@@ -116,6 +124,14 @@ data class CacheConfig(
      */
     val cacheExpiration: Long? = null,
 ) {
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    val cacheRedisConn by lazy { RedisClient.create(redis.uri).connect().coroutines() }
+
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    val libroRedisConn by lazy { RedisClient.create(libroRedisURI).connect().coroutines() }
+
+    val client by lazy { createClient(testing) }
+
     private val logger = KotlinLogging.logger {}
 
     private val reportingService: Bugsnag? = if (reportingKey.isNullOrBlank()) {
@@ -219,6 +235,7 @@ data class CacheConfig(
             }
 
             return CacheConfig(
+                testing = testing,
                 sessions = sessionsConfig,
                 libroRedisURI = libroRedisURI,
                 streamRedisURI = streamRedisURI,
@@ -264,7 +281,7 @@ class CacheConfiguration {
             pipeline.attributes.put(CacheConfigurationKey, configuration.config)
 
             pipeline.intercept(ApplicationCallPipeline.Features) {
-                this.call.attributes.put(CacheConfigurationKey, configuration.config)
+                call.attributes.put(CacheConfigurationKey, configuration.config)
             }
             return feature
         }

@@ -14,8 +14,8 @@ class KeyManager(
         config.redis.cachePrefix,
         config.redis.cacheEntryPrefix,
     ).toTypedArray()
-    val iriIndex = prefixes.size
-    val langIndex = iriIndex + 1
+    private val iriIndex = prefixes.size
+    private val langIndex = iriIndex + 1
 
     fun toKey(iri: String, lang: String = config.defaultLanguage): String {
         return listOfNotNull(*prefixes, encode(iri), lang).joinToString(separator)

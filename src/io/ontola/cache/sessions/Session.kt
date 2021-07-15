@@ -79,7 +79,8 @@ class Session(
         return session
     }
 
-    suspend fun language(): String? = claimsFromJWT()?.user?.language
+    suspend fun language(): String = claimsFromJWT()?.user?.language
+        ?: configuration.cacheConfig.defaultLanguage
 
     private suspend fun claimsFromJWT(): Claims? = try {
         legacySession()?.claims(configuration.jwtValidator)
