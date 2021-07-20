@@ -12,7 +12,7 @@ class KeyManagerTest {
             val config = CacheConfig.fromEnvironment(environment.config, true)
             val man = KeyManager(config)
 
-            val key = man.toKey("https://example.com/resource/1", "en")
+            val key = man.toEntryKey("https://example.com/resource/1", "en")
 
             assertEquals("cache:entry:https%3A//example.com/resource/1:en", key)
         }
@@ -24,7 +24,7 @@ class KeyManagerTest {
             val config = CacheConfig.fromEnvironment(environment.config, true)
             val man = KeyManager(config)
 
-            val (key, lang) = man.fromKey("cache:entry:https%3A//example.com/resource/1:en")
+            val (key, lang) = man.fromEntryKey("cache:entry:https%3A//example.com/resource/1:en")
 
             assertEquals("https://example.com/resource/1", key)
             assertEquals("en", lang)

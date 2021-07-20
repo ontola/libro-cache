@@ -3,6 +3,7 @@ package io.ontola.cache.plugins
 import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature
+import io.ktor.application.application
 import io.ktor.application.call
 import io.ktor.application.feature
 import io.ktor.client.HttpClient
@@ -19,7 +20,6 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.takeFrom
-import io.ktor.request.ApplicationRequest
 import io.ktor.request.header
 import io.ktor.request.path
 import io.ktor.util.AttributeKey
@@ -28,7 +28,7 @@ import io.ontola.cache.BadGatewayException
 import io.ontola.cache.TenantNotFoundException
 import io.ontola.cache.util.configureClientLogging
 import io.ontola.cache.util.copy
-import io.ontola.cache.util.measured
+import io.ontola.cache.util.measuredHit
 import io.ontola.cache.util.origin
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -36,6 +36,9 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
 import mu.KLogger
 import mu.KotlinLogging
+import kotlin.properties.Delegates
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
 @Serializable
 data class OntolaManifest(
@@ -160,13 +163,14 @@ private fun ApplicationCall.reportMissingTenantization(): Nothing {
 private fun Boolean.toInt(): Int = if (this) 1 else 0
 
 class TenantizationNotYetConfiguredException :
-    IllegalStateException("Libro tenantization are not yet ready: you are asking it to early before the Tenantizations feature.")
+    IllegalStateException("Libro tenantization are not yet ready: you are asking it to early before the Tenantization feature.")
 
 class Tenantization(private val configuration: Configuration) {
     private val logger = KotlinLogging.logger {}
 
     class Configuration {
         val logger = KotlinLogging.logger {}
+
         /**
          * List of IRI prefixes which aren't subject to tenantization.
          */
@@ -184,13 +188,24 @@ class Tenantization(private val configuration: Configuration) {
                 )
             }
         }
+        var tenantExpiration by Delegates.notNull<Long>()
+    }
+
+    @Throws(TenantNotFoundException::class)
+    private suspend fun PipelineContext<*, ApplicationCall>.getWebsiteBase(): Url {
+        val websiteIRI = closeToWebsiteIRI(call.request.path(), call.request.headers, configuration.logger)
+
+        val websiteBase = cachedLookup("getWebsiteBase", expiration = configuration.tenantExpiration) {
+            getTenant(websiteIRI, configuration).websiteBase
+        }(websiteIRI) ?: throw TenantNotFoundException()
+
+        return Url(websiteBase)
     }
 
     private suspend fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
         try {
-            val originalReq = context.call.request
-            val tenantResponse = context.getTenant(originalReq, configuration)
-            val websiteBase = Url(tenantResponse.websiteBase)
+            val websiteBase = context.getWebsiteBase()
+
             val baseOrigin = websiteBase.copy(encodedPath = "")
             val currentIRI = Url("$baseOrigin${context.call.request.path()}")
 
@@ -198,7 +213,7 @@ class Tenantization(private val configuration: Configuration) {
                 TenantizationKey,
                 TenantData(
                     isBlackListed = false,
-                    websiteIRI = Url(tenantResponse.websiteBase),
+                    websiteIRI = websiteBase,
                     websiteOrigin = baseOrigin,
                     currentIRI = currentIRI
                 )
@@ -219,7 +234,10 @@ class Tenantization(private val configuration: Configuration) {
         override val key = AttributeKey<Tenantization>("Tenantization")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Tenantization {
-            val configuration = Configuration().apply(configure)
+            val configuration = Configuration().apply {
+                client = pipeline.cacheConfig.client
+                tenantExpiration = pipeline.cacheConfig.tenantExpiration
+            }.apply(configure)
             val feature = Tenantization(configuration)
 
             pipeline.intercept(ApplicationCallPipeline.Features) {
@@ -236,26 +254,48 @@ class Tenantization(private val configuration: Configuration) {
     }
 }
 
-private suspend fun PipelineContext<Unit, ApplicationCall>.getTenant(
-    originalReq: ApplicationRequest,
-    configuration: Tenantization.Configuration,
-): TenantFinderResponse = measured("getTenant") {
-    val resourceIri = closeToWebsiteIRI(originalReq.path(), originalReq.headers, configuration.logger)
+@OptIn(ExperimentalTime::class)
+private fun PipelineContext<*, ApplicationCall>.cachedLookup(
+    prefix: String,
+    expiration: Long = Duration.minutes(10).inWholeSeconds,
+    block: suspend (v: String) -> String?,
+): suspend (v: String) -> String? {
+    if (expiration == 0L) {
+        return block
+    }
 
-    val response = configuration.client.get<TenantFinderResponse> {
+    return { dependency ->
+        measuredHit(
+            prefix,
+            {
+                application.storage.getString(prefix, dependency)
+            },
+            {
+                block(dependency)?.also {
+                    application.storage.setString(prefix, dependency, value = it, expiration = expiration)
+                }
+            }
+        )
+    }
+}
+
+private suspend fun PipelineContext<*, ApplicationCall>.getTenant(
+    resourceIri: String,
+    configuration: Tenantization.Configuration,
+): TenantFinderResponse {
+    return configuration.client.get<TenantFinderResponse> {
         url.apply {
             takeFrom(call.services.route("/_public/spi/find_tenant"))
             parameters["iri"] = resourceIri
         }
         headers {
             header("Accept", ContentType.Application.Json)
-            copy("X-Request-Id", originalReq)
+            copy("X-Request-Id", context.request)
         }
+    }.apply {
+        val proto = context.request.header("X-Forwarded-Proto") ?: context.request.header("scheme") ?: "http"
+        websiteBase = "$proto://$iriPrefix"
     }
-    val proto = originalReq.header("X-Forwarded-Proto") ?: originalReq.header("scheme") ?: "http"
-    response.websiteBase = "$proto://${response.iriPrefix}"
-
-    response
 }
 
 internal fun closeToWebsiteIRI(requestPath: String, headers: Headers, logger: KLogger): String {

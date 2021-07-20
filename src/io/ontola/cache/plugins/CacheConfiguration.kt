@@ -11,6 +11,8 @@ import io.ktor.utils.io.printStack
 import io.lettuce.core.RedisURI
 import io.ontola.cache.createClient
 import mu.KotlinLogging
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
 data class SessionsConfig(
     /**
@@ -62,7 +64,7 @@ data class RedisConfig(
     /**
      * Key part for cache entries.
      */
-    val cacheEntryPrefix: String? = "entry",
+    val cacheEntryPrefix: String = "entry",
 
     /**
      * Separator to use inbetween key parts
@@ -79,7 +81,7 @@ data class RedisConfig(
     val invalidationGroup: String,
 )
 
-data class CacheConfig(
+data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
     /**
      * Whether the application is running in test mode.
      */
@@ -117,10 +119,15 @@ data class CacheConfig(
      */
     val reportingKey: String? = null,
     /**
-     * The amount of time after which cache entries should expire in seconds.
+     * The amount of seconds after which cache entries should expire.
      * Omit to disable expiration.
      */
     val cacheExpiration: Long? = null,
+    /**
+     * The amount of seconds after which tenant finder lookups should expire.
+     * Set to zero to disable caching.
+     */
+    val tenantExpiration: Long = Duration.minutes(10).inWholeSeconds,
     /**
      * Client to use for requests to external systems.
      */

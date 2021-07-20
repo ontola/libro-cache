@@ -140,7 +140,6 @@ fun Application.module(
             "/f_assets/",
             "/__webpack_hmr"
         )
-        this.client = client
     }
 
     install(LibroSession) {

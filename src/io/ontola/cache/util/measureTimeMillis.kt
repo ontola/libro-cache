@@ -8,12 +8,31 @@ import mu.KotlinLogging
 
 private val kLogger = KotlinLogging.logger {}
 
-suspend fun <T : Any> PipelineContext<Unit, ApplicationCall>.measured(name: String, block: suspend () -> T): T {
+suspend fun <T : Any> PipelineContext<*, ApplicationCall>.measured(name: String, block: suspend () -> T): T {
     lateinit var res: T
     val time = kotlin.system.measureTimeMillis {
         res = block()
     }
     this.call.requestTimings.add(name to time)
+
+    return res
+}
+
+suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(name: String, block: suspend () -> T, missed: suspend () -> T): T {
+    var res: T
+    var time = 0L
+    var missed = false
+    time += kotlin.system.measureTimeMillis {
+        res = block()
+    }
+    if (res == null) {
+        missed = true
+        time += kotlin.system.measureTimeMillis {
+            res = missed()
+        }
+    }
+    val postfix = if (missed) "miss" else "hit"
+    this.call.requestTimings.add("$name($postfix)" to time)
 
     return res
 }

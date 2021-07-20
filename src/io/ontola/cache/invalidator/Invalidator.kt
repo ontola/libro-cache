@@ -97,8 +97,8 @@ fun Application.module(testing: Boolean = false) {
                             when (val type = msg.body["type"]) {
                                 Updated::class.qualifiedName,
                                 Deleted::class.qualifiedName -> {
-                                    cacheRedisConn.del(keyManager.toKey(resource, "en"))
-                                    cacheRedisConn.del(keyManager.toKey(resource, "nl"))
+                                    cacheRedisConn.del(keyManager.toEntryKey(resource, "en"))
+                                    cacheRedisConn.del(keyManager.toEntryKey(resource, "nl"))
                                 }
                                 else -> logger.warn("Ignored message with type '$type'")
                             }

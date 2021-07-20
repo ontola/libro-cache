@@ -77,6 +77,11 @@ class ApplicationTest {
         val setEntries = slot<Map<String, String>>()
         coEvery { storage.hset("cache:entry:https%3A//example.com/test/2:en", capture(setEntries)) } returns null
 
+        coEvery { storage.get("cache:getWebsiteBase:https%3A//mysite.local") } returns null
+        val tenantEntries = slot<String>()
+        coEvery { storage.set("cache:getWebsiteBase:https%3A//mysite.local", capture(tenantEntries)) } returns null
+        coEvery { storage.expire("cache:getWebsiteBase:https%3A//mysite.local", 600) } returns null
+
         withTestApplication({ module(testing = true, storage = storage, client = client) }) {
             handleRequest(HttpMethod.Post, "link-lib/bulk") {
                 addHeader("authority", "mysite.local")
@@ -100,6 +105,7 @@ class ApplicationTest {
 
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertEquals(payload, response.content)
+                assertEquals(tenantEntries.captured, "https://mysite.local")
             }
         }
     }

@@ -8,24 +8,29 @@ class KeyManager(
 ) {
     private val separator = config.redis.separator
     private val encodedSeparator = URLEncoder.encode(config.redis.separator, "utf-8")
+    private val cacheEntryPrefix = config.redis.cacheEntryPrefix
 
-    private val prefixes = listOfNotNull(
+    private val cachePrefixes = listOfNotNull(
         config.redis.rootPrefix,
         config.redis.cachePrefix,
-        config.redis.cacheEntryPrefix,
     ).toTypedArray()
-    private val iriIndex = prefixes.size
+    private val cachePrefix = cachePrefixes.joinToString(separator) + ":"
+
+    private val iriIndex = cachePrefixes.size + 1
     private val langIndex = iriIndex + 1
 
-    fun toKey(iri: String, lang: String): String {
-        return listOfNotNull(*prefixes, encode(iri), lang).joinToString(separator)
-    }
+    fun toEntryKey(iri: String, lang: String): String = toKey(cacheEntryPrefix, encode(iri), lang)
 
-    fun fromKey(key: String): Pair<String, String> {
+    fun fromEntryKey(key: String): Pair<String, String> {
         val split = key.split(separator)
 
         return Pair(decode(split[iriIndex]), split[langIndex])
     }
+
+    fun toKey(vararg components: String): String = listOfNotNull(*cachePrefixes, *components.map { encode(it) }.toTypedArray())
+        .joinToString(separator)
+
+    fun fromKey(key: String): List<String> = key.removePrefix(cachePrefix).split(separator).map { decode(it) }
 
     private fun decode(iri: String): String = iri.replace(encodedSeparator, separator)
 

@@ -31,7 +31,7 @@ interface StorageAdapter<K : Any, V : Any> {
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
 class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : StorageAdapter<String, String> {
     override suspend fun expire(key: String, seconds: Long): Boolean? {
-        return expire(key, seconds)
+        return client.expire(key, seconds)
     }
 
     override fun hmget(key: String, vararg fields: String): Flow<Pair<String, String?>> {
@@ -70,7 +70,7 @@ class Storage(
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     suspend fun getCacheEntry(iri: String, lang: String): CacheEntry? {
-        val key = keyManager.toKey(iri, lang)
+        val key = keyManager.toEntryKey(iri, lang)
 
         val hash = adapter
             .hmget(key, *CacheEntry.fields)
@@ -97,7 +97,7 @@ class Storage(
     suspend fun setCacheEntries(entries: List<CacheEntry>, lang: String) {
         entries
             .associateBy(
-                { keyManager.toKey(it.iri, lang) },
+                { keyManager.toEntryKey(it.iri, lang) },
                 {
                     mapOf(
                         "iri" to it.iri,
@@ -114,6 +114,14 @@ class Storage(
                 }
             }
     }
+
+    suspend fun setString(vararg key: String, value: String, expiration: Long?) {
+        val prefixed = keyManager.toKey(*key)
+        adapter.set(prefixed, value)
+        expiration?.let { adapter.expire(prefixed, it) }
+    }
+
+    suspend fun getString(vararg key: String): String? = adapter.get(keyManager.toKey(*key))
 
     companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, Storage> {
         override val key = AttributeKey<Storage>("Storage")
