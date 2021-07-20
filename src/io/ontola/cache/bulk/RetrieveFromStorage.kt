@@ -11,13 +11,12 @@ import io.ontola.cache.util.measured
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
 internal suspend fun PipelineContext<Unit, ApplicationCall>.readFromStorage(
     requested: List<CacheRequest>,
-): MutableMap<String, CacheEntry> = measured("readFromStorage") {
+): Map<String, CacheEntry> = measured("readFromStorage") {
     val lang = call.session.language()
     val storage = call.application.storage
 
     requested
         .map { req -> req.iri to storage.getCacheEntry(req.iri, lang) }
-        .filter { it.second != null }
-        .associateBy({ it.first }, { it.second!! })
-        .toMutableMap()
+        .mapNotNull { it.second }
+        .associateBy { it.iri }
 }

@@ -13,6 +13,7 @@ import io.ontola.cache.plugins.session
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.measured
 import java.util.Locale
+import kotlin.time.ExperimentalTime
 
 @OptIn(KtorExperimentalLocationsAPI::class)
 @Location("/link-lib/bulk")
@@ -28,6 +29,17 @@ fun ratio(tot: Int, part: Int): String {
     return "%.2f".format(Locale.ENGLISH, part.toDouble() / tot)
 }
 
+fun PipelineContext<Unit, ApplicationCall>.checkInvariant(requested: List<CacheRequest>, entries: List<CacheEntry>) {
+    if (entries.size != requested.size) {
+        call.logger.warn("Requested ${requested.size}, serving ${entries.size}")
+    } else {
+        val diffPos = requested.map { it.iri } - entries.map { it.iri }
+        val diffNeg = entries.map { it.iri } - requested.map { it.iri }
+        call.logger.warn("Request / serve diff ${diffPos + diffNeg}")
+    }
+}
+
+@OptIn(ExperimentalTime::class)
 fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit = {
     val updatedEntries = measured("handler hot") {
         val requested = requestedResources()
@@ -38,16 +50,10 @@ fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit
             "Link-Cache",
             "items=${entries.size}; cached=${ratio(stats.total, stats.cached)}; public=${ratio(stats.total, stats.public)}; authorized=${ratio(stats.total, stats.authorized)}; ",
         )
-        if (entries.size != requested.size) {
-            call.logger.warn("Requested ${requested.size}, serving ${entries.size}")
-        } else {
-            val diffPos = requested.map { it.iri } - entries.map { it.key }
-            val diffNeg = entries.map { it.key } - requested.map { it.iri }
-            call.logger.warn("Request / serve diff ${diffPos + diffNeg}")
-        }
+        checkInvariant(requested, entries)
 
         call.respondText(
-            entries.toList().joinToString("\n") { (_, r) -> "${statusCode(r.iri, r.status)}\n${r.contents ?: ""}" },
+            entries.joinToString("\n") { r -> "${statusCode(r.iri, r.status)}\n${r.contents ?: ""}" },
             ContentType.parse("application/hex+x-ndjson"),
         )
 

@@ -3,6 +3,6 @@ package io.ontola.cache.bulk
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class CacheRequest(
-    val iri: String,
+open class CacheRequest(
+    open val iri: String,
 )

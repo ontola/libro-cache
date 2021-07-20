@@ -9,31 +9,81 @@ import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.services
 import io.ontola.cache.util.scopeBlankNodes
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 
-private fun CacheEntry?.isEmptyOrNotPublic() =
-    this == null || cacheControl != CacheControl.Public || contents.isNullOrEmpty()
+@OptIn(ExperimentalContracts::class)
+private fun CacheEntry?.isEmptyOrNotPublic(): Boolean {
+    contract { returns(false) implies (this@isEmptyOrNotPublic != null) }
 
-data class Stats(val total: Int, val cached: Int, val public: Int, val authorized: Int)
+    return this == null || isNotPublic() || contents.isNullOrEmpty()
+}
 
-internal suspend fun PipelineContext<Unit, ApplicationCall>.readOrFetch(
+private fun CacheEntry.isNotPublic(): Boolean {
+    return cacheControl != CacheControl.Public
+}
+
+data class Stats(val cached: Int, val public: Int, val authorized: Int) {
+    val total: Int = cached + public + authorized
+}
+
+internal class ReadResult {
+    private val _notCached = mutableListOf<CacheRequest>()
+    var notCached: List<CacheRequest> = _notCached
+        get() = field.toList()
+
+    private val _cachedNotPublic = mutableListOf<CacheEntry>()
+    var cachedNotPublic: List<CacheEntry> = _cachedNotPublic
+        get() = field.toList()
+
+    private val _cachedPublic = mutableListOf<CacheEntry>()
+    var cachedPublic: List<CacheEntry> = _cachedPublic
+        get() = field.toList()
+
+    val entirelyPublic: Boolean
+        get() = _notCached.isEmpty() && _cachedNotPublic.isEmpty()
+
+    val stats: Stats
+        get() = Stats(
+            cached = cachedNotPublic.size + cachedPublic.size,
+            authorized = notCached.size,
+            public = cachedPublic.size,
+        )
+
+    internal fun add(entry: CacheEntry) {
+        if (entry.isNotPublic()) {
+            _cachedNotPublic.add(entry)
+        } else {
+            _cachedPublic.add(entry)
+        }
+    }
+
+    internal fun add(entry: CacheRequest) {
+        _notCached.add(entry)
+    }
+}
+
+internal suspend fun PipelineContext<Unit, ApplicationCall>.readAndPartition(
     requested: List<CacheRequest>
-): Triple<MutableMap<String, CacheEntry>, List<CacheEntry>?, Stats> {
+): ReadResult {
     val entries = readFromStorage(requested)
     call.logger.debug { "Fetched ${entries.size} resources from storage" }
 
-    val (toRequest, public) = requested.partition { entries[it.iri].isEmptyOrNotPublic() }
-    val stats = Stats(requested.size, entries.size, public.size, toRequest.size)
-
-    if (toRequest.isEmpty()) {
-        call.logger.debug { "All ${requested.size} resources in cache" }
-
-        return Triple(entries, null, stats)
+    return ReadResult().apply {
+        requested.forEach { requested ->
+            entries[requested.iri].let {
+                if (it.isEmptyOrNotPublic()) {
+                    add(requested)
+                } else {
+                    add(it)
+                }
+            }
+        }
     }
+}
 
-    call.logger.debug { "Requesting ${toRequest.size} resources" }
-    call.logger.trace { "Requesting ${toRequest.joinToString(", ") { it.iri }}" }
-
-    val redisUpdate = toRequest
+suspend fun PipelineContext<Unit, ApplicationCall>.authorize(toAuthorize: List<CacheRequest>): List<CacheEntry> {
+    return toAuthorize
         .groupBy { call.services.resolve(Url(it.iri).fullPath) }
         .flatMap { (service, resources) ->
             if (service.bulk) {
@@ -43,17 +93,33 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.readOrFetch(
             }
         }
         .map {
-            val entry = CacheEntry(
+            CacheEntry(
                 iri = it.iri,
                 status = HttpStatusCode.fromValue(it.status),
                 cacheControl = it.cache,
                 contents = scopeBlankNodes(it.body),
             )
-            entries[it.iri] = entry
-
-            entry
         }
-        .filter { it.cacheControl != CacheControl.Private }
+}
 
-    return Triple(entries, redisUpdate, stats)
+internal suspend fun PipelineContext<Unit, ApplicationCall>.readOrFetch(
+    requested: List<CacheRequest>
+): Triple<List<CacheEntry>, List<CacheEntry>?, Stats> {
+    val result = readAndPartition(requested)
+
+    if (result.entirelyPublic) {
+        call.logger.debug { "All ${requested.size} resources in cache" }
+
+        return Triple(result.cachedPublic, null, result.stats)
+    }
+
+    val toAuthorize = result.notCached + result.cachedNotPublic
+
+    call.logger.debug { "Requesting ${toAuthorize.size} resources" }
+    call.logger.trace { "Requesting ${toAuthorize.joinToString(", ") { it.iri }}" }
+
+    val entries = authorize(toAuthorize)
+    val redisUpdate = entries.filter { it.cacheControl != CacheControl.Private }
+
+    return Triple(result.cachedPublic + entries, redisUpdate, result.stats)
 }
