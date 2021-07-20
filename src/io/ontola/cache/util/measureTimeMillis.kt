@@ -4,12 +4,9 @@ import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.requestTimings
-import mu.KotlinLogging
 
-private val kLogger = KotlinLogging.logger {}
-
-suspend fun <T : Any> PipelineContext<*, ApplicationCall>.measured(name: String, block: suspend () -> T): T {
-    lateinit var res: T
+suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measured(name: String, block: suspend () -> T): T {
+    var res: T
     val time = kotlin.system.measureTimeMillis {
         res = block()
     }
@@ -32,7 +29,7 @@ suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(name: Str
         }
     }
     val postfix = if (missed) "miss" else "hit"
-    this.call.requestTimings.add("$name($postfix)" to time)
+    this.call.requestTimings.add("$name;$postfix" to time)
 
     return res
 }

@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.toList
 
 internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizePlain(
     resources: List<String>,
-): List<SPIResourceResponseItem> = measured("authorizePlain(${resources.size})") {
+): List<SPIResourceResponseItem> = measured("authorizePlain;i=${resources.size}") {
     val lang = call.session.language()
 
     resources

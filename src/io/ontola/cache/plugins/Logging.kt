@@ -4,9 +4,12 @@ import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature
 import io.ktor.application.call
+import io.ktor.response.ApplicationSendPipeline
+import io.ktor.response.header
 import io.ktor.util.AttributeKey
 import mu.KLogger
 import mu.KotlinLogging
+import java.time.Instant
 import kotlin.system.measureTimeMillis
 
 /**
@@ -21,12 +24,19 @@ class Logging {
             pipeline.attributes.put(KLoggerKey, feature)
 
             pipeline.intercept(ApplicationCallPipeline.Features) {
-                this.call.attributes.put(KLoggerKey, feature)
-                this.call.attributes.put(TimingsKey, mutableListOf(Pair("tot", 0)))
+                call.attributes.put(KLoggerKey, feature)
+                call.attributes.put(TimingsKey, mutableListOf(Pair("tot", Instant.now().toEpochMilli())))
                 val time = measureTimeMillis {
-                    this.proceed()
+                    proceed()
                 }
                 this.call.attributes[TimingsKey][0] = Pair("tot", time)
+            }
+            pipeline.sendPipeline.intercept(ApplicationSendPipeline.After) {
+                call.attributes[TimingsKey][0] = Pair("tot", Instant.now().toEpochMilli() - call.attributes[TimingsKey][0].second)
+                call.response.header(
+                    "Server-Timing",
+                    call.attributes[TimingsKey].joinToString(", ") { "${it.first};dur=${it.second}" },
+                )
             }
 
             return feature

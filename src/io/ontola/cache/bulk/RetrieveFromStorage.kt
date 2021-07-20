@@ -6,15 +6,16 @@ import io.ktor.util.pipeline.PipelineContext
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.ontola.cache.plugins.session
 import io.ontola.cache.plugins.storage
+import io.ontola.cache.util.measured
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
 internal suspend fun PipelineContext<Unit, ApplicationCall>.readFromStorage(
     requested: List<CacheRequest>,
-): MutableMap<String, CacheEntry> {
+): MutableMap<String, CacheEntry> = measured("readFromStorage") {
     val lang = call.session.language()
     val storage = call.application.storage
 
-    return requested
+    requested
         .map { req -> req.iri to storage.getCacheEntry(req.iri, lang) }
         .filter { it.second != null }
         .associateBy({ it.first }, { it.second!! })

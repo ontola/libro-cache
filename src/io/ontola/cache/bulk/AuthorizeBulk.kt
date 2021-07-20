@@ -19,7 +19,7 @@ import kotlinx.serialization.json.Json
 
 internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
     resources: List<String>,
-): List<SPIResourceResponseItem> = measured("authorizeBulk(${resources.size})") {
+): List<SPIResourceResponseItem> = measured("authorizeBulk;i=${resources.size}") {
     val lang = call.session.language()
     val prefix = call.tenant.websiteIRI.encodedPath.split("/").getOrNull(1)?.let { "/$it" } ?: ""
 

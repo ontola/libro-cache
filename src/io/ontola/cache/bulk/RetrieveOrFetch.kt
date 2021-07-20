@@ -13,18 +13,21 @@ import io.ontola.cache.util.scopeBlankNodes
 private fun CacheEntry?.isEmptyOrNotPublic() =
     this == null || cacheControl != CacheControl.Public || contents.isNullOrEmpty()
 
+data class Stats(val total: Int, val cached: Int, val public: Int, val authorized: Int)
+
 internal suspend fun PipelineContext<Unit, ApplicationCall>.readOrFetch(
     requested: List<CacheRequest>
-): Pair<MutableMap<String, CacheEntry>, List<CacheEntry>?> {
+): Triple<MutableMap<String, CacheEntry>, List<CacheEntry>?, Stats> {
     val entries = readFromStorage(requested)
     call.logger.debug { "Fetched ${entries.size} resources from storage" }
 
-    val toRequest = requested.filter { entries[it.iri].isEmptyOrNotPublic() }
+    val (toRequest, public) = requested.partition { entries[it.iri].isEmptyOrNotPublic() }
+    val stats = Stats(requested.size, entries.size, public.size, toRequest.size)
 
     if (toRequest.isEmpty()) {
-        call.logger.debug("All ${requested.size} resources in cache")
+        call.logger.debug { "All ${requested.size} resources in cache" }
 
-        return Pair(entries, null)
+        return Triple(entries, null, stats)
     }
 
     call.logger.debug { "Requesting ${toRequest.size} resources" }
@@ -52,5 +55,5 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.readOrFetch(
         }
         .filter { it.cacheControl != CacheControl.Private }
 
-    return Pair(entries, redisUpdate)
+    return Triple(entries, redisUpdate, stats)
 }

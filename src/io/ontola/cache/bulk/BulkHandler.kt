@@ -5,27 +5,39 @@ import io.ktor.application.call
 import io.ktor.http.ContentType
 import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Location
+import io.ktor.response.header
 import io.ktor.response.respondText
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.session
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.measured
+import java.util.Locale
 
 @OptIn(KtorExperimentalLocationsAPI::class)
 @Location("/link-lib/bulk")
 class Bulk
 
-fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit = {
-    var updatedEntries: List<CacheEntry>? = null
+fun ratio(tot: Int, part: Int): String {
+    if (tot == 0) {
+        return "1.00"
+    } else if (part == 0) {
+        return "0.00"
+    }
 
-    measured("handler hot") {
-        // TODO: handle empty request
+    return "%.2f".format(Locale.ENGLISH, part.toDouble() / tot)
+}
+
+fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit = {
+    val updatedEntries = measured("handler hot") {
         val requested = requestedResources()
         call.logger.debug { "Fetching ${requested.size} resources from cache" }
 
-        val (entries, updates) = readOrFetch(requested)
-        updatedEntries = updates
+        val (entries, updates, stats) = readOrFetch(requested)
+        call.response.header(
+            "Link-Cache",
+            "items=${entries.size}; cached=${ratio(stats.total, stats.cached)}; public=${ratio(stats.total, stats.public)}; authorized=${ratio(stats.total, stats.authorized)}; ",
+        )
         if (entries.size != requested.size) {
             call.logger.warn("Requested ${requested.size}, serving ${entries.size}")
         } else {
@@ -38,6 +50,8 @@ fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit
             entries.toList().joinToString("\n") { (_, r) -> "${statusCode(r.iri, r.status)}\n${r.contents ?: ""}" },
             ContentType.parse("application/hex+x-ndjson"),
         )
+
+        updates
     }
 
     measured("handler cold") {
