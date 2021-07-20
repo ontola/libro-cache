@@ -4,6 +4,7 @@ import com.bugsnag.Bugsnag
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature
 import io.ktor.application.call
+import io.ktor.client.HttpClient
 import io.ktor.config.ApplicationConfig
 import io.ktor.util.AttributeKey
 import io.ktor.utils.io.printStack
@@ -120,9 +121,11 @@ data class CacheConfig(
      * Omit to disable expiration.
      */
     val cacheExpiration: Long? = null,
+    /**
+     * Client to use for requests to external systems.
+     */
+    val client: HttpClient,
 ) {
-    val client by lazy { createClient(testing) }
-
     private val logger = KotlinLogging.logger {}
 
     private val reportingService: Bugsnag? = if (reportingKey.isNullOrBlank()) {
@@ -133,7 +136,11 @@ data class CacheConfig(
     }
 
     companion object {
-        fun fromEnvironment(config: ApplicationConfig, testing: Boolean): CacheConfig {
+        fun fromEnvironment(
+            config: ApplicationConfig,
+            testing: Boolean,
+            client: HttpClient = createClient(),
+        ): CacheConfig {
 
             val cacheConfig = config.config("cache")
             val cacheSession = cacheConfig.config("session")
@@ -236,6 +243,7 @@ data class CacheConfig(
                 enableInvalidator = true, // TODO
                 reportingKey = cacheConfig.propertyOrNull("reportingKey")?.toString(),
                 cacheExpiration = cacheConfig.propertyOrNull("cacheExpiration")?.toString()?.toLongOrNull(),
+                client = client,
             )
         }
     }

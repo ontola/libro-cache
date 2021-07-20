@@ -15,8 +15,10 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
+import io.ktor.http.takeFrom
 import io.ktor.request.ApplicationRequest
 import io.ktor.request.header
 import io.ktor.request.path
@@ -238,17 +240,17 @@ private suspend fun PipelineContext<Unit, ApplicationCall>.getTenant(
     originalReq: ApplicationRequest,
     configuration: Tenantization.Configuration,
 ): TenantFinderResponse = measured("getTenant") {
-    val response = configuration.client.get<TenantFinderResponse>(call.services.route("/_public/spi/find_tenant")) {
+    val resourceIri = closeToWebsiteIRI(originalReq.path(), originalReq.headers, configuration.logger)
+
+    val response = configuration.client.get<TenantFinderResponse> {
+        url.apply {
+            takeFrom(call.services.route("/_public/spi/find_tenant"))
+            parameters["iri"] = resourceIri
+        }
         headers {
             header("Accept", ContentType.Application.Json)
-            header("Content-Type", ContentType.Application.Json)
-            copy("Accept-Language", originalReq)
-            header("X-Forwarded-Host", originalReq.header("Host"))
-            copy("X-Forwarded-Proto", originalReq)
-            copy("X-Forwarded-Ssl", originalReq)
             copy("X-Request-Id", originalReq)
         }
-        body = TenantFinderRequest(closeToWebsiteIRI(originalReq, configuration.logger))
     }
     val proto = originalReq.header("X-Forwarded-Proto") ?: originalReq.header("scheme") ?: "http"
     response.websiteBase = "$proto://${response.iriPrefix}"
@@ -256,19 +258,19 @@ private suspend fun PipelineContext<Unit, ApplicationCall>.getTenant(
     response
 }
 
-private fun closeToWebsiteIRI(originalReq: ApplicationRequest, logger: KLogger): String {
-    val path = originalReq.path()
+internal fun closeToWebsiteIRI(requestPath: String, headers: Headers, logger: KLogger): String {
+    val path = requestPath.removeSuffix("link-lib/bulk")
     val authority = listOf("X-Forwarded-Host", "origin", "host", "authority")
-        .find { header -> originalReq.header(header) != null }
-        ?.let { header -> originalReq.header(header)!! }
+        .find { header -> headers[header] != null }
+        ?.let { header -> headers[header]!! }
         ?: throw Exception("No header usable for authority present")
 
 //        if (authority.contains(':')) {
 //            return "$authority$path"
 //        }
 
-    val proto = originalReq.header("X-Forwarded-Proto")
-        ?: originalReq.header("X-Forwarded-Proto")
+    val proto = headers["X-Forwarded-Proto"]
+        ?: headers["origin"]?.split(":")?.firstOrNull()
         ?: throw Exception("No Forwarded host nor authority scheme")
 
     val authoritativeOrigin = if (authority.contains(':')) {
@@ -277,11 +279,11 @@ private fun closeToWebsiteIRI(originalReq: ApplicationRequest, logger: KLogger):
         "$proto://$authority"
     }
 
-    return originalReq.header("Website-IRI")
+    return headers["Website-IRI"]
         ?.let { websiteIRI ->
             if (Url(websiteIRI).origin() != authoritativeOrigin) {
                 logger.warn("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")
             }
             websiteIRI
-        } ?: "${authoritativeOrigin.dropLast(authoritativeOrigin.endsWith('/').toInt())}$path"
+        } ?: "$authoritativeOrigin$path".let { it.dropLast(it.endsWith('/').toInt()) }
 }

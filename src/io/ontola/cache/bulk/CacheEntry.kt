@@ -7,4 +7,8 @@ data class CacheEntry(
     val status: HttpStatusCode = HttpStatusCode.NotFound,
     val cacheControl: CacheControl = CacheControl.NoCache,
     val contents: String? = null,
-)
+) {
+    companion object {
+        val fields = arrayOf("iri", "status", "cacheControl", "contents")
+    }
+}

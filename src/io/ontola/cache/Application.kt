@@ -3,6 +3,7 @@ package io.ontola.cache
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
+import io.ktor.client.HttpClient
 import io.ktor.features.CallLogging
 import io.ktor.features.Compression
 import io.ktor.features.ContentNegotiation
@@ -47,8 +48,12 @@ fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 @OptIn(KtorExperimentalLocationsAPI::class, io.lettuce.core.ExperimentalLettuceCoroutinesApi::class)
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
-fun Application.module(testing: Boolean = false, storage: StorageAdapter<String, String>? = null) {
-    val config = CacheConfig.fromEnvironment(environment.config, testing)
+fun Application.module(
+    testing: Boolean = false,
+    storage: StorageAdapter<String, String>? = null,
+    client: HttpClient = createClient(),
+) {
+    val config = CacheConfig.fromEnvironment(environment.config, testing, client)
 
     install(Logging)
 
@@ -135,7 +140,7 @@ fun Application.module(testing: Boolean = false, storage: StorageAdapter<String,
             "/f_assets/",
             "/__webpack_hmr"
         )
-        this.client = createClient(testing)
+        this.client = client
     }
 
     install(LibroSession) {

@@ -6,20 +6,20 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.util.AttributeKey
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.FlushMode
-import io.lettuce.core.KeyValue
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.CacheEntry
 import io.ontola.cache.util.KeyManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.fold
+import kotlinx.coroutines.flow.map
 
 interface StorageAdapter<K : Any, V : Any> {
     suspend fun expire(key: K, seconds: Long): Boolean?
 
     suspend fun get(key: K): V?
 
-    fun hmget(key: K, vararg fields: K): Flow<KeyValue<K, V>>
+    fun hmget(key: K, vararg fields: K): Flow<Pair<K, V?>>
 
     suspend fun hset(key: K, map: Map<K, V>): Long?
 
@@ -34,8 +34,8 @@ class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : Storag
         return expire(key, seconds)
     }
 
-    override fun hmget(key: String, vararg fields: String): Flow<KeyValue<String, String>> {
-        return client.hmget(key, *fields)
+    override fun hmget(key: String, vararg fields: String): Flow<Pair<String, String?>> {
+        return client.hmget(key, *fields).map { Pair(it.key, it.getValueOrElse(null)) }
     }
 
     override suspend fun hset(key: String, map: Map<String, String>): Long? {
@@ -73,9 +73,11 @@ class Storage(
         val key = keyManager.toKey(iri, lang)
 
         val hash = adapter
-            .hmget(key, "iri", "status", "cacheControl", "contents")
-            .fold<KeyValue<String, String>, MutableMap<String, String>>(mutableMapOf()) { e, h ->
-                h.ifHasValue { e[h.key] = it }
+            .hmget(key, *CacheEntry.fields)
+            .fold<Pair<String, String?>, MutableMap<String, String>>(mutableMapOf()) { e, (key, value) ->
+                value?.let {
+                    e[key] = it
+                }
                 e
             }
 
@@ -106,10 +108,9 @@ class Storage(
                 }
             )
             .forEach {
-                val key = keyManager.toKey(it.key, lang)
-                adapter.hset(key, it.value)
+                adapter.hset(it.key, it.value)
                 expiration?.let { cacheExpiration ->
-                    adapter.expire(key, cacheExpiration)
+                    adapter.expire(it.key, cacheExpiration)
                 }
             }
     }

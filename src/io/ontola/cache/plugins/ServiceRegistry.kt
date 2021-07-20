@@ -6,6 +6,7 @@ import io.ktor.application.ApplicationFeature
 import io.ktor.application.call
 import io.ktor.application.feature
 import io.ktor.config.ApplicationConfig
+import io.ktor.http.Url
 import io.ktor.util.AttributeKey
 import kotlin.properties.Delegates
 
@@ -17,11 +18,11 @@ data class Service(
 )
 
 data class Services(val services: List<Service>) {
-    fun route(path: String): String {
+    fun route(path: String): Url {
         val service = services.find { service -> service.match.containsMatchIn(path) }
             ?: throw IllegalStateException("No service matched")
 
-        return "${service.url}$path"
+        return Url("${service.url}$path")
     }
 
     fun resolve(path: String): Service {
