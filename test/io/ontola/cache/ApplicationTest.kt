@@ -101,7 +101,7 @@ class ApplicationTest {
                     isA(resource1, "http://schema.org/Thing"),
                     statusCode(resource2, HttpStatusCode.OK),
                     isA(resource2, "http://example.com/Thing"),
-                ).joinToString("\n")
+                ).joinToString("\n", postfix = "\n")
 
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertEquals(payload, response.content)
