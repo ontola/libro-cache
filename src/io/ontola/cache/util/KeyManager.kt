@@ -1,18 +1,18 @@
 package io.ontola.cache.util
 
-import io.ontola.cache.plugins.CacheConfig
+import io.ontola.cache.plugins.RedisConfig
 import java.net.URLEncoder
 
 class KeyManager(
-    config: CacheConfig,
+    config: RedisConfig,
 ) {
-    private val separator = config.redis.separator
-    private val encodedSeparator = URLEncoder.encode(config.redis.separator, "utf-8")
-    private val cacheEntryPrefix = config.redis.cacheEntryPrefix
+    private val separator = config.separator
+    private val encodedSeparator = URLEncoder.encode(config.separator, "utf-8")
+    private val cacheEntryPrefix = config.cacheEntryPrefix
 
     private val cachePrefixes = listOfNotNull(
-        config.redis.rootPrefix,
-        config.redis.cachePrefix,
+        config.rootPrefix,
+        config.cachePrefix,
     ).toTypedArray()
     private val cachePrefix = cachePrefixes.joinToString(separator) + ":"
 

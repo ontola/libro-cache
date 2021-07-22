@@ -86,7 +86,7 @@ fun Application.module(testing: Boolean = false) {
                 val args = XReadArgs().apply {
                     block(Long.MAX_VALUE)
                 }
-                val keyManager = KeyManager(config)
+                val keyManager = KeyManager(config.redis)
 
                 while (true) {
                     streamRedisConn

@@ -10,7 +10,7 @@ class KeyManagerTest {
     fun testToKey() {
         withTestApplication {
             val config = CacheConfig.fromEnvironment(environment.config, true)
-            val man = KeyManager(config)
+            val man = KeyManager(config.redis)
 
             val key = man.toEntryKey("https://example.com/resource/1", "en")
 
@@ -22,7 +22,7 @@ class KeyManagerTest {
     fun testFromKey() {
         withTestApplication {
             val config = CacheConfig.fromEnvironment(environment.config, true)
-            val man = KeyManager(config)
+            val man = KeyManager(config.redis)
 
             val (key, lang) = man.fromEntryKey("cache:entry:https%3A//example.com/resource/1:en")
 
