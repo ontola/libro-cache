@@ -13,6 +13,9 @@ import io.ontola.cache.util.KeyManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
+import java.time.Instant
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
 interface StorageAdapter<K : Any, V : Any> {
     suspend fun expire(key: K, seconds: Long): Boolean?
@@ -55,11 +58,15 @@ class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : Storag
     }
 }
 
+typealias TempString = Pair<Long, String>
+
 class Storage(
     private val adapter: StorageAdapter<String, String>,
     private val keyManager: KeyManager,
-    private val expiration: Long?
+    private val expiration: Long?,
 ) {
+    private val strings: MutableMap<String, TempString> = mutableMapOf()
+
     class Configuration {
         lateinit var adapter: StorageAdapter<String, String>
         lateinit var keyManager: KeyManager
@@ -115,13 +122,29 @@ class Storage(
             }
     }
 
+    @OptIn(ExperimentalTime::class)
     suspend fun setString(vararg key: String, value: String, expiration: Long?) {
         val prefixed = keyManager.toKey(*key)
         adapter.set(prefixed, value)
-        expiration?.let { adapter.expire(prefixed, it) }
+        expiration?.let {
+            val expiresAt = Instant.now().plusMillis(Duration.seconds(expiration).inWholeMilliseconds).toEpochMilli()
+            strings[prefixed] = Pair(expiresAt, value)
+            adapter.expire(prefixed, it)
+        }
     }
 
-    suspend fun getString(vararg key: String): String? = adapter.get(keyManager.toKey(*key))
+    suspend fun getString(vararg key: String): String? {
+        val prefixed = keyManager.toKey(*key)
+        strings[prefixed]?.let { (exp, value) ->
+            if (Instant.now().toEpochMilli() < exp) {
+                return value
+            } else {
+                strings.remove(prefixed)
+            }
+        }
+
+        return adapter.get(prefixed)
+    }
 
     companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, Storage> {
         override val key = AttributeKey<Storage>("Storage")
@@ -129,7 +152,7 @@ class Storage(
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Storage {
             val config = Configuration()
                 .apply {
-                    keyManager = KeyManager(pipeline.cacheConfig)
+                    keyManager = KeyManager(pipeline.cacheConfig.redis)
                 }.apply(configure)
 
             val feature = Storage(
