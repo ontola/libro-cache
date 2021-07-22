@@ -37,7 +37,6 @@ import kotlinx.serialization.json.Json
 import mu.KLogger
 import mu.KotlinLogging
 import kotlin.properties.Delegates
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @Serializable
@@ -257,7 +256,7 @@ class Tenantization(private val configuration: Configuration) {
 @OptIn(ExperimentalTime::class)
 private fun PipelineContext<*, ApplicationCall>.cachedLookup(
     prefix: String,
-    expiration: Long = Duration.minutes(10).inWholeSeconds,
+    expiration: Long,
     block: suspend (v: String) -> String?,
 ): suspend (v: String) -> String? {
     if (expiration == 0L) {

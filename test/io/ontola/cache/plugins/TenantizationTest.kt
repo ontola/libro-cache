@@ -16,7 +16,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class TenantizationTest {
-    @org.junit.Test
+    @Test
     fun testKtorPathStartsWithSlash() {
         withTestApplication({ module(testing = true) }) {
             handleRequest(HttpMethod.Get, "/") {
