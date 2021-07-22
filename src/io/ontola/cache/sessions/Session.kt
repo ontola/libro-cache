@@ -82,7 +82,7 @@ class Session(
     suspend fun language(): String = claimsFromJWT()?.user?.language
         ?: configuration.cacheConfig.defaultLanguage
 
-    private suspend fun claimsFromJWT(): Claims? = try {
+    suspend fun claimsFromJWT(): Claims? = try {
         legacySession()?.claims(configuration.jwtValidator)
     } catch (e: JWTVerificationException) {
         configuration.cacheConfig.notify(e)

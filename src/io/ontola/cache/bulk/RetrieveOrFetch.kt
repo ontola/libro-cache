@@ -1,11 +1,9 @@
 package io.ontola.cache.bulk
 
 import io.ktor.application.ApplicationCall
-import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.fullPath
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.services
 import io.ontola.cache.util.scopeBlankNodes
@@ -15,7 +13,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import java.io.Writer
 
-internal suspend fun PipelineContext<Unit, ApplicationCall>.readOrFetch(
+internal suspend fun ApplicationCall.readOrFetch(
     result: ReadResult,
     writer: Writer,
 ): List<CacheEntry>? = coroutineScope {
@@ -31,8 +29,8 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.readOrFetch(
 
         val toAuthorize = result.notCached + result.cachedNotPublic
 
-        call.logger.debug { "Requesting ${toAuthorize.size} resources" }
-        call.logger.trace { "Requesting ${toAuthorize.joinToString(", ") { it.iri }}" }
+        logger.debug { "Requesting ${toAuthorize.size} resources" }
+        logger.trace { "Requesting ${toAuthorize.joinToString(", ") { it.iri }}" }
 
         val entries = authorize(toAuthorize)
 
@@ -49,9 +47,9 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.readOrFetch(
     }
 }
 
-private suspend fun PipelineContext<Unit, ApplicationCall>.authorize(toAuthorize: List<CacheRequest>): List<CacheEntry> {
+private suspend fun ApplicationCall.authorize(toAuthorize: List<CacheRequest>): List<CacheEntry> {
     return toAuthorize
-        .groupBy { call.services.resolve(Url(it.iri).fullPath) }
+        .groupBy { services.resolve(Url(it.iri).fullPath) }
         .flatMap { (service, resources) ->
             if (service.bulk) {
                 authorizeBulk(resources.map { e -> e.iri })

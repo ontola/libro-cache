@@ -27,11 +27,11 @@ val hexJson = ContentType.parse("application/hex+x-ndjson")
 fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit = {
     var updatedEntries: List<CacheEntry>? = null
 
-    measured("handler hot") {
-        val requested = requestedResources()
+    call.measured("handler hot") {
+        val requested = call.requestedResources()
         call.logger.debug { "Fetching ${requested.size} resources from cache" }
 
-        val result = readAndPartition(requested)
+        val result = call.readAndPartition(requested)
         call.response.header("Link-Cache", result.stats.toString())
 
         if (result.entirelyPublic) {
@@ -40,12 +40,12 @@ fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit
 
         val output = ByteArrayOutputStream()
         output.writer(Charset.defaultCharset()).use {
-            updatedEntries = readOrFetch(result, it)
+            updatedEntries = call.readOrFetch(result, it)
         }
         call.respondBytes(output.toByteArray(), hexJson, HttpStatusCode.OK)
     }
 
-    measured("handler cold") {
+    call.measured("handler cold") {
         updatedEntries?.let {
             if (it.isNotEmpty()) {
                 call.logger.debug { "Updating redis after responding (${it.size} entries)" }

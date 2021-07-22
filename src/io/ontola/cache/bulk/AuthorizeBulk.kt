@@ -1,14 +1,12 @@
 package io.ontola.cache.bulk
 
 import io.ktor.application.ApplicationCall
-import io.ktor.application.call
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.url
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.session
@@ -17,16 +15,16 @@ import io.ontola.cache.util.measured
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
-internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
+internal suspend fun ApplicationCall.authorizeBulk(
     resources: List<String>,
 ): List<SPIResourceResponseItem> = measured("authorizeBulk;i=${resources.size}") {
-    val lang = call.session.language()
-    val prefix = call.tenant.websiteIRI.encodedPath.split("/").getOrNull(1)?.let { "/$it" } ?: ""
+    val lang = session.language()
+    val prefix = tenant.websiteIRI.encodedPath.split("/").getOrNull(1)?.let { "/$it" } ?: ""
 
-    val res: String = call.application.cacheConfig.client.post {
-        url(call.services.route("$prefix/spi/bulk"))
+    val res: String = application.cacheConfig.client.post {
+        url(services.route("$prefix/spi/bulk"))
         contentType(ContentType.Application.Json)
-        initHeaders(call, lang)
+        initHeaders(this@authorizeBulk, lang)
         headers {
             header("Accept", ContentType.Application.Json)
             header("Content-Type", ContentType.Application.Json)

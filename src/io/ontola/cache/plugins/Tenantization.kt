@@ -165,6 +165,21 @@ private fun Boolean.toInt(): Int = if (this) 1 else 0
 class TenantizationNotYetConfiguredException :
     IllegalStateException("Libro tenantization are not yet ready: you are asking it to early before the Tenantization feature.")
 
+fun ApplicationCall.setTenantFromWebsiteIRI(iri: Url) {
+    val baseOrigin = iri.copy(encodedPath = "")
+    val currentIRI = Url("$baseOrigin${request.path()}")
+
+    attributes.put(
+        TenantizationKey,
+        TenantData(
+            isBlackListed = false,
+            websiteIRI = iri,
+            websiteOrigin = baseOrigin,
+            currentIRI = currentIRI
+        )
+    )
+}
+
 class Tenantization(private val configuration: Configuration) {
     private val logger = KotlinLogging.logger {}
 
@@ -206,18 +221,7 @@ class Tenantization(private val configuration: Configuration) {
         try {
             val websiteBase = context.getWebsiteBase()
 
-            val baseOrigin = websiteBase.copy(encodedPath = "")
-            val currentIRI = Url("$baseOrigin${context.call.request.path()}")
-
-            context.call.attributes.put(
-                TenantizationKey,
-                TenantData(
-                    isBlackListed = false,
-                    websiteIRI = websiteBase,
-                    websiteOrigin = baseOrigin,
-                    currentIRI = currentIRI
-                )
-            )
+            context.call.setTenantFromWebsiteIRI(websiteBase)
         } catch (e: ResponseException) {
             when (val status = e.response.status) {
                 HttpStatusCode.NotFound -> throw TenantNotFoundException()
@@ -265,7 +269,7 @@ private fun PipelineContext<*, ApplicationCall>.cachedLookup(
     }
 
     return { dependency ->
-        measuredHit(
+        call.measuredHit(
             prefix,
             {
                 application.storage.getString(prefix, dependency)
@@ -299,7 +303,7 @@ private suspend fun PipelineContext<*, ApplicationCall>.getTenant(
 }
 
 internal fun closeToWebsiteIRI(requestPath: String, headers: Headers, logger: KLogger): String {
-    val path = requestPath.removeSuffix("link-lib/bulk")
+    val path = requestPath.removeSuffix("link-lib/bulk").removeSuffix("link-lib/socket")
     val authority = listOf("X-Forwarded-Host", "origin", "host", "authority")
         .find { header -> headers[header] != null }
         ?.let { header -> headers[header]!! }
