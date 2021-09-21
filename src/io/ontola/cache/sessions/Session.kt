@@ -12,6 +12,8 @@ import kotlinx.serialization.properties.Properties
 import kotlinx.serialization.properties.encodeToMap
 import mu.KotlinLogging
 
+private val json = Json { ignoreUnknownKeys = true }
+
 @Serializable
 data class UserData(
     val type: String,
@@ -52,7 +54,7 @@ class Session(
     /**
      * Retrieves session information from redis referenced by a libro koa server cookie.
      */
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    @OptIn(ExperimentalLettuceCoroutinesApi::class, ExperimentalSerializationApi::class)
     suspend fun legacySession(): LegacySession? {
         if (session != null) {
             return session
@@ -67,7 +69,7 @@ class Session(
             return LegacySession()
         }
 
-        session = configuration.adapter.get(sessionId)?.let { Json.decodeFromString(it) }
+        session = configuration.adapter.get(sessionId)?.let { json.decodeFromString(it) }
 
         if (session == null) {
             logger.warn("Session not found")
