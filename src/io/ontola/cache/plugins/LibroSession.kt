@@ -13,13 +13,14 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.ontola.cache.sessions.Session
 import io.ontola.cache.sessions.SessionRefresher
 
+fun splitCookieWithInvalidName(value: String?, cookieName: String): String? = value
+    ?.split(";")
+    ?.map { it.split("=").map { it.trim() } }
+    ?.firstOrNull { it[0] == cookieName }
+    ?.last()
+
 fun getCookieWithInvalidName(call: ApplicationCall, cookieName: String): String? {
-    return call.request
-        .header("Cookie")
-        ?.split(";")
-        ?.map { it.split("=").map { it.trim() } }
-        ?.firstOrNull { it[0] == cookieName }
-        ?.last()
+    return splitCookieWithInvalidName(call.request.header("Cookie"), cookieName)
 }
 
 class LibroSession(private val configuration: Configuration) {
