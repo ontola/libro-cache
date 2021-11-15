@@ -3,6 +3,7 @@ package io.ontola.cache.util
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.util.pipeline.PipelineContext
+import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.requestTimings
 
 suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measured(name: String, block: suspend () -> T): T {
@@ -29,6 +30,13 @@ suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(name: Str
         }
     }
     val postfix = if (missed) "miss" else "hit"
+    call.logger.debug {
+        if (missed) {
+            "[cache] $postfix for $name"
+        } else {
+            "[cache] $postfix for $name"
+        }
+    }
     this.call.requestTimings.add("$name;$postfix" to time)
 
     return res

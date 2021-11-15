@@ -14,33 +14,51 @@ import io.ktor.http.fullPath
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.ontola.cache.plugins.LibroSession
 import io.ontola.cache.util.configureClientLogging
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Serializable
 data class OIDCTokenResponse(
-    val access_token: String,
-    val token_type: String,
-    val expires_in: Long,
-    val refresh_token: String,
+    @SerialName("access_token")
+    val accessToken: String,
+    @SerialName("token_type")
+    val tokenType: String,
+    @SerialName("expires_in")
+    val expiresIn: Long,
+    @SerialName("refresh_token")
+    val refreshToken: String,
     val scope: String,
-    val created_at: Long,
+    @SerialName("created_at")
+    val createdAt: Long,
 )
 
 @Serializable
 data class OIDCRequest(
-    val client_id: String,
-    val client_secret: String,
-    val grant_type: String,
-    val refresh_token: String,
+    @SerialName("client_id")
+    val clientId: String,
+    @SerialName("client_secret")
+    val clientSecret: String,
+    @SerialName("grant_type")
+    val grantType: String,
+    @SerialName("refresh_token")
+    val refreshToken: String? = null,
+    val scope: String? = null,
 ) {
     companion object {
+        fun guestRequest(clientId: String, clientSecret: String): OIDCRequest = OIDCRequest(
+            clientId,
+            clientSecret,
+            grantType = "password",
+            scope = "guest"
+        )
+
         fun refreshRequest(clientId: String, clientSecret: String, refreshToken: String): OIDCRequest = OIDCRequest(
-            client_id = clientId,
-            client_secret = clientSecret,
-            grant_type = "refresh_token",
-            refresh_token = refreshToken,
+            clientId = clientId,
+            clientSecret = clientSecret,
+            grantType = "refresh_token",
+            refreshToken = refreshToken,
         )
     }
 }
@@ -51,8 +69,8 @@ class SessionRefresher(private val configuration: LibroSession.Configuration) {
         val refreshToken = session.refreshToken ?: throw Exception("No refreshToken present")
         val refreshResponse = refreshToken(userToken, refreshToken)
         val newSession = session.copy(
-            refreshToken = refreshResponse.refresh_token,
-            userToken = refreshResponse.access_token,
+            refreshToken = refreshResponse.refreshToken,
+            userToken = refreshResponse.accessToken,
         )
         storeSession(sessionId, newSession)
 

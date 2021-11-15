@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val bugsnag_version: String by project
 val ktor_version: String by project
+val kotlin_css_version: String by project
 val kotlin_version: String by project
 val coroutines_version: String by project
 val logback_version: String by project
@@ -19,6 +20,10 @@ version = "1.0.0"
 
 application {
     mainClassName = "io.ktor.server.cio.EngineMain"
+
+    if (System.getenv("KTOR_ENV") == "development") {
+        applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
+    }
 }
 
 repositories {
@@ -53,13 +58,15 @@ dependencies {
     implementation("io.ktor:ktor-client-serialization:$ktor_version")
     implementation("io.ktor:ktor-client-gson:$ktor_version")
     implementation("io.ktor:ktor-client-logging-jvm:$ktor_version")
+    implementation("io.ktor:ktor-html-builder:$ktor_version")
     implementation("io.ktor:ktor-server-core:$ktor_version")
     implementation("io.ktor:ktor-locations:$ktor_version")
     implementation("io.ktor:ktor-metrics:$ktor_version")
     implementation("io.ktor:ktor-server-host-common:$ktor_version")
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
-
     implementation("io.ktor:ktor-serialization:$ktor_version")
+
+    implementation("org.jetbrains.kotlin-wrappers:kotlin-css:$kotlin_css_version")
 
     implementation("commons-codec:commons-codec:1.15")
 

@@ -11,7 +11,7 @@ import io.ktor.http.contentType
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.services
-import io.ontola.cache.plugins.session
+import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.plugins.tenant
 import io.ontola.cache.util.measured
 import kotlinx.serialization.decodeFromString
@@ -20,7 +20,7 @@ import kotlinx.serialization.json.Json
 internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
     resources: List<String>,
 ): List<SPIResourceResponseItem> = measured("authorizeBulk;i=${resources.size}") {
-    val lang = call.session.language()
+    val lang = call.sessionManager.language
     val prefix = call.tenant.websiteIRI.encodedPath.split("/").getOrNull(1)?.let { "/$it" } ?: ""
 
     val res: String = call.application.cacheConfig.client.post {

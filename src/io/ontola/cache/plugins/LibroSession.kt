@@ -35,6 +35,10 @@ class LibroSession(private val configuration: Configuration) {
         lateinit var oidcClientId: String
         lateinit var oidcClientSecret: String
         lateinit var oidcUrl: String
+
+        suspend fun accessToken(): String {
+            return "TODO"
+        }
     }
 
     private fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
@@ -49,8 +53,11 @@ class LibroSession(private val configuration: Configuration) {
         val sessionData = Session(
             configuration = configuration,
             refresher = refresher,
+            tenantData = context.call.tenant,
             sessionId = sessionId,
-            sessionSig = sessionSig
+            sessionSig = sessionSig,
+            lang = context.call.request.header("Accept-Language"),
+            host = context.call.request.header("Host"),
         )
         context.call.attributes.put(LibroSessionKey, sessionData)
     }

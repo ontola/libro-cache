@@ -10,6 +10,7 @@ import io.ktor.util.AttributeKey
 import io.ktor.utils.io.printStack
 import io.lettuce.core.RedisURI
 import io.ontola.cache.createClient
+import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
@@ -31,6 +32,10 @@ data class SessionsConfig(
      * The secret to identify this client.
      */
     val clientSecret: String,
+    /**
+     * TODO: Refactor away
+     */
+    val oAuthToken: String,
     /**
      * Name of the legacy koa cookie that holds the session id
      */
@@ -132,6 +137,11 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
      * Client to use for requests to external systems.
      */
     val client: HttpClient,
+    val serializer: Json = Json {
+        encodeDefaults = true
+        isLenient = false
+        ignoreUnknownKeys = false
+    },
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -161,14 +171,18 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
                     clientId = "0",
                     clientSecret = "",
                     oidcUrl = "",
+                    oAuthToken = "",
                 )
             } else {
+                val oidcConfig = services.config("oidc")
+
                 SessionsConfig(
                     sessionSecret = cacheSession.property("secret").getString(),
                     jwtEncryptionToken = cacheSession.property("jwtEncryptionToken").getString(),
-                    clientId = services.config("oidc").property("clientId").getString(),
-                    clientSecret = services.config("oidc").property("clientSecret").getString(),
-                    oidcUrl = services.config("oidc").property("url").getString(),
+                    clientId = oidcConfig.property("clientId").getString(),
+                    clientSecret = oidcConfig.property("clientSecret").getString(),
+                    oAuthToken = oidcConfig.property("oAuthToken").getString(),
+                    oidcUrl = oidcConfig.property("url").getString(),
                 )
             }
 

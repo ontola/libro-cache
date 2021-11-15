@@ -18,6 +18,8 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 interface StorageAdapter<K : Any, V : Any> {
+    suspend fun del(key: K): Long?
+
     suspend fun expire(key: K, seconds: Long): Boolean?
 
     suspend fun get(key: K): V?
@@ -33,6 +35,10 @@ interface StorageAdapter<K : Any, V : Any> {
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
 class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : StorageAdapter<String, String> {
+    override suspend fun del(key: String): Long? {
+        return client.del(key)
+    }
+
     override suspend fun expire(key: String, seconds: Long): Boolean? {
         return client.expire(key, seconds)
     }

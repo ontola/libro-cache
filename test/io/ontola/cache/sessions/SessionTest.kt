@@ -26,7 +26,7 @@ class SessionTest {
 
     @Test
     fun shouldNotProcessWithoutSessionId() {
-        val session = Session(mockk(), mockk())
+        val session = Session(mockk(), mockk(), mockk())
         runBlocking {
             val legacy = session.legacySession()
 
@@ -37,7 +37,7 @@ class SessionTest {
     @Test
     fun shouldNotReprocessSession() {
         val existing = mockk<LegacySession>()
-        val session = Session(mockk(), mockk(), session = existing)
+        val session = Session(mockk(), mockk(), session = existing, tenantData = mockk())
         runBlocking {
             assertEquals(session.legacySession(), existing)
         }
@@ -86,7 +86,7 @@ class SessionTest {
         val refreshed = mockk<LegacySession>(relaxed = true)
         every { refreshed.userToken } returns "token"
 
-        val session = Session(conf, refresher, sessionId, sessionSig, session = null)
+        val session = Session(conf, refresher, tenantData = mockk(), sessionId, sessionSig, session = null)
         coEvery { refresher.refresh(sessionId, any()) } answers { refreshed }
 
         runBlocking {

@@ -4,22 +4,21 @@ import io.ktor.application.ApplicationCall
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
-import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
-import io.ktor.request.ApplicationRequest
 import io.ktor.request.header
-import io.ontola.cache.plugins.session
+import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.plugins.tenant
+import io.ontola.cache.util.copy
 
 suspend fun HttpRequestBuilder.initHeaders(call: ApplicationCall, lang: String) {
     // TODO: Support direct bearer header for API requests
-    val authorization = call.session.legacySession()
+    val authorization = call.sessionManager.session
     val websiteIRI = call.tenant.websiteIRI
     val originalReq = call.request
 
     headers {
-        if (!authorization?.userToken.isNullOrBlank()) {
-            header(HttpHeaders.Authorization, "Bearer ${authorization!!.userToken}")
+        if (!authorization?.accessToken.isNullOrBlank()) {
+            header(HttpHeaders.Authorization, "Bearer ${authorization!!.accessToken}")
         }
 
         header("Accept-Language", lang)
@@ -46,11 +45,5 @@ suspend fun HttpRequestBuilder.initHeaders(call: ApplicationCall, lang: String) 
         copy("Client-Ip", originalReq)
         copy("Host", originalReq)
         copy("Forwarded", originalReq)
-    }
-}
-
-fun HeadersBuilder.copy(header: String, req: ApplicationRequest) {
-    req.header(header)?.let {
-        set(header, it)
     }
 }
