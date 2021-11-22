@@ -15,6 +15,13 @@ plugins {
     kotlin("plugin.serialization") version "1.6.0"
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(13))
+        vendor.set(JvmVendorSpec.ADOPTOPENJDK)
+    }
+}
+
 group = "io.ontola"
 version = "1.0.0"
 
