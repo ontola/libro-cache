@@ -28,6 +28,7 @@ import io.ktor.http.takeFrom
 import io.ktor.request.header
 import io.ktor.request.path
 import io.ktor.util.AttributeKey
+import io.ktor.util.InternalAPI
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.BadGatewayException
 import io.ontola.cache.TenantNotFoundException
@@ -358,6 +359,7 @@ private fun PipelineContext<*, ApplicationCall>.cachedLookup(
     }
 }
 
+@OptIn(InternalAPI::class)
 private suspend fun PipelineContext<*, ApplicationCall>.getTenant(
     resourceIri: String,
     configuration: Tenantization.Configuration,
