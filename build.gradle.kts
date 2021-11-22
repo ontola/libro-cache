@@ -17,7 +17,7 @@ plugins {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(13))
+        languageVersion.set(JavaLanguageVersion.of(16))
         vendor.set(JvmVendorSpec.ADOPTOPENJDK)
     }
 }

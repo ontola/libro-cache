@@ -1,11 +1,11 @@
-FROM openjdk:8-jdk as builder
+FROM openjdk:16-jdk as builder
 
 RUN mkdir /app
 WORKDIR /app
 COPY . /app
 RUN /app/gradlew --no-daemon stage
 
-FROM openjdk:8-jdk
+FROM openjdk:16-jdk
 
 EXPOSE 8080:8080
 
