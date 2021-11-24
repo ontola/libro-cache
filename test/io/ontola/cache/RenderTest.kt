@@ -37,8 +37,6 @@ class RenderTest {
                     addHeader(HttpHeaders.XForwardedProto, "https")
                 }.apply {
                     assertEquals(HttpStatusCode.OK, response.status())
-                    println(response.content)
-                    assertEquals("UP", response.content)
                 }
             }
         }

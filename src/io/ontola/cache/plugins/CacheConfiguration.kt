@@ -86,11 +86,20 @@ data class RedisConfig(
     val invalidationGroup: String,
 )
 
+data class AssetsConfig(
+    val es6ManifestLocation: String = "./assets/manifest.module.json",
+    val es5ManifestLocation: String = "./assets/manifest.legacy.json",
+    val publicFolder: String,
+    val defaultBundle: String,
+)
+
 data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
     /**
      * Whether the application is running in test mode.
      */
     val testing: Boolean,
+    val env: String = if (testing) "testing" else System.getenv("KTOR_ENV") ?: "production",
+    val assets: AssetsConfig,
     /**
      * Configuration relating to session management.
      */
@@ -152,19 +161,137 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
         Bugsnag(reportingKey)
     }
 
+    inline val envKind get() = this.env
+    inline val isDev get() = envKind == "development"
+    inline val isTesting get() = envKind == "testing"
+    inline val isProd get() = envKind == "production"
+
     companion object {
         fun fromEnvironment(
             config: ApplicationConfig,
             testing: Boolean,
             client: HttpClient = createClient(),
         ): CacheConfig {
-
             val cacheConfig = config.config("cache")
+
+            val (libroRedisURI, streamRedisURI, redisConfig) = redisConfig(cacheConfig, testing)
+
+            return CacheConfig(
+                assets = assetsConfig(cacheConfig, testing),
+                testing = testing,
+                sessions = sessionsConfig(cacheConfig, testing),
+                libroRedisURI = libroRedisURI,
+                streamRedisURI = streamRedisURI,
+                redis = redisConfig,
+                services = cacheConfig.config("services"),
+                defaultLanguage = defaultLanguage(cacheConfig, testing),
+                enableInvalidator = true, // TODO
+                reportingKey = cacheConfig.propertyOrNull("reportingKey")?.toString(),
+                cacheExpiration = cacheConfig.propertyOrNull("cacheExpiration")?.toString()?.toLongOrNull(),
+                client = client,
+            )
+        }
+
+        private fun defaultLanguage(
+            cacheConfig: ApplicationConfig,
+            testing: Boolean,
+        ): String = if (testing) {
+            "en"
+        } else {
+            cacheConfig.property("defaultLanguage").getString()
+        }
+
+        private fun assetsConfig(
+            cacheConfig: ApplicationConfig,
+            testing: Boolean,
+        ): AssetsConfig {
+            val assetsConfig = cacheConfig.config("assets")
+
+            return if (testing) {
+                AssetsConfig(
+                    publicFolder = "f_assets",
+                    defaultBundle = "main",
+                )
+            } else {
+                AssetsConfig(
+                    publicFolder = assetsConfig.property("publicFolder").getString(),
+                    defaultBundle = assetsConfig.property("defaultBundle").getString(),
+                )
+            }
+        }
+
+        private fun redisConfig(
+            cacheConfig: ApplicationConfig,
+            testing: Boolean,
+        ): Triple<RedisURI, RedisURI, RedisConfig> = if (testing) {
+            // TODO: in-memory redis
+
+            val testRedisURI = RedisURI.create("redis://redis")
+
+            val libroRedisDb = 0
+            val libroRedisURI = testRedisURI.apply {
+                database = libroRedisDb
+            }
+
+            val streamRedisDb = 0
+            val streamRedisURI = testRedisURI.apply {
+                database = streamRedisDb
+            }
+
+            val redisConfig = RedisConfig(
+                uri = testRedisURI,
+                invalidationChannel = "invalidationChannel",
+                invalidationGroup = "testGroup",
+            )
+
+            Triple(libroRedisURI, streamRedisURI, redisConfig)
+        } else {
+            val redisConfigProp = cacheConfig.config("services").config("redis")
+            val redisHost = redisConfigProp.property("host").getString()
+            val redisPort = redisConfigProp.property("port").getString().toInt()
+            val redisDb = redisConfigProp.property("db").getString().toInt()
+            val redisUsername = redisConfigProp.propertyOrNull("username")?.getString()
+            val redisPassword = redisConfigProp.propertyOrNull("password")?.getString()?.toCharArray()
+            val redisSsl = redisConfigProp.propertyOrNull("ssl")?.getString()?.toBoolean()
+            val libroRedisDb = redisConfigProp.property("libroDb").getString().toInt()
+            val streamRedisDb = redisConfigProp.property("streamDb").getString().toInt()
+            fun redisUrl(db: Int) = RedisURI
+                .builder()
+                .withHost(redisHost)
+                .withPort(redisPort)
+                .withDatabase(db)
+                .withSsl(redisSsl ?: false)
+                .apply {
+                    if (redisPassword !== null) {
+                        withPassword(redisPassword)
+                    }
+                    if (redisUsername !== null && redisPassword !== null) {
+                        withAuthentication(redisUsername, redisPassword)
+                    }
+                }
+                .build()
+
+            val redisURI = redisUrl(redisDb)
+            val libroRedisURI = redisUrl(libroRedisDb)
+            val streamRedisURI = redisUrl(streamRedisDb)
+
+            val redisConfig = RedisConfig(
+                uri = redisURI,
+                invalidationChannel = redisConfigProp.property("invalidationChannel").getString(),
+                invalidationGroup = redisConfigProp.property("invalidationGroup").getString(),
+            )
+
+            Triple(libroRedisURI, streamRedisURI, redisConfig)
+        }
+
+        private fun sessionsConfig(
+            cacheConfig: ApplicationConfig,
+            testing: Boolean,
+        ): SessionsConfig {
+            val services = cacheConfig.config("services")
             val cacheSession = cacheConfig.config("session")
 
-            val services = cacheConfig.config("services")
-
-            val sessionsConfig = if (testing) {
+            return if (testing) {
                 SessionsConfig(
                     sessionSecret = "",
                     jwtEncryptionToken = "",
@@ -185,90 +312,8 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
                     oidcUrl = oidcConfig.property("url").getString(),
                 )
             }
-
-            val (libroRedisURI, streamRedisURI, redisConfig) = if (testing) {
-                // TODO: in-memory redis
-
-                val testRedisURI = RedisURI.create("redis://redis")
-
-                val libroRedisDb = 0
-                val libroRedisURI = testRedisURI.apply {
-                    database = libroRedisDb
-                }
-
-                val streamRedisDb = 0
-                val streamRedisURI = testRedisURI.apply {
-                    database = streamRedisDb
-                }
-
-                val redisConfig = RedisConfig(
-                    uri = testRedisURI,
-                    invalidationChannel = "invalidationChannel",
-                    invalidationGroup = "testGroup",
-                )
-
-                Triple(libroRedisURI, streamRedisURI, redisConfig)
-            } else {
-                val redisConfigProp = services.config("redis")
-                val redisHost = redisConfigProp.property("host").getString()
-                val redisPort = redisConfigProp.property("port").getString().toInt()
-                val redisDb = redisConfigProp.property("db").getString().toInt()
-                val redisUsername = redisConfigProp.propertyOrNull("username")?.getString()
-                val redisPassword = redisConfigProp.propertyOrNull("password")?.getString()?.toCharArray()
-                val redisSsl = redisConfigProp.propertyOrNull("ssl")?.getString()?.toBoolean()
-                val libroRedisDb = redisConfigProp.property("libroDb").getString().toInt()
-                val streamRedisDb = redisConfigProp.property("streamDb").getString().toInt()
-                fun redisUrl(db: Int) = RedisURI
-                    .builder()
-                    .withHost(redisHost)
-                    .withPort(redisPort)
-                    .withDatabase(db)
-                    .withSsl(redisSsl ?: false)
-                    .apply {
-                        if (redisPassword !== null) {
-                            withPassword(redisPassword)
-                        }
-                        if (redisUsername !== null && redisPassword !== null) {
-                            withAuthentication(redisUsername, redisPassword)
-                        }
-                    }
-                    .build()
-
-                val redisURI = redisUrl(redisDb)
-                val libroRedisURI = redisUrl(libroRedisDb)
-                val streamRedisURI = redisUrl(streamRedisDb)
-
-                val redisConfig = RedisConfig(
-                    uri = redisURI,
-                    invalidationChannel = redisConfigProp.property("invalidationChannel").getString(),
-                    invalidationGroup = redisConfigProp.property("invalidationGroup").getString(),
-                )
-
-                Triple(libroRedisURI, streamRedisURI, redisConfig)
-            }
-
-            val defaultLanguage = if (testing) {
-                "en"
-            } else {
-                cacheConfig.property("defaultLanguage").getString()
-            }
-
-            return CacheConfig(
-                testing = testing,
-                sessions = sessionsConfig,
-                libroRedisURI = libroRedisURI,
-                streamRedisURI = streamRedisURI,
-                redis = redisConfig,
-                services = services,
-                defaultLanguage = defaultLanguage,
-                enableInvalidator = true, // TODO
-                reportingKey = cacheConfig.propertyOrNull("reportingKey")?.toString(),
-                cacheExpiration = cacheConfig.propertyOrNull("cacheExpiration")?.toString()?.toLongOrNull(),
-                client = client,
-            )
         }
     }
-
     /**
      * Prints the message and notifies the reporting service if available.
      */

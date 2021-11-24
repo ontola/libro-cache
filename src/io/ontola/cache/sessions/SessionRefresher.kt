@@ -11,13 +11,10 @@ import io.ktor.client.request.request
 import io.ktor.http.HttpMethod
 import io.ktor.http.Url
 import io.ktor.http.fullPath
-import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.ontola.cache.plugins.LibroSession
+import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.util.configureClientLogging
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 @Serializable
 data class OIDCTokenResponse(
@@ -63,18 +60,19 @@ data class OIDCRequest(
     }
 }
 
-class SessionRefresher(private val configuration: LibroSession.Configuration) {
-    suspend fun refresh(sessionId: String, session: LegacySession): LegacySession {
-        val userToken = session.userToken ?: throw Exception("No userToken present")
-        val refreshToken = session.refreshToken ?: throw Exception("No refreshToken present")
+class SessionRefresher(private val configuration: CacheSession.Configuration) {
+    /**
+     * Retrieve a new access token for the given session.
+     */
+    suspend fun refresh(session: SessionData): SessionData {
+        val userToken = session.accessToken
+        val refreshToken = session.refreshToken
         val refreshResponse = refreshToken(userToken, refreshToken)
-        val newSession = session.copy(
-            refreshToken = refreshResponse.refreshToken,
-            userToken = refreshResponse.accessToken,
-        )
-        storeSession(sessionId, newSession)
 
-        return newSession
+        return session.copy(
+            refreshToken = refreshResponse.refreshToken,
+            accessToken = refreshResponse.accessToken,
+        )
     }
 
     private suspend fun refreshToken(userToken: String, refreshToken: String): OIDCTokenResponse {
@@ -104,10 +102,5 @@ class SessionRefresher(private val configuration: LibroSession.Configuration) {
                 refreshToken
             )
         }
-    }
-
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    private suspend fun storeSession(sessionId: String, session: LegacySession) {
-        configuration.adapter.set(sessionId, Json.encodeToString(session))
     }
 }

@@ -1,4 +1,4 @@
-package io.ontola
+package io.ontola.cache.plugins
 
 import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
@@ -6,7 +6,6 @@ import io.ktor.application.ApplicationFeature
 import io.ktor.application.call
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
-import io.ktor.client.features.expectSuccess
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.FormDataContent
 import io.ktor.client.request.header
@@ -14,6 +13,7 @@ import io.ktor.client.request.headers
 import io.ktor.client.request.request
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.readText
+import io.ktor.http.ContentDisposition
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
@@ -27,6 +27,7 @@ import io.ktor.http.parseHeaderValue
 import io.ktor.request.ApplicationRequest
 import io.ktor.request.accept
 import io.ktor.request.document
+import io.ktor.request.header
 import io.ktor.request.httpMethod
 import io.ktor.request.path
 import io.ktor.request.receiveChannel
@@ -36,12 +37,10 @@ import io.ktor.util.AttributeKey
 import io.ktor.util.filter
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
-import io.ontola.cache.plugins.logger
-import io.ontola.cache.plugins.services
-import io.ontola.cache.plugins.sessionManager
-import io.ontola.cache.plugins.tenant
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.util.copy
+import io.ontola.cache.util.isDownloadRequest
+import io.ontola.cache.util.isHtmlAccept
 import java.util.Locale
 
 private val DataProxyKey = AttributeKey<DataProxy>("DataProxyKey")
@@ -84,9 +83,10 @@ internal fun HttpRequestBuilder.proxyHeaders(
 class DataProxy(private val configuration: Configuration, val call: ApplicationCall?) {
     class Configuration {
         var transforms = mutableMapOf<Regex, (req: ApplicationRequest) -> String>()
+        var binaryPaths: List<String> = emptyList()
         var contentTypes: List<ContentType> = emptyList()
         var extensions: List<String> = emptyList()
-        var paths: List<String> = emptyList()
+        var excludedPaths: List<String> = emptyList()
         val unsafeList = listOf(
             "new-authorization",
             "new-refresh-token",
@@ -96,6 +96,14 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
             "upgrade",
             *UnsafeHeadersList.toTypedArray()
         )
+        val client = HttpClient(CIO) {
+            followRedirects = false
+            expectSuccess = false
+        }
+
+        fun isBinaryRequest(uri: Url, accept: String?): Boolean {
+            return (binaryPaths.any { uri.encodedPath.contains(it) } && !accept.isHtmlAccept()) || uri.isDownloadRequest()
+        }
     }
 
     /**
@@ -115,8 +123,9 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
     /**
      * Proxies the request to the data server
      */
-    private suspend fun interceptHttp(call: ApplicationCall) {
+    private suspend fun interceptRequest(call: ApplicationCall) {
         val originalReq = call.request
+        val uri = Url(originalReq.uri)
 
         val path = configuration.transforms.entries
             .find { (path, _) -> path.containsMatchIn(originalReq.uri) }
@@ -134,6 +143,10 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
                 override val contentLength: Long? = contentLength?.toLong()
                 override val contentType: ContentType? = contentType?.let { ContentType.parse(it) }
                 override val headers: Headers = Headers.build {
+                    if (uri.isDownloadRequest()) {
+                        append(HttpHeaders.ContentDisposition, ContentDisposition.Attachment.disposition)
+                    }
+
                     response.headers["New-Authorization"]?.let {
                         call.sessionManager.setAuthorization(
                             accessToken = it,
@@ -151,7 +164,7 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
                     }
                     appendAll(proxiedHeaders.filter { key, _ -> !configuration.unsafeList.contains(key.lowercase(Locale.getDefault())) })
                 }
-                override val status: HttpStatusCode? = response.status
+                override val status: HttpStatusCode = response.status
                 override suspend fun writeTo(channel: ByteWriteChannel) {
                     response.content.copyAndClose(channel)
                 }
@@ -162,9 +175,7 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
     private suspend fun proxiedRequest(call: ApplicationCall, path: String, method: HttpMethod, body: Any): HttpResponse {
         call.sessionManager.ensure()
 
-        val client = HttpClient(CIO)
-        return client.request(call.services.route(path)) {
-            expectSuccess = false
+        return configuration.client.request(call.services.route(path)) {
             this.method = method
             this.body = body
             proxyHeaders(call, call.sessionManager.session, useWebsiteIRI = false)
@@ -182,16 +193,34 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
                 val accept = parseHeaderValue(call.request.accept() ?: "*/*")
                     .map { v -> ContentType.parse(v.value).withoutParameters() }
                 val path = call.request.path()
+                val uri = Url(call.request.uri)
 
-                this.call.attributes.put(DataProxyKey, DataProxy(configuration, this.call))
+                call.attributes.put(DataProxyKey, DataProxy(configuration, this.call))
+
+                val isManifestRequest = call.request.document() == "manifest.json"
+                val isPathExcluded = configuration.excludedPaths.contains(call.request.path())
+                val isNotExcluded = !isManifestRequest && !isPathExcluded
 
                 val ext = if (path.contains(".")) path.split(".").lastOrNull() else null
-                val shouldProxyHttp = call.request.document() != "manifest.json" &&
-                    !configuration.paths.contains(call.request.path()) && (
-                    ext?.let { configuration.extensions.contains(it) } ?: false ||
-                        configuration.contentTypes.intersect(accept).isNotEmpty()
-                    )
+                val isDataReqByExtension = ext?.let { configuration.extensions.contains(it) } ?: false
+                val isDataReqByAccept = configuration.contentTypes.intersect(accept).isNotEmpty()
+                val isBinaryRequest = configuration.isBinaryRequest(uri, call.request.header(HttpHeaders.Accept))
+                val isProxyableComponent = isDataReqByExtension || isDataReqByAccept || isBinaryRequest
 
+                val shouldProxyHttp = isNotExcluded && isProxyableComponent
+
+                call.logger.debug {
+                    """
+                        isManifestRequest: $isManifestRequest
+                        isPathExcluded: $isPathExcluded
+                        isNotExcluded: $isNotExcluded
+                        isDataReqByExtension: $isDataReqByExtension
+                        isDataReqByAccept: $isDataReqByAccept
+                        isBinaryRequest: $isBinaryRequest
+                        isProxyableComponent: $isProxyableComponent
+                        shouldProxyHttp: $shouldProxyHttp
+                    """.trimIndent()
+                }
                 call.logger.debug {
                     if (shouldProxyHttp)
                         "Proxying request to backend: $path"
@@ -200,7 +229,7 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
                 }
 
                 if (shouldProxyHttp) {
-                    feature.interceptHttp(this.call)
+                    feature.interceptRequest(this.call)
                     this.finish()
                 }
             }

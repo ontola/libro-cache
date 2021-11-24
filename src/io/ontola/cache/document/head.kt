@@ -29,7 +29,7 @@ fun HEAD.renderHead(nonce: String, config: PageConfiguration, manifest: Manifest
         }
         meta(name = "bugsnagConfig", content = Json.encodeToString(config.bugsnagOpts))
     }
-    link(rel = "stylesheet", type = "text/css", href = config.assets.mainCss) {
+    link(rel = "stylesheet", type = "text/css", href = config.assets.es6.mainCss) {
         attributes["crossorigin"] = "anonymous"
     }
     link(href = "https://fonts.googleapis.com/css?family=Open+Sans:400,700", rel = "stylesheet")
@@ -58,7 +58,7 @@ fun HEAD.renderHead(nonce: String, config: PageConfiguration, manifest: Manifest
     meta(name = "theme-color", content = manifest.themeColor)
     meta(name = "msapplication-navbutton-color", content = manifest.themeColor)
     meta(name = "apple-mobile-web-app-status-bar-style", content = "black-translucent")
-    meta(name = "msapplication-starturl", content = manifest.startUrl.toString())
+    meta(name = "msapplication-starturl", content = manifest.startUrl)
     meta(name = "viewport", content = "width=device-width, shrink-to-fit=no, initial-scale=1, maximum-scale=1.0, user-scalable=yes")
     meta(name = "theme", content = manifest.ontola.theme ?: "common")
     meta(name = "themeOpts", content = manifest.ontola.themeOptions)

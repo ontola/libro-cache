@@ -19,6 +19,7 @@ import io.ontola.cache.bulk.CacheRequest
 import io.ontola.cache.bulk.coldHandler
 import io.ontola.cache.bulk.initHeaders
 import io.ontola.cache.bulk.resourcesToOutputStream
+import io.ontola.cache.document.AssetsManifests
 import io.ontola.cache.document.PageConfiguration
 import io.ontola.cache.document.indexPage
 import io.ontola.cache.plugins.cacheConfig
@@ -99,13 +100,16 @@ fun PipelineContext<Unit, ApplicationCall>.respondServerRedirect(head: HeadRespo
     call.response.status(HttpStatusCode.TemporaryRedirect)
 }
 
-suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(includes: List<String>?) {
+suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
+    includes: List<String>?,
+    assets: AssetsManifests,
+) {
     val manifest = call.tenant.manifest
 
-    val pageConfig = PageConfiguration(appElement = "root")
-    val updatedEntries = ByteArrayOutputStream().use {
+    val pageConfig = PageConfiguration(appElement = "root", assets = assets)
+    val updatedEntries = ByteArrayOutputStream().use { stream ->
         val entries = if (includes != null) {
-            resourcesToOutputStream(includes.map { CacheRequest(it) }, it)
+            resourcesToOutputStream(includes.map { CacheRequest(it) }, stream)
         } else {
             emptyList()
         }
@@ -114,7 +118,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(include
             indexPage(
                 pageConfig,
                 manifest,
-                it.toString(Charset.forName("UTF-8")),
+                stream.toString(Charset.forName("UTF-8")),
                 call.application.cacheConfig.serializer
             )
         }
@@ -125,7 +129,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(include
     coldHandler(updatedEntries)
 }
 
-suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClient) {
+suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClient, assets: AssetsManifests) {
     if (!call.request.isHTML()) {
         return call.respond(HttpStatusCode.NotFound)
     }
@@ -143,5 +147,5 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
         call.tenant.websiteIRI.toString() + "/ns/core",
     ) + (head.includeResources ?: emptyList())
 
-    respondRenderWithData(includes)
+    respondRenderWithData(includes, assets)
 }

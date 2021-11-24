@@ -21,41 +21,21 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Serializable
+data class AssetsManifests(
+    val es5: ResourcesManifest,
+    val es6: ResourcesManifest,
+)
+
+@Serializable
 data class ResourcesManifest(
+    val publicFolder: String? = null,
+    val defaultBundle: String? = null,
+    @SerialName("./sw.js")
+    val swJs: String = "/$publicFolder/sw.js",
     @SerialName("main.css")
-    val mainCss: String = "/dist/main.bundle.css",
+    val mainCss: String = "/$publicFolder/$defaultBundle.bundle.css",
     @SerialName("main.js")
-    val mainJs: String = "/dist/main.bundle.js",
-    @SerialName("main.js.map")
-    val mainJsMap: String? = "/dist/main.js.map",
-    @SerialName("Forms.css")
-    val FormsValCss: String? = "/dist/Forms.css",
-    @SerialName("Forms.js")
-    val FormsValJs: String? = "/dist/Forms.js",
-    @SerialName("Forms.js.map")
-    val FormsJsMap: String? = "/dist/Forms.js.map",
-    @SerialName("MapView.js")
-    val MapViewValJs: String? = "/dist/MapView.js",
-    @SerialName("MapView.js.map")
-    val MapViewJsMap: String? = "/dist/MapView.js.map",
-    @SerialName("vendors~Forms.js")
-    val vendorsFormsJs: String? = "/dist/vendors~Forms.js",
-    @SerialName("vendors~Forms.js.map")
-    val vendorsFormsJsMap: String? = "/dist/vendors~Forms.js.map",
-    @SerialName("vendors~MapView.css")
-    val vendorsMapViewCss: String? = "/dist/vendors~MapView.css",
-    @SerialName("vendors~MapView.js")
-    val vendorsMapViewJs: String? = "/dist/vendors~MapView.js",
-    @SerialName("vendors~MapView.js.map")
-    val vendorsMapViewJsMap: String? = "/dist/vendors~MapView.js.map",
-    @SerialName("vendors~Typeform.js")
-    val vendorsTypeformJs: String? = "/dist/vendors~Typeform.js",
-    @SerialName("vendors~Typeform.js.map")
-    val vendorsTypeformJsMap: String? = "/dist/vendors~Typeform.js.map",
-    @SerialName("vendors~main.js")
-    val vendorsMainJs: String = "/dist/vendors~main.js",
-    @SerialName("vendors~main.js.map")
-    val vendorsMainJsMap: String? = "/dist/vendors~main.js.map",
+    val mainJs: String = "/$publicFolder/$defaultBundle.bundle.js",
 )
 
 @Serializable
@@ -68,7 +48,7 @@ data class BugsnagOpts(
 @Serializable
 data class PageConfiguration(
     val appElement: String,
-    val assets: ResourcesManifest = ResourcesManifest(),
+    val assets: AssetsManifests,
     val env: String? = null,
     val bugsnagOpts: BugsnagOpts? = null,
     val facebookAppId: String? = null,
@@ -205,28 +185,14 @@ fun BODY.assetsBlock(nonce: String, config: PageConfiguration) {
         async = true
         this.nonce = nonce
         attributes["crossorigin"] = "anonymous"
-        src = config.assets.mainJs
-    }
-    script(type = "module") {
-        async = true
-        this.nonce = nonce
-        attributes["crossorigin"] = "anonymous"
-        src = config.assets.vendorsMainJs
-    }
-
-    script(type = "application/javascript") {
-        async = true
-        this.nonce = nonce
-        attributes["nomodule"] = "true"
-        attributes["crossorigin"] = "anonymous"
-        src = config.assets.mainJs
+        src = config.assets.es6.mainJs
     }
     script(type = "application/javascript") {
         async = true
         this.nonce = nonce
         attributes["nomodule"] = "true"
         attributes["crossorigin"] = "anonymous"
-        src = config.assets.vendorsMainJs
+        src = config.assets.es5.mainJs
     }
 }
 

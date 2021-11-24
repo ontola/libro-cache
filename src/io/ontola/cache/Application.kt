@@ -19,6 +19,10 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.Url
+import io.ktor.http.content.CompressedFileType
+import io.ktor.http.content.files
+import io.ktor.http.content.preCompressed
+import io.ktor.http.content.static
 import io.ktor.http.fullPath
 import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Locations
@@ -35,23 +39,26 @@ import io.ktor.sessions.Sessions
 import io.ktor.sessions.cookie
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
-import io.ontola.DataProxy
 import io.ontola.cache.bulk.bulkHandler
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.CacheConfiguration
 import io.ontola.cache.plugins.CacheSession
+import io.ontola.cache.plugins.DataProxy
 import io.ontola.cache.plugins.Logging
 import io.ontola.cache.plugins.RedisAdapter
 import io.ontola.cache.plugins.ServiceRegistry
 import io.ontola.cache.plugins.Storage
 import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.plugins.Tenantization
+import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.requestTimings
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.plugins.tenant
 import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.util.configureCallLogging
+import io.ontola.cache.util.isHtmlAccept
+import io.ontola.cache.util.loadAssetsManifests
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -61,7 +68,7 @@ fun ApplicationRequest.isHTML(): Boolean {
     val accept = headers["accept"] ?: ""
     val contentType = headers["content-type"] ?: ""
 
-    return accept.contains("text/html") || contentType.contains("text/html")
+    return accept.isHtmlAccept() || contentType.contains("text/html")
 }
 
 @OptIn(KtorExperimentalLocationsAPI::class, io.lettuce.core.ExperimentalLettuceCoroutinesApi::class)
@@ -74,6 +81,7 @@ fun Application.module(
 ) {
     val config = CacheConfig.fromEnvironment(environment.config, testing, client)
     val adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
+    val assets = loadAssetsManifests(config)
 
     install(Logging)
 
@@ -123,6 +131,10 @@ fun Application.module(
     install(DefaultHeaders) {
         header("X-Powered-By", "Ontola") // will send this header with each response
         header("X-Engine", "Ktor") // will send this header with each response
+        header("Referrer-Policy", "strict-origin-when-cross-origin")
+        header("X-XSS-Protection", "1; mode=block")
+        header("X-Content-Type-Options", "nosniff")
+        header("X-Frame-Options", "DENY")
     }
 
     install(ForwardedHeaderSupport) // WARNING: for security, do not include this if not behind a reverse proxy
@@ -158,18 +170,6 @@ fun Application.module(
             "/f_assets/",
             "/__webpack_hmr"
         )
-//        dataExtensions = listOf(
-//            ".json",
-//            ".hndjson",
-//            ".nq",
-//            ".nt",
-//            ".n3",
-//            ".rdf",
-//            ".ttl",
-//            ".png",
-//            ".csv",
-//            ".pdf",
-//        )
     }
 
     install(Sessions) {
@@ -179,7 +179,9 @@ fun Application.module(
         )
     }
 
-    install(CacheSession)
+    install(CacheSession) {
+        legacyStorageAdapter = adapter
+    }
 
     install(DataProxy) {
         val loginQuery = ParametersBuilder().apply {
@@ -196,7 +198,10 @@ fun Application.module(
                 .fullPath
         }
 
-        paths = listOf(
+        binaryPaths = listOf(
+            "/media_objects/",
+        )
+        excludedPaths = listOf(
             "/link-lib/bulk",
             "static",
         )
@@ -218,22 +223,21 @@ fun Application.module(
             "ttl",
             "n3",
             "png",
+            "rdf",
+            "csv",
+            "pdf]",
         )
         transforms[Regex("^/login$")] = loginTransform
         transforms[Regex("^/[\\w/]*/login$")] = loginTransform
     }
 
-//    install(LibroSession) {
-//        adapter = RedisAdapter(RedisClient.create(config.libroRedisURI).connect().coroutines())
-//        cookieNameLegacy = config.sessions.cookieNameLegacy
-//        oidcUrl = config.sessions.oidcUrl
-//        oidcClientId = config.sessions.clientId
-//        oidcClientSecret = config.sessions.clientSecret
-//        signatureNameLegacy = config.sessions.signatureNameLegacy
-//        jwtValidator = createJWTVerifier(config.sessions.jwtEncryptionToken, config.sessions.clientId)
-//    }
-
     routing {
+        static("f_assets") {
+            preCompressed(CompressedFileType.BROTLI, CompressedFileType.GZIP) {
+                files("assets")
+            }
+        }
+
         get("/link-lib/cache/status") {
             call.respondText("UP", contentType = ContentType.Text.Plain)
         }
@@ -245,6 +249,8 @@ fun Application.module(
         }
 
         get("*/manifest.json") {
+            call.logger.debug { "Requested manifest from external (via handler)" }
+
             if (call.tenant.websiteIRI.fullPath + "/manifest.json" != call.request.uri) {
                 return@get call.respond(HttpStatusCode.NotFound)
             }
@@ -255,7 +261,7 @@ fun Application.module(
         post(bulkHandler())
 
         get("{...}") {
-            indexHandler(client)
+            indexHandler(client, assets)
         }
     }
 }

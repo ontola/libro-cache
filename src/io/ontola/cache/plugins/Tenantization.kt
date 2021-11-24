@@ -21,6 +21,7 @@ import io.ktor.client.request.headers
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.fullPath
@@ -251,16 +252,16 @@ class Tenantization(private val configuration: Configuration) {
         val manifest = cachedLookup(CachedLookupKeys.Manifest, expiration = configuration.tenantExpiration) {
             val manifestRequest = configuration.client.get<HttpResponse>(services.route("${Url(it).fullPath}/manifest.json")) {
                 headers {
-                    header("Accept", ContentType.Application.Json)
-                    header("Content-Type", ContentType.Application.Json)
+                    header(HttpHeaders.Accept, ContentType.Application.Json)
+                    header(HttpHeaders.ContentType, ContentType.Application.Json)
                     header("Website-IRI", it)
 
-                    copy("X-Forwarded-Host", context.request)
-                    copy("X-Forwarded-Proto", context.request)
+                    copy(HttpHeaders.XForwardedHost, context.request, context.request.header(HttpHeaders.Host))
+                    copy(HttpHeaders.XForwardedProto, context.request)
+                    copy(HttpHeaders.XForwardedFor, context.request)
                     copy("X-Forwarded-Ssl", context.request)
                     copy("X-Real-Ip", context.request)
-                    copy("X-Requested-With", context.request)
-                    copy("X-Request-Id", context.request)
+                    copy(HttpHeaders.XRequestId, context.request)
                 }
             }
 
