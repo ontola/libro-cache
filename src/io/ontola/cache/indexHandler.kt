@@ -30,6 +30,8 @@ import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.plugins.tenant
 import io.ontola.cache.sessions.SessionData
+import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.requestUri
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
@@ -49,7 +51,7 @@ data class HeadResponse(
 suspend fun PipelineContext<Unit, ApplicationCall>.headResponse(client: HttpClient): HeadResponse {
     val lang = call.sessionManager.language
     val headResponse = client.head<HttpResponse>(call.services.route(call.request.uri)) {
-        header("Website-IRI", call.tenant.websiteIRI)
+        header(CacheHttpHeaders.WebsiteIri, call.tenant.websiteIRI)
         initHeaders(call, lang)
     }
 
@@ -57,14 +59,14 @@ suspend fun PipelineContext<Unit, ApplicationCall>.headResponse(client: HttpClie
 
     return HeadResponse(
         headResponse.status,
-        newAuthorization = headResponse.headers["new-authorization"],
-        newRefreshToken = headResponse.headers["new-refresh-token"],
+        newAuthorization = headResponse.headers[CacheHttpHeaders.NewAuthorization],
+        newRefreshToken = headResponse.headers[CacheHttpHeaders.NewRefreshToken],
         accessControlAllowCredentials = headResponse.headers[HttpHeaders.AccessControlAllowCredentials],
         accessControlAllowHeaders = headResponse.headers[HttpHeaders.AccessControlAllowHeaders],
         accessControlAllowMethods = headResponse.headers[HttpHeaders.AccessControlAllowMethods],
         accessControlAllowOrigin = headResponse.headers[HttpHeaders.AccessControlAllowOrigin],
         location = headResponse.headers[HttpHeaders.Location],
-        includeResources = headResponse.headers["Include-Resources"]?.ifBlank { null }?.split(','),
+        includeResources = headResponse.headers[CacheHttpHeaders.IncludeResources]?.ifBlank { null }?.split(','),
     )
 }
 
@@ -139,6 +141,8 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
     if (!call.request.isHTML()) {
         return call.respond(HttpStatusCode.NotFound)
     }
+
+    call.response.header(HttpHeaders.Vary, VaryHeader)
 
     val head = headResponse(client)
     updateSessionAccessToken(head)

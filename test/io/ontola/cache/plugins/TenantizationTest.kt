@@ -1,6 +1,7 @@
 package io.ontola.cache.plugins
 
 import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.request.path
 import io.ktor.server.testing.handleRequest
@@ -20,7 +21,7 @@ class TenantizationTest {
     fun testKtorPathStartsWithSlash() {
         withTestApplication({ module(testing = true) }) {
             handleRequest(HttpMethod.Get, "/") {
-                addHeader("origin", "https://mysite.local")
+                addHeader(HttpHeaders.Origin, "https://mysite.local")
             }.apply {
                 assertEquals("/", this.request.path())
             }

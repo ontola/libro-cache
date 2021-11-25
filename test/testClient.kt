@@ -19,6 +19,7 @@ import io.ontola.cache.bulk.SPIAuthorizeRequest
 import io.ontola.cache.bulk.SPIResourceResponseItem
 import io.ontola.cache.configureClient
 import io.ontola.cache.plugins.TenantFinderResponse
+import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.fullUrl
 import io.ontola.cache.util.withoutProto
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -63,10 +64,10 @@ fun MockRequestHandleScope.handleHeadRequest(request: HttpRequestData, headRespo
 
     val test = buildMap<String, List<String>> {
         response.newAuthorization?.let {
-            put("new-authorization", listOf(it))
+            put(CacheHttpHeaders.NewAuthorization, listOf(it))
         }
         response.newRefreshToken?.let {
-            put("new-refresh-token", listOf(it))
+            put(CacheHttpHeaders.NewRefreshToken, listOf(it))
         }
         response.accessControlAllowCredentials?.let {
             put(HttpHeaders.AccessControlAllowCredentials, listOf(it))
@@ -84,7 +85,7 @@ fun MockRequestHandleScope.handleHeadRequest(request: HttpRequestData, headRespo
             put(HttpHeaders.Location, listOf(it))
         }
         response.includeResources?.let {
-            put("Include-Resources", listOf(it.joinToString(",")))
+            put(CacheHttpHeaders.IncludeResources, listOf(it.joinToString(",")))
         }
     }
 

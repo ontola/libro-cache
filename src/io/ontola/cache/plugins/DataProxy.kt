@@ -38,9 +38,17 @@ import io.ktor.util.filter
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
 import io.ontola.cache.sessions.SessionData
+import io.ontola.cache.util.Actions
+import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.copy
+import io.ontola.cache.util.hasAction
 import io.ontola.cache.util.isDownloadRequest
 import io.ontola.cache.util.isHtmlAccept
+import io.ontola.cache.util.proxySafeHeaders
+import io.ontola.cache.util.setActionParam
+import io.ontola.cache.util.setParameter
+import java.net.URLEncoder
 import java.util.Locale
 
 private val DataProxyKey = AttributeKey<DataProxy>("DataProxyKey")
@@ -51,32 +59,28 @@ internal fun HttpRequestBuilder.proxyHeaders(
     useWebsiteIRI: Boolean = true,
 ) {
     val request = call.request
-    val userToken = session?.accessToken
 
     headers {
-        userToken?.let {
-            header("Authorization", "Bearer $it")
+        session?.accessTokenBearer()?.let {
+            header(HttpHeaders.Authorization, it)
         }
         if (useWebsiteIRI) {
-            header("Website-IRI", call.tenant.websiteIRI)
+            header(CacheHttpHeaders.WebsiteIri, call.tenant.websiteIRI)
         }
-        copy("Accept", request)
-        copy("Accept-Language", request)
-        copy("Content-Type", request)
-        copy("Origin", request)
-        copy("Referer", request)
-        copy("User-Agent", request)
-        copy("X-Forwarded-Host", request)
-        copy("X-Forwarded-Proto", request)
-        copy("X-Forwarded-Ssl", request)
+        proxySafeHeaders(request)
+        copy(HttpHeaders.Accept, request)
+        copy(HttpHeaders.ContentType, request)
+        copy(HttpHeaders.Forwarded, request)
+        copy(HttpHeaders.Host, request)
+        copy(HttpHeaders.Origin, request)
+        copy(HttpHeaders.Referrer, request)
+        copy(HttpHeaders.UserAgent, request)
+        copy(CacheHttpHeaders.XDeviceId, request)
+
+        copy("Client-Ip", request)
+        copy("X-Client-Ip", request)
         copy("X-Real-Ip", request)
         copy("X-Requested-With", request)
-        copy("X-Device-Id", request)
-        copy("X-Request-Id", request)
-        copy("X-Client-Ip", request)
-        copy("Client-Ip", request)
-        copy("Host", request)
-        copy("Forwarded", request)
     }
 }
 
@@ -88,12 +92,12 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
         var extensions: List<String> = emptyList()
         var excludedPaths: List<String> = emptyList()
         val unsafeList = listOf(
-            "new-authorization",
-            "new-refresh-token",
-            "content-length",
-            "content-type",
-            "transfer-encoding",
-            "upgrade",
+            CacheHttpHeaders.NewAuthorization.lowercase(),
+            CacheHttpHeaders.NewRefreshToken.lowercase(),
+            HttpHeaders.ContentLength.lowercase(),
+            HttpHeaders.ContentType.lowercase(),
+            HttpHeaders.TransferEncoding.lowercase(),
+            HttpHeaders.Upgrade.lowercase(),
             *UnsafeHeadersList.toTypedArray()
         )
         val client = HttpClient(CIO) {
@@ -120,6 +124,35 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
         return response.readText()
     }
 
+    fun ApplicationCall.newAuthorizationBulk(response: HttpResponse): String? {
+        val newAuthorization = response.headers[CacheHttpHeaders.NewAuthorization] ?: return null
+
+        sessionManager.setAuthorization(
+            accessToken = newAuthorization,
+            refreshToken = response.headers[CacheHttpHeaders.NewRefreshToken]
+                ?: throw Exception("Received New-Authorization header without New-Refresh-Header"),
+        )
+
+        val isRedirect = (response.status.value in 300..399)
+
+        if (isRedirect) {
+            return null
+        }
+
+        if (response.hasAction(Actions.RedirectAction)) {
+            return response.setActionParam(Actions.RedirectAction, "reload", "true")
+        }
+
+        val location = response.headers[HttpHeaders.Location]
+        if (location != null && location.isNotEmpty()) {
+            return Actions.RedirectAction
+                .setParameter("reload", "true")
+                .setParameter("location", URLEncoder.encode(location, "utf-8"))
+        }
+
+        return Actions.RefreshAction
+    }
+
     /**
      * Proxies the request to the data server
      */
@@ -143,25 +176,18 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
                 override val contentLength: Long? = contentLength?.toLong()
                 override val contentType: ContentType? = contentType?.let { ContentType.parse(it) }
                 override val headers: Headers = Headers.build {
+                    set(HttpHeaders.Vary, VaryHeader)
+
                     if (uri.isDownloadRequest()) {
                         append(HttpHeaders.ContentDisposition, ContentDisposition.Attachment.disposition)
                     }
 
-                    response.headers["New-Authorization"]?.let {
-                        call.sessionManager.setAuthorization(
-                            accessToken = it,
-                            refreshToken = response.headers["New-Refresh-Token"]
-                                ?: throw Exception("Received New-Authorization header without New-Refresh-Header"),
-                        )
+                    val action = call.newAuthorizationBulk(response)
 
-                        val isRedirect = response.status.value in 300..399
-                        if (!isRedirect) {
-                            // if (hasAction(backendRes, 'https://ns.ontola.io/libro/actions/redirect')) {
-                            //   return setActionParam(backendRes, 'https://ns.ontola.io/libro/actions/redirect', 'reload', 'true');
-                            // }
-                            this["Exec-Action"] = "https://ns.ontola.io/libro/actions/refresh"
-                        }
+                    if (action != null) {
+                        set(CacheHttpHeaders.ExecAction, action)
                     }
+
                     appendAll(proxiedHeaders.filter { key, _ -> !configuration.unsafeList.contains(key.lowercase(Locale.getDefault())) })
                 }
                 override val status: HttpStatusCode = response.status
@@ -209,18 +235,6 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
 
                 val shouldProxyHttp = isNotExcluded && isProxyableComponent
 
-                call.logger.debug {
-                    """
-                        isManifestRequest: $isManifestRequest
-                        isPathExcluded: $isPathExcluded
-                        isNotExcluded: $isNotExcluded
-                        isDataReqByExtension: $isDataReqByExtension
-                        isDataReqByAccept: $isDataReqByAccept
-                        isBinaryRequest: $isBinaryRequest
-                        isProxyableComponent: $isProxyableComponent
-                        shouldProxyHttp: $shouldProxyHttp
-                    """.trimIndent()
-                }
                 call.logger.debug {
                     if (shouldProxyHttp)
                         "Proxying request to backend: $path"

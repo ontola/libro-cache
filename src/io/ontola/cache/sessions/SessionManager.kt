@@ -19,7 +19,9 @@ import io.ktor.sessions.set
 import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.tenant
+import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.copy
+import io.ontola.cache.util.proxySafeHeaders
 
 class SessionManager(
     private val call: ApplicationCall,
@@ -31,10 +33,10 @@ class SessionManager(
         set(value) = call.sessions.set(value)
 
     val host: String?
-        get() = call.request.header("Host")
+        get() = call.request.header(HttpHeaders.Host)
 
     val language: String
-        get() = call.request.header("Accept-Language")
+        get() = call.request.header(HttpHeaders.AcceptLanguage)
             ?: session?.claims(configuration.jwtValidator)?.user?.language
             ?: configuration.cacheConfig.defaultLanguage
 
@@ -108,21 +110,12 @@ class SessionManager(
                 header(HttpHeaders.Authorization, "Bearer $serviceToken")
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
 
-                copy("Accept-Language", call.request)
-                header("X-Forwarded-Host", call.request.header("Host"))
+                header(CacheHttpHeaders.WebsiteIri, call.tenant.websiteIRI)
 
-                copy("X-Forwarded-Host", call.request)
-                copy("X-Forwarded-Proto", call.request)
-                copy("X-Forwarded-Ssl", call.request)
+                proxySafeHeaders(call.request)
+                header(CacheHttpHeaders.XDeviceId, call.deviceId)
                 copy("X-Real-Ip", call.request)
                 copy("X-Requested-With", call.request)
-                copy("X-Request-Id", call.request)
-            }
-
-            headers {
-                header("X-Argu-Back", "true")
-                header("X-Device-Id", "") // TODO
-                header("Website-IRI", call.tenant.websiteIRI)
             }
 
             body = OIDCRequest.guestRequest(configuration.oidcClientId, configuration.oidcClientSecret)

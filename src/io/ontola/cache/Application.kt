@@ -138,16 +138,16 @@ fun Application.module(
     }
 
     install(DefaultHeaders) {
-        header("X-Powered-By", "Ontola") // will send this header with each response
-        header("X-Engine", "Ktor") // will send this header with each response
         header("Referrer-Policy", "strict-origin-when-cross-origin")
-        header("X-XSS-Protection", "1; mode=block")
         header("X-Content-Type-Options", "nosniff")
+        header("X-Engine", "Ktor")
         header("X-Frame-Options", "DENY")
+        header("X-Powered-By", "Ontola")
+        header("X-XSS-Protection", "1; mode=block")
     }
 
-    install(ForwardedHeaderSupport) // WARNING: for security, do not include this if not behind a reverse proxy
-    install(XForwardedHeaderSupport) // WARNING: for security, do not include this if not behind a reverse proxy
+    install(ForwardedHeaderSupport)
+    install(XForwardedHeaderSupport)
 
     install(StatusPages) {
         exception<TenantNotFoundException> {
