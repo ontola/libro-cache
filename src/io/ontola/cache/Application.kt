@@ -20,28 +20,19 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.Url
-import io.ktor.http.content.CompressedFileType
-import io.ktor.http.content.files
-import io.ktor.http.content.preCompressed
-import io.ktor.http.content.static
 import io.ktor.http.fullPath
 import io.ktor.locations.KtorExperimentalLocationsAPI
 import io.ktor.locations.Locations
-import io.ktor.locations.post
 import io.ktor.request.ApplicationRequest
 import io.ktor.request.header
 import io.ktor.request.path
-import io.ktor.request.uri
 import io.ktor.response.respond
-import io.ktor.response.respondText
-import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.sessions.Sessions
 import io.ktor.sessions.cookie
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
-import io.ontola.cache.bulk.bulkHandler
 import io.ontola.cache.plugins.CSP
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.CacheConfiguration
@@ -54,18 +45,18 @@ import io.ontola.cache.plugins.ServiceRegistry
 import io.ontola.cache.plugins.Storage
 import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.plugins.Tenantization
-import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.requestTimings
-import io.ontola.cache.plugins.storage
-import io.ontola.cache.plugins.tenant
+import io.ontola.cache.routes.mountIndex
+import io.ontola.cache.routes.mountBulk
+import io.ontola.cache.routes.mountManifest
+import io.ontola.cache.routes.mountStatic
 import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.signedTransformer
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.isHtmlAccept
 import io.ontola.cache.util.loadAssetsManifests
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import kotlin.collections.set
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
 
@@ -254,38 +245,11 @@ fun Application.module(
     }
 
     routing {
-        static("f_assets") {
-            preCompressed(CompressedFileType.BROTLI, CompressedFileType.GZIP) {
-                files("assets")
-            }
-        }
-
-        get("/link-lib/cache/status") {
-            call.respondText("UP", contentType = ContentType.Text.Plain)
-        }
-
-        get("/link-lib/cache/clear") {
-            val test = call.application.storage.clear()
-
-            call.respondText(test ?: "no message given", ContentType.Text.Plain, HttpStatusCode.OK)
-        }
-
-        get("*/manifest.json") {
-            call.logger.debug { "Requested manifest from external (via handler)" }
-
-            if (call.tenant.websiteIRI.fullPath + "/manifest.json" != call.request.uri) {
-                return@get call.respond(HttpStatusCode.NotFound)
-            }
-
-            call.respond(Json.encodeToString(call.tenant.manifest))
-        }
-
-        post(bulkHandler())
-
-        installLogout()
-
-        get("{...}") {
-            indexHandler(client, assets)
-        }
+        mountStatic()
+        mountManifest()
+        mountBulk()
+        mountLogout()
+        mountMaps()
+        mountIndex(client, assets)
     }
 }

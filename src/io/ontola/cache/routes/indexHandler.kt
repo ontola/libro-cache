@@ -1,4 +1,4 @@
-package io.ontola.cache
+package io.ontola.cache.routes
 
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -12,6 +12,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.request.uri
 import io.ktor.response.header
 import io.ktor.response.respond
+import io.ktor.routing.Routing
+import io.ktor.routing.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import io.ktor.util.pipeline.PipelineContext
@@ -22,7 +24,7 @@ import io.ontola.cache.bulk.resourcesToOutputStream
 import io.ontola.cache.document.AssetsManifests
 import io.ontola.cache.document.PageConfiguration
 import io.ontola.cache.document.indexPage
-import io.ontola.cache.plugins.cacheConfig
+import io.ontola.cache.isHTML
 import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.services
@@ -154,4 +156,10 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
     ) + (head.includeResources ?: emptyList())
 
     respondRenderWithData(includes, assets)
+}
+
+fun Routing.mountIndex(client: HttpClient, assets: AssetsManifests) {
+    get("{...}") {
+        indexHandler(client, assets)
+    }
 }

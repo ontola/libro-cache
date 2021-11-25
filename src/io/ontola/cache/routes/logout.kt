@@ -27,7 +27,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.handleLogout() {
     call.respond(response.status)
 }
 
-fun Routing.installLogout() {
+fun Routing.mountLogout() {
     get("/*/logout") { handleLogout() }
     get("/logout") { handleLogout() }
     post("/*/logout") { handleLogout() }
