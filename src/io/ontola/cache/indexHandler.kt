@@ -23,6 +23,7 @@ import io.ontola.cache.document.AssetsManifests
 import io.ontola.cache.document.PageConfiguration
 import io.ontola.cache.document.indexPage
 import io.ontola.cache.plugins.cacheConfig
+import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.nonce
 import io.ontola.cache.plugins.services
@@ -76,6 +77,7 @@ fun PipelineContext<Unit, ApplicationCall>.updateSessionAccessToken(head: HeadRe
         val newSession = SessionData(
             accessToken = head.newAuthorization,
             refreshToken = head.newRefreshToken,
+            deviceId = call.deviceId,
         )
 
         call.sessions.set(newSession)

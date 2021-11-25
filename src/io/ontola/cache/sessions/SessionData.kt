@@ -53,6 +53,7 @@ data class Claims(
 data class SessionData(
     val accessToken: String,
     val refreshToken: String,
+    val deviceId: String?,
 ) {
     fun accessTokenBearer(): String = "Bearer $accessToken"
 
@@ -63,7 +64,7 @@ data class SessionData(
         return json.decodeFromString(Base64().decode(jwt.payload).decodeToString())
     }
 
-    fun isExpired(jwtValidator: com.auth0.jwt.interfaces.JWTVerifier): Boolean {
+    fun isExpired(jwtValidator: JWTVerifier): Boolean {
         try {
             jwtValidator.verify(accessToken)
         } catch (e: TokenExpiredException) {

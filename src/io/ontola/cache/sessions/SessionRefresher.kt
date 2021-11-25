@@ -8,6 +8,8 @@ import io.ktor.client.features.logging.Logging
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.request
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.Url
 import io.ktor.http.fullPath
@@ -88,11 +90,11 @@ class SessionRefresher(private val configuration: CacheSession.Configuration) {
         return client.request("${configuration.oidcUrl}${url.fullPath}") {
             method = HttpMethod.Post
             headers {
-                header("Accept", "application/json")
-                header("Authorization", "Bearer $userToken")
-                header("Content-Type", "application/json")
-                header("X-Forwarded-Host", url.host)
-                header("X-Forwarded-Proto", "https")
+                header(HttpHeaders.Accept, ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer $userToken")
+                header(HttpHeaders.ContentType, ContentType.Application.Json)
+                header(HttpHeaders.XForwardedHost, url.host)
+                header(HttpHeaders.XForwardedProto, "https")
                 header("X-Forwarded-Ssl", "on")
             }
 

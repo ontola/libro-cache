@@ -17,6 +17,7 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import io.ontola.cache.plugins.CacheSession
+import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.tenant
 import io.ontola.cache.util.copy
 
@@ -54,7 +55,11 @@ class SessionManager(
 
         if (existing == null) {
             val guestToken = guestToken()
-            session = SessionData(guestToken.accessToken, guestToken.refreshToken)
+            session = SessionData(
+                guestToken.accessToken,
+                guestToken.refreshToken,
+                call.deviceId,
+            )
         } else if (existing.isExpired(configuration.jwtValidator)) {
             session = refresher.refresh(existing)
         }
@@ -65,7 +70,11 @@ class SessionManager(
     }
 
     fun setAuthorization(accessToken: String, refreshToken: String) {
-        session = SessionData(accessToken = accessToken, refreshToken = refreshToken)
+        session = SessionData(
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            deviceId = call.deviceId,
+        )
     }
 
     @Deprecated("Until sessions are migrated")
@@ -76,6 +85,7 @@ class SessionManager(
             SessionData(
                 accessToken = it.userToken,
                 refreshToken = it.refreshToken,
+                deviceId = call.deviceId,
             )
         }
     }

@@ -12,6 +12,7 @@ import io.ktor.features.StatusPages
 import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.features.deflate
 import io.ktor.features.gzip
+import io.ktor.features.maxAge
 import io.ktor.features.minimumSize
 import io.ktor.features.toLogString
 import io.ktor.http.ContentType
@@ -37,6 +38,7 @@ import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.sessions.Sessions
 import io.ktor.sessions.cookie
+import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
 import io.ontola.cache.bulk.bulkHandler
@@ -45,6 +47,7 @@ import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.CacheConfiguration
 import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.plugins.DataProxy
+import io.ontola.cache.plugins.DeviceId
 import io.ontola.cache.plugins.Logging
 import io.ontola.cache.plugins.RedisAdapter
 import io.ontola.cache.plugins.ServiceRegistry
@@ -57,11 +60,14 @@ import io.ontola.cache.plugins.storage
 import io.ontola.cache.plugins.tenant
 import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData
+import io.ontola.cache.sessions.signedTransformer
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.isHtmlAccept
 import io.ontola.cache.util.loadAssetsManifests
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.time.Duration.Companion.days
+import kotlin.time.ExperimentalTime
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
@@ -72,7 +78,7 @@ fun ApplicationRequest.isHTML(): Boolean {
     return accept.isHtmlAccept() || contentType.contains("text/html")
 }
 
-@OptIn(KtorExperimentalLocationsAPI::class, io.lettuce.core.ExperimentalLettuceCoroutinesApi::class)
+@OptIn(KtorExperimentalLocationsAPI::class, ExperimentalLettuceCoroutinesApi::class, ExperimentalTime::class)
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
 fun Application.module(
@@ -179,8 +185,21 @@ fun Application.module(
         cookie<SessionData>(
             name = "identity",
             storage = RedisSessionStorage(adapter),
-        )
+        ) {
+            cookie.httpOnly = true
+            cookie.secure = true
+        }
+        cookie<String>("deviceId") {
+            cookie.httpOnly = true
+            cookie.secure = true
+            cookie.maxAge = 365.days
+            transform(
+                signedTransformer(signingSecret = config.sessions.sessionSecret)
+            )
+        }
     }
+
+    install(DeviceId)
 
     install(CacheSession) {
         legacyStorageAdapter = adapter
