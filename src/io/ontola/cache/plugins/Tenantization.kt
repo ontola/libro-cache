@@ -38,6 +38,7 @@ import io.ontola.cache.util.configureClientLogging
 import io.ontola.cache.util.copy
 import io.ontola.cache.util.measuredHit
 import io.ontola.cache.util.origin
+import io.ontola.cache.util.proxySafeHeaders
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -179,6 +180,7 @@ data class TenantFinderResponse(
 }
 
 data class TenantData(
+    internal val client: HttpClient,
     val isBlackListed: Boolean,
     val websiteIRI: Url,
     val websiteOrigin: Url,
@@ -221,6 +223,7 @@ class Tenantization(private val configuration: Configuration) {
             ignoreUnknownKeys = false
         }
         var client: HttpClient = HttpClient(CIO) {
+            followRedirects = false
             install(Logging) {
                 configureClientLogging()
             }
@@ -256,12 +259,9 @@ class Tenantization(private val configuration: Configuration) {
                     header(HttpHeaders.ContentType, ContentType.Application.Json)
                     header("Website-IRI", it)
 
-                    copy(HttpHeaders.XForwardedHost, context.request, context.request.header(HttpHeaders.Host))
-                    copy(HttpHeaders.XForwardedProto, context.request)
+                    proxySafeHeaders(context.request)
                     copy(HttpHeaders.XForwardedFor, context.request)
-                    copy("X-Forwarded-Ssl", context.request)
                     copy("X-Real-Ip", context.request)
-                    copy(HttpHeaders.XRequestId, context.request)
                 }
             }
 
@@ -286,6 +286,7 @@ class Tenantization(private val configuration: Configuration) {
             context.call.attributes.put(
                 TenantizationKey,
                 TenantData(
+                    client = configuration.client,
                     isBlackListed = false,
                     websiteIRI = manifest.ontola.websiteIRI,
                     websiteOrigin = baseOrigin,

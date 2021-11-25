@@ -263,6 +263,8 @@ fun Application.module(
 
         post(bulkHandler())
 
+        installLogout()
+
         get("{...}") {
             indexHandler(client, assets)
         }

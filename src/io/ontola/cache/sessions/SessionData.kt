@@ -14,8 +14,16 @@ import org.apache.commons.codec.binary.Base64
 private val json = Json { ignoreUnknownKeys = true }
 
 @Serializable
+enum class UserType {
+    @SerialName("guest")
+    Guest,
+    @SerialName("user")
+    User,
+}
+
+@Serializable
 data class UserData(
-    val type: String,
+    val type: UserType,
     @SerialName("@id")
     val iri: String,
     val id: String,
@@ -46,6 +54,10 @@ data class SessionData(
     val accessToken: String,
     val refreshToken: String,
 ) {
+    fun accessTokenBearer(): String = "Bearer $accessToken"
+
+    fun refreshTokenBearer(): String = "Bearer $refreshToken"
+
     fun claims(jwtValidator: JWTVerifier): Claims? {
         val jwt = jwtValidator.verify(accessToken)
         return json.decodeFromString(Base64().decode(jwt.payload).decodeToString())

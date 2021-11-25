@@ -37,6 +37,18 @@ class SessionManager(
             ?: session?.claims(configuration.jwtValidator)?.user?.language
             ?: configuration.cacheConfig.defaultLanguage
 
+    val loggedIn: Boolean
+        get() = session?.claims(configuration.jwtValidator)?.user?.type == UserType.User
+
+    val logoutRequest: LogoutRequest?
+        get() = session?.accessToken?.let {
+            LogoutRequest(
+                configuration.oidcClientId,
+                configuration.oidcClientSecret,
+                it,
+            )
+        }
+
     suspend fun ensure() {
         val existing = session
 
@@ -46,6 +58,10 @@ class SessionManager(
         } else if (existing.isExpired(configuration.jwtValidator)) {
             session = refresher.refresh(existing)
         }
+    }
+
+    fun delete() {
+        session = null
     }
 
     fun setAuthorization(accessToken: String, refreshToken: String) {
