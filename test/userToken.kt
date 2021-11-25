@@ -1,4 +1,5 @@
 import io.ontola.cache.sessions.UserData
+import io.ontola.cache.sessions.UserType
 import io.ontola.cache.sessions.createJWT
 import java.time.Instant
 import java.util.Date
@@ -7,7 +8,7 @@ fun userToken(expired: Boolean = false): String {
     val year = if (expired) "2010" else "2030"
 
     val userData = UserData(
-        type = "GuestUser",
+        type = UserType.Guest,
         iri = "https://example.com/user",
         email = "user@example.com",
         id = "5",

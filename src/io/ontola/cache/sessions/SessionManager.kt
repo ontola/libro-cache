@@ -40,7 +40,7 @@ class SessionManager(
             ?: session?.claims(configuration.jwtValidator)?.user?.language
             ?: configuration.cacheConfig.defaultLanguage
 
-    val loggedIn: Boolean
+    val isUser: Boolean
         get() = session?.claims(configuration.jwtValidator)?.user?.type == UserType.User
 
     val logoutRequest: LogoutRequest?

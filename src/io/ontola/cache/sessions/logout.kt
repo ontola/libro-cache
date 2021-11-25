@@ -20,7 +20,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.logout(): HttpResponse? {
 
     return call.tenant.client.post<HttpResponse>(call.services.route(revokeUrl.encodedPath)) {
         headers {
-            if (call.sessionManager.loggedIn) {
+            if (call.sessionManager.isUser) {
                 set(HttpHeaders.Authorization, call.sessionManager.session!!.accessTokenBearer())
             }
             proxySafeHeaders(call.request)

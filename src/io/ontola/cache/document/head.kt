@@ -1,6 +1,8 @@
 package io.ontola.cache.document
 
 import io.ontola.cache.plugins.Manifest
+import io.ontola.cache.plugins.TrackerType
+import io.ontola.cache.plugins.Tracking
 import kotlinx.html.HEAD
 import kotlinx.html.link
 import kotlinx.html.meta
@@ -11,7 +13,29 @@ import kotlinx.html.unsafe
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-fun HEAD.preloader(nonce: String) {
+fun HEAD.renderHead(url: String, nonce: String, config: PageConfiguration, manifest: Manifest, seed: String) {
+    opening(manifest)
+
+    unsafe {
+        raw(renderedMetaTags(url, manifest, seed))
+        raw("\n")
+    }
+
+    headTracking(nonce, manifest.ontola.tracking)
+
+    // Statics
+    services(config, manifest)
+    stylesheets(config)
+
+    // Web app / styles
+    theming(manifest)
+    fbAppId(config)
+    webAppConfig(manifest)
+    preloader(nonce)
+    appIcons(manifest)
+}
+
+private fun HEAD.preloader(nonce: String) {
     style {
         this.nonce = nonce
         unsafe {
@@ -20,7 +44,7 @@ fun HEAD.preloader(nonce: String) {
     }
 }
 
-fun HEAD.appIcons(manifest: Manifest) {
+private fun HEAD.appIcons(manifest: Manifest) {
     manifest.icons?.forEach { icon ->
         when {
             icon.src.contains("favicon") -> {
@@ -40,7 +64,7 @@ fun HEAD.appIcons(manifest: Manifest) {
     }
 }
 
-fun HEAD.opening(manifest: Manifest) {
+private fun HEAD.opening(manifest: Manifest) {
     meta(charset = "utf-8")
     title(manifest.name)
     link(rel = "manifest", href = "${manifest.scope}/manifest.json")
@@ -54,7 +78,7 @@ fun HEAD.opening(manifest: Manifest) {
     }
 }
 
-fun HEAD.services(config: PageConfiguration, manifest: Manifest) {
+private fun HEAD.services(config: PageConfiguration, manifest: Manifest) {
     config.tileServerUrl?.let { meta(name = "mapboxTileURL", content = it) }
     manifest.ontola.websocketPath?.ifBlank { null }?.let { meta(name = "websocket-path", content = it) }
     config.bugsnagOpts?.let {
@@ -65,7 +89,7 @@ fun HEAD.services(config: PageConfiguration, manifest: Manifest) {
     }
 }
 
-fun HEAD.stylesheets(config: PageConfiguration) {
+private fun HEAD.stylesheets(config: PageConfiguration) {
     link(rel = "stylesheet", type = "text/css", href = config.assets.es6.mainCss) {
         attributes["crossorigin"] = "anonymous"
     }
@@ -75,12 +99,12 @@ fun HEAD.stylesheets(config: PageConfiguration) {
     }
 }
 
-fun HEAD.theming(manifest: Manifest) {
+private fun HEAD.theming(manifest: Manifest) {
     meta(name = "theme", content = manifest.ontola.theme ?: "common")
     meta(name = "themeOpts", content = manifest.ontola.themeOptions ?: "")
 }
 
-fun HEAD.fbAppId(config: PageConfiguration) {
+private fun HEAD.fbAppId(config: PageConfiguration) {
     config.facebookAppId?.let {
         meta(content = it) {
             attributes["property"] = "fb:app_id"
@@ -88,7 +112,7 @@ fun HEAD.fbAppId(config: PageConfiguration) {
     }
 }
 
-fun HEAD.webAppConfig(manifest: Manifest) {
+private fun HEAD.webAppConfig(manifest: Manifest) {
     meta(name = "mobile-web-app-capable", content = "yes")
     meta(name = "apple-mobile-web-app-capable", content = "yes")
     meta(name = "application-name", content = manifest.shortName)
@@ -104,22 +128,27 @@ fun HEAD.webAppConfig(manifest: Manifest) {
     meta(name = "msapplication-config", content = "/assets/favicons/browserconfig.xml")
 }
 
-fun HEAD.renderHead(url: String, nonce: String, config: PageConfiguration, manifest: Manifest, seed: String) {
-    opening(manifest)
+private fun HEAD.headTracking(nonce: String, tracking: List<Tracking>) {
+    tracking.forEach {
+        when (it.type) {
+            TrackerType.GTM -> {
+                script {
+                    this.nonce = nonce
 
-    unsafe {
-        raw(renderedMetaTags(url, manifest, seed))
-        raw("\n")
+                    unsafe {
+                        raw(
+                            """
+                            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                            })(window,document,'script','dataLayer','${it.containerId}');
+                            """.trimIndent()
+                        )
+                    }
+                }
+            }
+            else -> Unit
+        }
     }
-
-    // Statics
-    services(config, manifest)
-    stylesheets(config)
-
-    // Web app / styles
-    theming(manifest)
-    fbAppId(config)
-    webAppConfig(manifest)
-    preloader(nonce)
-    appIcons(manifest)
 }

@@ -99,9 +99,17 @@ data class Icon(
 )
 
 @Serializable
+enum class TrackerType {
+    GUA,
+    GTM,
+    PiwikPro,
+    Matomo,
+}
+
+@Serializable
 data class Tracking(
     val host: String? = null,
-    val type: String,
+    val type: TrackerType,
     @SerialName("container_id")
     val containerId: String,
 )

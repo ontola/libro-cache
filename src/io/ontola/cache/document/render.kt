@@ -1,6 +1,11 @@
 package io.ontola.cache.document
 
+import io.ktor.application.ApplicationCall
 import io.ontola.cache.plugins.Manifest
+import io.ontola.cache.plugins.cacheConfig
+import io.ontola.cache.plugins.nonce
+import io.ontola.cache.plugins.sessionManager
+import io.ontola.cache.util.requestUri
 import kotlinx.html.BODY
 import kotlinx.html.HTML
 import kotlinx.html.body
@@ -19,6 +24,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.collections.set
 
 @Serializable
 data class AssetsManifests(
@@ -197,13 +203,16 @@ fun BODY.assetsBlock(nonce: String, config: PageConfiguration) {
 }
 
 fun HTML.indexPage(
-    url: String,
-    nonce: String,
+    call: ApplicationCall,
     config: PageConfiguration,
     manifest: Manifest,
     seed: String,
-    serializer: Json,
 ) {
+    val url = call.requestUri().toString()
+    val nonce = call.nonce
+    val serializer = call.application.cacheConfig.serializer
+    val isUser = call.sessionManager.isUser
+
     head {
         renderHead(url, nonce, config, manifest, seed)
     }
@@ -218,6 +227,6 @@ fun HTML.indexPage(
 //            deferredBodyStyles(nonceStr)
         manifestBlock(nonce, manifest, serializer)
 //            browserUpdateBlock()
-//            bodyTracking()
+        bodyTracking(nonce, manifest.ontola.tracking, isUser)
     }
 }
