@@ -46,9 +46,10 @@ import io.ontola.cache.plugins.Storage
 import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.plugins.Tenantization
 import io.ontola.cache.plugins.requestTimings
-import io.ontola.cache.routes.mountIndex
 import io.ontola.cache.routes.mountBulk
+import io.ontola.cache.routes.mountIndex
 import io.ontola.cache.routes.mountManifest
+import io.ontola.cache.routes.mountMaps
 import io.ontola.cache.routes.mountStatic
 import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData

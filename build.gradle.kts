@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val bugsnag_version: String by project
+val datetime_version: String by project
 val graal_version: String by project
 val ktor_version: String by project
 val kotlin_css_version: String by project
@@ -52,6 +53,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$coroutines_version")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties:$serialization_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:$datetime_version")
 
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.github.microutils:kotlin-logging:2.0.12")

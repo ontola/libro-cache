@@ -29,7 +29,6 @@ import io.ktor.request.accept
 import io.ktor.request.document
 import io.ktor.request.header
 import io.ktor.request.httpMethod
-import io.ktor.request.path
 import io.ktor.request.receiveChannel
 import io.ktor.request.uri
 import io.ktor.response.respond
@@ -218,13 +217,13 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
             pipeline.intercept(ApplicationCallPipeline.Features) {
                 val accept = parseHeaderValue(call.request.accept() ?: "*/*")
                     .map { v -> ContentType.parse(v.value).withoutParameters() }
-                val path = call.request.path()
                 val uri = Url(call.request.uri)
+                val path = uri.encodedPath
 
                 call.attributes.put(DataProxyKey, DataProxy(configuration, this.call))
 
                 val isManifestRequest = call.request.document() == "manifest.json"
-                val isPathExcluded = configuration.excludedPaths.contains(call.request.path())
+                val isPathExcluded = configuration.excludedPaths.contains(path)
                 val isNotExcluded = !isManifestRequest && !isPathExcluded
 
                 val ext = if (path.contains(".")) path.split(".").lastOrNull() else null

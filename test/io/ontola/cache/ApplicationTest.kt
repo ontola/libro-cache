@@ -26,10 +26,12 @@ import io.ontola.cache.bulk.statusCode
 import io.ontola.cache.plugins.Manifest
 import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.plugins.TenantFinderResponse
+import io.ontola.cache.sessions.OIDCTokenResponse
 import io.ontola.cache.util.fullUrl
 import io.ontola.cache.util.stem
 import io.ontola.cache.util.withoutProto
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.datetime.Clock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -75,6 +77,12 @@ class ApplicationTest {
             }
         }
 
+        val keys = mutableListOf<String>()
+        val values = mutableListOf<String>()
+        coEvery { storage.set(capture(keys), capture(values)) } returns null
+        val key = slot<String>()
+        coEvery { storage.get(capture(key)) } answers { values[keys.indexOf(key.captured)] }
+
         val setEntries = slot<Map<String, String>>()
         coEvery { storage.hset("cache:entry:https%3A//example.com/test/2:en", capture(setEntries)) } returns null
 
@@ -113,6 +121,8 @@ class ApplicationTest {
     }
 
     private fun createClient(resources: List<Triple<String, String, CacheControl>>): HttpClient = HttpClient(MockEngine) {
+        val jsonContentType = headersOf("Content-Type" to listOf(ContentType.Application.Json.toString()))
+
         configureClient()
         engine {
             addHandler { request ->
@@ -122,11 +132,11 @@ class ApplicationTest {
                         val payload = TenantFinderResponse(
                             iriPrefix = Url(iri).withoutProto(),
                         )
-                        val responseHeaders = headersOf("Content-Type" to listOf(ContentType.Application.Json.toString()))
+
                         respond(
                             Json.encodeToString(payload),
                             HttpStatusCode.OK,
-                            headers = responseHeaders,
+                            headers = jsonContentType,
                         )
                     }
                     "https://data.local/spi/bulk" -> {
@@ -144,11 +154,27 @@ class ApplicationTest {
                                 body = payload,
                             )
                         }
-                        val responseHeaders = headersOf("Content-Type" to listOf(ContentType.Application.Json.toString()))
+
                         respond(
                             Json.encodeToString(payload),
                             HttpStatusCode.OK,
-                            headers = responseHeaders,
+                            headers = jsonContentType,
+                        )
+                    }
+                    "https://oidcserver.test/oauth/token" -> {
+                        val body = OIDCTokenResponse(
+                            accessToken = "",
+                            tokenType = "",
+                            expiresIn = 100,
+                            refreshToken = "",
+                            scope = "",
+                            createdAt = Clock.System.now().epochSeconds,
+                        )
+
+                        respond(
+                            Json.encodeToString(body),
+                            HttpStatusCode.OK,
+                            headers = jsonContentType,
                         )
                     }
                     else -> error("Unhandled ${request.url.fullUrl}")

@@ -10,6 +10,7 @@ import io.ktor.http.Url
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.ontola.cache.plugins.Manifest
+import io.ontola.cache.routes.HeadResponse
 import kotlinx.coroutines.runBlocking
 import setManifest
 import setWebsiteBase

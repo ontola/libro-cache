@@ -1,13 +1,11 @@
 package io.ontola.cache.sessions
 
 import io.ktor.application.ApplicationCall
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.features.json.JsonFeature
-import io.ktor.client.features.json.serializer.KotlinxSerializer
+import io.ktor.client.call.receive
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.request
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -17,6 +15,7 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import io.ontola.cache.plugins.CacheSession
+import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.tenant
 import io.ontola.cache.util.CacheHttpHeaders
@@ -93,16 +92,10 @@ class SessionManager(
     }
 
     private suspend fun guestToken(): OIDCTokenResponse {
-        val client = HttpClient(CIO) {
-            install(JsonFeature) {
-                serializer = KotlinxSerializer()
-            }
-        }
-
         val serviceToken = configuration.oAuthToken
         val path = "${call.tenant.websiteIRI.fullPath}/oauth/token"
 
-        return client.request("${configuration.oidcUrl}$path") {
+        val response = call.application.cacheConfig.client.request<HttpResponse>("${configuration.oidcUrl}$path") {
             method = HttpMethod.Post
 
             headers {
@@ -118,7 +111,12 @@ class SessionManager(
                 copy("X-Requested-With", call.request)
             }
 
-            body = OIDCRequest.guestRequest(configuration.oidcClientId, configuration.oidcClientSecret)
+            body = OIDCRequest.guestRequest(
+                configuration.oidcClientId,
+                configuration.oidcClientSecret,
+            )
         }
+
+        return response.receive()
     }
 }

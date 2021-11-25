@@ -86,6 +86,20 @@ data class RedisConfig(
     val invalidationGroup: String,
 )
 
+data class MapsConfig(
+    val username: String,
+    val key: String,
+    val scopes: List<String> = listOf(
+        "styles:tiles",
+        "styles:read",
+        "fonts:read",
+        "datasets:read",
+    ),
+) {
+    val tokenEndpoint: String
+        get() = "https://api.mapbox.com/tokens/v2/$username?access_token=$key"
+}
+
 data class AssetsConfig(
     val es6ManifestLocation: String = "./assets/manifest.module.json",
     val es5ManifestLocation: String = "./assets/manifest.legacy.json",
@@ -128,6 +142,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
      * Whether the invalidator should be running.
      */
     val enableInvalidator: Boolean,
+    val maps: MapsConfig? = null,
     /**
      * Key of the error reporting service.
      */
@@ -186,6 +201,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
                 services = cacheConfig.config("services"),
                 defaultLanguage = defaultLanguage(cacheConfig, testing),
                 enableInvalidator = true, // TODO
+                maps = mapsConfig(cacheConfig, testing),
                 reportingKey = cacheConfig.propertyOrNull("reportingKey")?.toString(),
                 cacheExpiration = cacheConfig.propertyOrNull("cacheExpiration")?.toString()?.toLongOrNull(),
                 client = client,
@@ -284,6 +300,18 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
             Triple(libroRedisURI, streamRedisURI, redisConfig)
         }
 
+        private fun mapsConfig(
+            cacheConfig: ApplicationConfig,
+            testing: Boolean,
+        ): MapsConfig? = if (testing) {
+            null
+        } else {
+            MapsConfig(
+                username = cacheConfig.config("maps").property("username").getString(),
+                key = cacheConfig.config("maps").property("key").getString(),
+            )
+        }
+
         private fun sessionsConfig(
             cacheConfig: ApplicationConfig,
             testing: Boolean,
@@ -293,11 +321,11 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
 
             return if (testing) {
                 SessionsConfig(
-                    sessionSecret = "",
+                    sessionSecret = "secret",
                     jwtEncryptionToken = "",
                     clientId = "0",
                     clientSecret = "",
-                    oidcUrl = "",
+                    oidcUrl = "https://oidcserver.test",
                     oAuthToken = "",
                 )
             } else {
