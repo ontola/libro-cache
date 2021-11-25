@@ -197,15 +197,15 @@ fun BODY.assetsBlock(nonce: String, config: PageConfiguration) {
 }
 
 fun HTML.indexPage(
+    url: String,
+    nonce: String,
     config: PageConfiguration,
     manifest: Manifest,
     seed: String,
     serializer: Json,
 ) {
-    val nonce = ""
-
     head {
-        renderHead(nonce, config, manifest)
+        renderHead(url, nonce, config, manifest, seed)
     }
     body {
         attributes["style"] = "margin: 0;"

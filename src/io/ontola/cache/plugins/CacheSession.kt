@@ -57,9 +57,9 @@ class CacheSession(private val configuration: Configuration) {
 private val CacheSessionKey = AttributeKey<SessionManager>("CacheSessionKey")
 
 internal val ApplicationCall.sessionManager: SessionManager
-    get() = attributes.getOrNull(CacheSessionKey) ?: reportMissingTenantization()
+    get() = attributes.getOrNull(CacheSessionKey) ?: reportMissingSession()
 
-private fun ApplicationCall.reportMissingTenantization(): Nothing {
+private fun ApplicationCall.reportMissingSession(): Nothing {
     application.feature(CacheSession) // ensure the feature is installed
     throw CacheSessionNotYetConfiguredException()
 }

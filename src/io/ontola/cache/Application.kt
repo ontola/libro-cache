@@ -40,6 +40,7 @@ import io.ktor.sessions.cookie
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
 import io.ontola.cache.bulk.bulkHandler
+import io.ontola.cache.plugins.CSP
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.CacheConfiguration
 import io.ontola.cache.plugins.CacheSession
@@ -101,6 +102,8 @@ fun Application.module(
         this.adapter = adapter
         this.expiration = config.cacheExpiration
     }
+
+    install(CSP)
 
     install(Locations)
 

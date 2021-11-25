@@ -24,10 +24,12 @@ import io.ontola.cache.document.PageConfiguration
 import io.ontola.cache.document.indexPage
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.logger
+import io.ontola.cache.plugins.nonce
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.plugins.tenant
 import io.ontola.cache.sessions.SessionData
+import io.ontola.cache.util.requestUri
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 
@@ -116,6 +118,8 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
 
         call.respondHtml(HttpStatusCode.OK) {
             indexPage(
+                call.requestUri().toString(),
+                call.nonce,
                 pageConfig,
                 manifest,
                 stream.toString(Charset.forName("UTF-8")),

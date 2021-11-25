@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val bugsnag_version: String by project
+val graal_version: String by project
 val ktor_version: String by project
 val kotlin_css_version: String by project
 val kotlin_version: String by project
@@ -74,6 +75,11 @@ dependencies {
     implementation("io.ktor:ktor-serialization:$ktor_version")
 
     implementation("org.jetbrains.kotlin-wrappers:kotlin-css:$kotlin_css_version")
+
+    implementation("org.graalvm.sdk:graal-sdk:$graal_version")
+    implementation("org.graalvm.js:js:$graal_version")
+    implementation("org.graalvm.truffle:truffle-api:$graal_version")
+    implementation("org.graalvm.truffle:truffle-dsl-processor:$graal_version")
 
     implementation("commons-codec:commons-codec:1.15")
 
