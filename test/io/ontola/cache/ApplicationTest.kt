@@ -30,6 +30,7 @@ import io.ontola.cache.sessions.OIDCTokenResponse
 import io.ontola.cache.util.fullUrl
 import io.ontola.cache.util.stem
 import io.ontola.cache.util.withoutProto
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Clock
 import kotlinx.serialization.decodeFromString
@@ -82,6 +83,8 @@ class ApplicationTest {
         coEvery { storage.set(capture(keys), capture(values)) } returns null
         val key = slot<String>()
         coEvery { storage.get(capture(key)) } answers { values[keys.indexOf(key.captured)] }
+
+        coEvery { storage.keys("cache:routes:start:*") } returns emptyFlow()
 
         val setEntries = slot<Map<String, String>>()
         coEvery { storage.hset("cache:entry:https%3A//example.com/test/2:en", capture(setEntries)) } returns null

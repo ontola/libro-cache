@@ -24,11 +24,15 @@ interface StorageAdapter<K : Any, V : Any> {
 
     suspend fun get(key: K): V?
 
+    suspend fun hget(key: String, field: String): String?
+
     fun hmget(key: K, vararg fields: K): Flow<Pair<K, V?>>
 
     suspend fun hset(key: K, map: Map<K, V>): Long?
 
     suspend fun flushdbAsync(): String?
+
+    suspend fun keys(pattern: K): Flow<String>
 
     suspend fun set(key: K, value: V): String?
 }
@@ -41,6 +45,10 @@ class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : Storag
 
     override suspend fun expire(key: String, seconds: Long): Boolean? {
         return client.expire(key, seconds)
+    }
+
+    override suspend fun hget(key: String, field: String): String? {
+        return client.hget(key, field)
     }
 
     override fun hmget(key: String, vararg fields: String): Flow<Pair<String, String?>> {
@@ -57,6 +65,10 @@ class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : Storag
 
     override suspend fun flushdbAsync(): String? {
         return client.flushdb(FlushMode.ASYNC)
+    }
+
+    override suspend fun keys(pattern: String): Flow<String> {
+        return client.keys(pattern)
     }
 
     override suspend fun set(key: String, value: String): String? {
@@ -139,6 +151,14 @@ class Storage(
         }
     }
 
+    suspend fun keys(vararg pattern: String): Flow<List<String>> {
+        val prefixed = keyManager.toKey(*pattern)
+
+        return adapter
+            .keys(prefixed)
+            .map { keyManager.fromKey(it) }
+    }
+
     suspend fun getString(vararg key: String): String? {
         val prefixed = keyManager.toKey(*key)
         strings[prefixed]?.let { (exp, value) ->
@@ -150,6 +170,12 @@ class Storage(
         }
 
         return adapter.get(prefixed)
+    }
+
+    suspend fun getHashValue(vararg key: String, hashKey: String): String? {
+        val prefixed = keyManager.toKey(*key)
+
+        return adapter.hget(prefixed, hashKey)
     }
 
     companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, Storage> {

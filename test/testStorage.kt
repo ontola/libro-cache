@@ -29,6 +29,8 @@ fun blankStorage(): StorageAdapter<String, String> {
         emptyFlow()
     }
 
+    coEvery { storage.keys(any()) } returns emptyFlow()
+
     return storage
 }
 

@@ -5,6 +5,8 @@ import io.ktor.http.authority
 import io.ktor.http.fullPath
 import io.ktor.http.hostWithPort
 
+fun Url.filename(): String? = encodedPath.split("/").lastOrNull()
+
 fun Url.origin(): String = "${this.protocol.name}://${this.authority}"
 
 fun Url.stem(): String = "${origin()}$encodedPath"

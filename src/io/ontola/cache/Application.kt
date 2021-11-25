@@ -33,6 +33,7 @@ import io.ktor.sessions.cookie
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
+import io.ontola.cache.document.PageConfiguration
 import io.ontola.cache.plugins.CSP
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.CacheConfiguration
@@ -54,6 +55,7 @@ import io.ontola.cache.routes.mountStatic
 import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.signedTransformer
+import io.ontola.cache.studio.Studio
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.isHtmlAccept
 import io.ontola.cache.util.loadAssetsManifests
@@ -99,6 +101,10 @@ fun Application.module(
     install(Storage) {
         this.adapter = adapter
         this.expiration = config.cacheExpiration
+    }
+
+    install(Studio) {
+        pageConfig = PageConfiguration(appElement = "root", assets = assets)
     }
 
     install(CSP)
