@@ -1,5 +1,7 @@
 package io.ontola.cache
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -34,6 +36,7 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
 import io.ontola.cache.document.PageConfiguration
+import io.ontola.cache.health.mountHealth
 import io.ontola.cache.plugins.CSP
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.CacheConfiguration
@@ -171,6 +174,7 @@ fun Application.module(
             "/favicon.ico",
             "/link-lib/cache/clear",
             "/link-lib/cache/status",
+            "/d/health",
             "/metrics",
             "/static/",
             "/assets/",
@@ -189,7 +193,6 @@ fun Application.module(
         }
         cookie<String>("deviceId") {
             cookie.httpOnly = true
-            cookie.secure = true
             cookie.maxAge = 365.days
             transform(
                 signedTransformer(signingSecret = config.sessions.sessionSecret)
@@ -201,6 +204,10 @@ fun Application.module(
 
     install(CacheSession) {
         legacyStorageAdapter = adapter
+        val jwtToken = Algorithm.HMAC512(config.sessions.jwtEncryptionToken)
+        jwtValidator = JWT.require(jwtToken)
+            .withClaim("application_id", config.sessions.clientId)
+            .build()
     }
 
     install(DataProxy) {
@@ -223,6 +230,7 @@ fun Application.module(
         )
         excludedPaths = listOf(
             "/link-lib/bulk",
+            "/d/health",
             "static",
         )
         contentTypes = listOf(
@@ -253,6 +261,7 @@ fun Application.module(
 
     routing {
         mountStatic()
+        mountHealth()
         mountManifest()
         mountBulk()
         mountLogout()

@@ -303,12 +303,17 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
         private fun mapsConfig(
             cacheConfig: ApplicationConfig,
             testing: Boolean,
-        ): MapsConfig? = if (testing) {
-            null
-        } else {
-            MapsConfig(
-                username = cacheConfig.config("maps").property("username").getString(),
-                key = cacheConfig.config("maps").property("key").getString(),
+        ): MapsConfig? {
+            if (testing) {
+                return null
+            }
+
+            val username = cacheConfig.config("maps").propertyOrNull("username")?.getString() ?: return null
+            val key = cacheConfig.config("maps").propertyOrNull("key")?.getString() ?: return null
+
+            return MapsConfig(
+                username = username,
+                key = key,
             )
         }
 

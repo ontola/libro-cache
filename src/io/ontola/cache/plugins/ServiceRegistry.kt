@@ -92,9 +92,6 @@ class ServiceRegistry(private val configuration: Configuration) {
             dataServiceMatcher = Regex(config.config("data").property("matcher").getString())
             dataServiceBulk = config.config("data").property("bulk").getString().toBoolean()
 
-//            cacheServiceUrl = config.config("cache").property("url").getString()
-//            cacheServiceName = config.config("cache").property("name").getString()
-//            cacheServiceMatcher = Regex(config.config("cache").property("matcher").getString())
             emailServiceUrl = config.config("email").property("url").getString()
             emailServiceName = config.config("email").property("name").getString()
             emailServiceMatcher = Regex(config.config("email").property("matcher").getString())

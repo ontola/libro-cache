@@ -1,0 +1,92 @@
+package io.ontola.cache.health
+
+import io.ktor.application.call
+import io.ktor.html.respondHtml
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.routing.Routing
+import io.ktor.routing.get
+import kotlinx.css.Color
+import kotlinx.css.CssBuilder
+import kotlinx.css.backgroundColor
+import kotlinx.css.thead
+import kotlinx.css.tr
+import kotlinx.html.FlowOrMetaDataContent
+import kotlinx.html.body
+import kotlinx.html.head
+import kotlinx.html.style
+import kotlinx.html.table
+import kotlinx.html.tbody
+import kotlinx.html.td
+import kotlinx.html.thead
+import kotlinx.html.tr
+import kotlinx.html.unsafe
+
+fun humanStatus(result: CheckResult): String = when (result) {
+    CheckResult.Pass -> "🟩 pass"
+    CheckResult.Fail -> "🟥 fail"
+    CheckResult.Warn -> "🟨 warn"
+}
+
+fun Routing.mountHealth() {
+    get("/d/health") {
+        val checks = listOf(
+            BackendCheck(),
+            EnvironmentCheck(),
+            RedisCheck(),
+            HeadRequestCheck(),
+        )
+
+        checks.forEach { it.run(this) }
+
+        if (checks.any { it.result == CheckResult.Fail }) {
+            call.response.status(HttpStatusCode.ServiceUnavailable)
+        }
+
+        call.respondHtml {
+            head {
+                styleCss {
+                    thead {
+                        backgroundColor = Color.turquoise
+                    }
+                    nthChild(tr.tagName) {
+                        backgroundColor = Color.aliceBlue
+                    }
+                }
+            }
+            body {
+                table {
+                    thead {
+                        tr {
+                            td { +"Check" }
+                            td { +"Result" }
+                            td { +"Message" }
+                        }
+                    }
+                    tbody {
+                        for (check in checks) {
+                            tr {
+                                td { +check.name }
+                                td { +humanStatus(check.result) }
+                                td {
+                                    if (check.result == CheckResult.Pass)
+                                        +"N/A"
+                                    else
+                                        +check.message
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun FlowOrMetaDataContent.styleCss(builder: CssBuilder.() -> Unit) {
+    style(type = ContentType.Text.CSS.toString()) {
+        unsafe {
+            raw(CssBuilder().apply(builder).toString())
+        }
+    }
+}

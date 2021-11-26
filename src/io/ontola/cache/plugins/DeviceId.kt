@@ -12,33 +12,6 @@ import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import java.util.UUID
 
-//const oneYearInMiliSec = 31536000000;
-//
-//const deviceIdFromCookie = (ctx) => ctx.cookies.get('deviceId');
-//
-//const generateDeviceId = () => uuidv4();
-//
-//const deviceIdMiddleware = async (ctx, next) => {
-//    if (!ctx.secure) {
-//        return next();
-//    }
-//
-//    let deviceId = deviceIdFromCookie(ctx);
-//
-//    if (!deviceId) {
-//        deviceId = generateDeviceId();
-//        ctx.cookies.set('deviceId', deviceId, {
-//                httpOnly: true,
-//                maxAge: oneYearInMiliSec,
-//                secure: true,
-//        });
-//    }
-//
-//    ctx.deviceId = deviceId;
-//
-//    return next();
-//};
-
 class DeviceId(private val configuration: Configuration) {
     class Configuration
 

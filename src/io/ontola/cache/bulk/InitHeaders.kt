@@ -5,16 +5,20 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
+import io.ktor.http.Url
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.plugins.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.copy
 import io.ontola.cache.util.proxySafeHeaders
 
-fun HttpRequestBuilder.initHeaders(call: ApplicationCall, lang: String) {
+fun HttpRequestBuilder.initHeaders(
+    call: ApplicationCall,
+    lang: String,
+    websiteBase: Url = call.tenant.websiteIRI,
+) {
     // TODO: Support direct bearer header for API requests
     val authorization = call.sessionManager.session
-    val websiteIRI = call.tenant.websiteIRI
     val originalReq = call.request
 
     headers {
@@ -22,7 +26,7 @@ fun HttpRequestBuilder.initHeaders(call: ApplicationCall, lang: String) {
             header(HttpHeaders.Authorization, it)
         }
 
-        header(CacheHttpHeaders.WebsiteIri, websiteIRI)
+        header(CacheHttpHeaders.WebsiteIri, websiteBase)
 
         proxySafeHeaders(originalReq, lang)
         copy(HttpHeaders.Host, originalReq)

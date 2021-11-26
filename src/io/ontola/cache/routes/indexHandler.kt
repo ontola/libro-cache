@@ -48,11 +48,14 @@ data class HeadResponse(
     val includeResources: List<String>? = emptyList(),
 )
 
-suspend fun PipelineContext<Unit, ApplicationCall>.headResponse(client: HttpClient): HeadResponse {
+suspend fun PipelineContext<Unit, ApplicationCall>.headRequest(
+    client: HttpClient,
+    uri: String = call.request.uri,
+    websiteBase: Url = call.tenant.websiteIRI,
+): HeadResponse {
     val lang = call.sessionManager.language
-    val headResponse = client.head<HttpResponse>(call.services.route(call.request.uri)) {
-        header(CacheHttpHeaders.WebsiteIri, call.tenant.websiteIRI)
-        initHeaders(call, lang)
+    val headResponse = client.head<HttpResponse>(call.services.route(uri)) {
+        initHeaders(call, lang, websiteBase)
     }
 
     call.logger.debug { "Head response status ${headResponse.status}" }
@@ -142,7 +145,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
 
     call.response.header(HttpHeaders.Vary, VaryHeader)
 
-    val head = headResponse(client)
+    val head = headRequest(client)
     updateSessionAccessToken(head)
     call.response.status(head.statusCode)
 
