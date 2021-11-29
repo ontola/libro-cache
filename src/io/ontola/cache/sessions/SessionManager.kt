@@ -35,8 +35,8 @@ class SessionManager(
         get() = call.request.header(HttpHeaders.Host)
 
     val language: String
-        get() = call.request.header(HttpHeaders.AcceptLanguage)
-            ?: session?.claims(configuration.jwtValidator)?.user?.language
+        get() = session?.claims(configuration.jwtValidator)?.user?.language
+            ?: call.request.header(HttpHeaders.AcceptLanguage)
             ?: configuration.cacheConfig.defaultLanguage
 
     val isUser: Boolean
