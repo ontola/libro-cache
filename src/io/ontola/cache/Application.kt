@@ -35,7 +35,7 @@ import io.ktor.sessions.cookie
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
-import io.ontola.cache.document.PageConfiguration
+import io.ontola.cache.assets.Assets
 import io.ontola.cache.health.mountHealth
 import io.ontola.cache.plugins.CSP
 import io.ontola.cache.plugins.CacheConfig
@@ -61,7 +61,6 @@ import io.ontola.cache.studio.Studio
 import io.ontola.cache.tenantization.Tenantization
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.isHtmlAccept
-import io.ontola.cache.util.loadAssetsManifests
 import kotlin.collections.set
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
@@ -85,13 +84,33 @@ fun Application.module(
 ) {
     val config = CacheConfig.fromEnvironment(environment.config, testing, client)
     val adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
-    val assets = loadAssetsManifests(config)
 
     install(Logging)
+
+    install(StatusPages) {
+        exception<TenantNotFoundException> {
+            call.respond(HttpStatusCode.NotFound)
+        }
+        exception<BadGatewayException> {
+            call.respond(HttpStatusCode.BadGateway)
+        }
+        exception<AuthenticationException> {
+            call.respond(HttpStatusCode.Unauthorized)
+        }
+        exception<AuthorizationException> {
+            call.respond(HttpStatusCode.Forbidden)
+        }
+        exception<Exception> { cause ->
+            config.notify(cause)
+            call.respond(HttpStatusCode.InternalServerError)
+        }
+    }
 
     install(CacheConfiguration) {
         this.config = config
     }
+
+    install(Assets)
 
     install(ServiceRegistry) {
         if (testing) {
@@ -104,10 +123,6 @@ fun Application.module(
     install(Storage) {
         this.adapter = adapter
         this.expiration = config.cacheExpiration
-    }
-
-    install(Studio) {
-        pageConfig = PageConfiguration(appElement = "root", assets = assets)
     }
 
     install(CSP)
@@ -149,25 +164,6 @@ fun Application.module(
 
     install(ForwardedHeaderSupport)
     install(XForwardedHeaderSupport)
-
-    install(StatusPages) {
-        exception<TenantNotFoundException> {
-            call.respond(HttpStatusCode.NotFound)
-        }
-        exception<BadGatewayException> {
-            call.respond(HttpStatusCode.BadGateway)
-        }
-        exception<AuthenticationException> {
-            call.respond(HttpStatusCode.Unauthorized)
-        }
-        exception<AuthorizationException> {
-            call.respond(HttpStatusCode.Forbidden)
-        }
-        exception<Exception> { cause ->
-            config.notify(cause)
-            call.respond(HttpStatusCode.InternalServerError)
-        }
-    }
 
     install(Tenantization) {
         blacklist = listOf(
@@ -266,6 +262,6 @@ fun Application.module(
         mountBulk()
         mountLogout()
         mountMaps()
-        mountIndex(client, assets)
+        mountIndex(client)
     }
 }

@@ -21,9 +21,9 @@ import io.ontola.cache.bulk.CacheRequest
 import io.ontola.cache.bulk.coldHandler
 import io.ontola.cache.bulk.initHeaders
 import io.ontola.cache.bulk.resourcesToOutputStream
-import io.ontola.cache.document.AssetsManifests
-import io.ontola.cache.document.PageConfiguration
+import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.document.indexPage
+import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.isHTML
 import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.logger
@@ -110,12 +110,10 @@ fun PipelineContext<Unit, ApplicationCall>.respondServerRedirect(head: HeadRespo
 }
 
 suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
+    ctx: PageRenderContext,
     includes: List<String>?,
-    assets: AssetsManifests,
 ) {
-    val manifest = call.tenant.manifest
 
-    val pageConfig = PageConfiguration(appElement = "root", assets = assets)
     val updatedEntries = ByteArrayOutputStream().use { stream ->
         val entries = if (includes != null) {
             resourcesToOutputStream(includes.map { CacheRequest(it) }, stream)
@@ -124,12 +122,9 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
         }
 
         call.respondHtml(HttpStatusCode.OK) {
-            indexPage(
-                call,
-                pageConfig,
-                manifest,
-                stream.toString(Charset.forName("UTF-8")),
-            )
+            ctx.seed = stream.toString(Charset.forName("UTF-8"))
+
+            indexPage(ctx)
         }
 
         entries
@@ -138,7 +133,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
     coldHandler(updatedEntries)
 }
 
-suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClient, assets: AssetsManifests) {
+suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClient) {
     if (!call.request.isHTML()) {
         return call.respond(HttpStatusCode.NotFound)
     }
@@ -158,11 +153,13 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
         call.tenant.websiteIRI.toString() + "/ns/core",
     ) + (head.includeResources ?: emptyList())
 
-    respondRenderWithData(includes, assets)
+    val ctx = call.pageRenderContextFromCall()
+
+    respondRenderWithData(ctx, includes)
 }
 
-fun Routing.mountIndex(client: HttpClient, assets: AssetsManifests) {
+fun Routing.mountIndex(client: HttpClient) {
     get("{...}") {
-        indexHandler(client, assets)
+        indexHandler(client)
     }
 }

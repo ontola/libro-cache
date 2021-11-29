@@ -1,7 +1,5 @@
-package io.ontola.cache.util
+package io.ontola.cache.assets
 
-import io.ontola.cache.document.AssetsManifests
-import io.ontola.cache.document.ResourcesManifest
 import io.ontola.cache.plugins.CacheConfig
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json

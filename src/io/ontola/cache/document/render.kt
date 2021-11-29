@@ -1,11 +1,7 @@
 package io.ontola.cache.document
 
-import io.ktor.application.ApplicationCall
-import io.ontola.cache.plugins.cacheConfig
-import io.ontola.cache.plugins.nonce
-import io.ontola.cache.plugins.sessionManager
+import io.ontola.cache.assets.AssetsManifests
 import io.ontola.cache.tenantization.Manifest
-import io.ontola.cache.util.requestUri
 import kotlinx.html.BODY
 import kotlinx.html.HTML
 import kotlinx.html.body
@@ -14,35 +10,17 @@ import kotlinx.html.div
 import kotlinx.html.h1
 import kotlinx.html.head
 import kotlinx.html.id
+import kotlinx.html.lang
 import kotlinx.html.noScript
 import kotlinx.html.p
 import kotlinx.html.script
 import kotlinx.html.style
 import kotlinx.html.unsafe
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.collections.set
-
-@Serializable
-data class AssetsManifests(
-    val es5: ResourcesManifest,
-    val es6: ResourcesManifest,
-)
-
-@Serializable
-data class ResourcesManifest(
-    val publicFolder: String? = null,
-    val defaultBundle: String? = null,
-    @SerialName("./sw.js")
-    val swJs: String = "/$publicFolder/sw.js",
-    @SerialName("main.css")
-    val mainCss: String = "/$publicFolder/$defaultBundle.bundle.css",
-    @SerialName("main.js")
-    val mainJs: String = "/$publicFolder/$defaultBundle.bundle.js",
-)
 
 @Serializable
 data class BugsnagOpts(
@@ -202,16 +180,14 @@ fun BODY.assetsBlock(nonce: String, config: PageConfiguration) {
     }
 }
 
-fun HTML.indexPage(
-    call: ApplicationCall,
-    config: PageConfiguration,
-    manifest: Manifest,
-    seed: String,
-) {
-    val url = call.requestUri().toString()
-    val nonce = call.nonce
-    val serializer = call.application.cacheConfig.serializer
-    val isUser = call.sessionManager.isUser
+fun HTML.indexPage(ctx: PageRenderContext) {
+    val url = ctx.uri.toString()
+    val nonce = ctx.nonce
+    val config = ctx.configuration
+    val manifest = ctx.manifest
+    val seed = ctx.seed ?: ""
+
+    this.lang = ctx.lang
 
     head {
         renderHead(url, nonce, config, manifest, seed)
@@ -225,8 +201,8 @@ fun HTML.indexPage(
         seedBlock(nonce, seed)
         assetsBlock(nonce, config)
 //            deferredBodyStyles(nonceStr)
-        manifestBlock(nonce, manifest, serializer)
+        manifestBlock(nonce, manifest, ctx.serializer)
 //            browserUpdateBlock()
-        bodyTracking(nonce, manifest.ontola.tracking, isUser)
+        bodyTracking(nonce, manifest.ontola.tracking, ctx.isUser)
     }
 }
