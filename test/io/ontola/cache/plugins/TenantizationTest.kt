@@ -10,6 +10,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.ontola.cache.module
+import io.ontola.cache.tenantization.closeToWebsiteIRI
 import mu.KLogger
 import kotlin.test.Test
 import kotlin.test.assertContains

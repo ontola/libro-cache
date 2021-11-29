@@ -29,6 +29,7 @@ import io.ktor.request.accept
 import io.ktor.request.document
 import io.ktor.request.header
 import io.ktor.request.httpMethod
+import io.ktor.request.path
 import io.ktor.request.receiveChannel
 import io.ktor.request.uri
 import io.ktor.response.respond
@@ -37,6 +38,7 @@ import io.ktor.util.filter
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
 import io.ontola.cache.sessions.SessionData
+import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.Actions
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
@@ -218,7 +220,7 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
                 val accept = parseHeaderValue(call.request.accept() ?: "*/*")
                     .map { v -> ContentType.parse(v.value).withoutParameters() }
                 val uri = Url(call.request.uri)
-                val path = uri.encodedPath
+                val path = call.request.path()
 
                 call.attributes.put(DataProxyKey, DataProxy(configuration, this.call))
 

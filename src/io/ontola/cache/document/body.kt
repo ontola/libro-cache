@@ -1,7 +1,7 @@
 package io.ontola.cache.document
 
-import io.ontola.cache.plugins.TrackerType
-import io.ontola.cache.plugins.Tracking
+import io.ontola.cache.tenantization.TrackerType
+import io.ontola.cache.tenantization.Tracking
 import kotlinx.html.BODY
 import kotlinx.html.iframe
 import kotlinx.html.noScript
@@ -32,12 +32,14 @@ internal fun BODY.bodyTracking(nonce: String, tracking: List<Tracking>, isUser: 
                     async = true
                     this.nonce = nonce
                     unsafe {
-                        raw("""
+                        raw(
+                            """
                             window.dataLayer = window.dataLayer || [];
                             function gtag(){dataLayer.push(arguments);}
                             gtag('js', new Date());
                             gtag('config', "${it.containerId}");
-                        """.trimIndent())
+                            """.trimIndent()
+                        )
                     }
                 }
             }
@@ -53,7 +55,8 @@ internal fun BODY.bodyTracking(nonce: String, tracking: List<Tracking>, isUser: 
                     async = true
                     this.nonce = nonce
                     unsafe {
-                        raw("""
+                        raw(
+                            """
                             var _paq = window._paq || [];
                             ${if (isUser) "" else "_paq.push(['disableCookies']);"}
                             _paq.push(['trackPageView']);
@@ -65,7 +68,8 @@ internal fun BODY.bodyTracking(nonce: String, tracking: List<Tracking>, isUser: 
                               var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
                               g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'$trackerName.js'; s.parentNode.insertBefore(g,s);
                             })();
-                        """.trimIndent())
+                            """.trimIndent()
+                        )
                     }
                 }
             }

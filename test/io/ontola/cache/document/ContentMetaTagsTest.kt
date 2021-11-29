@@ -1,7 +1,7 @@
 package io.ontola.cache.document
 
 import io.ktor.http.Url
-import io.ontola.cache.plugins.Manifest
+import io.ontola.cache.tenantization.Manifest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

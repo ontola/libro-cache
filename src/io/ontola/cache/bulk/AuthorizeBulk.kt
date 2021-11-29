@@ -12,7 +12,7 @@ import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
-import io.ontola.cache.plugins.tenant
+import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.measured
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json

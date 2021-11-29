@@ -23,10 +23,10 @@ import io.ontola.cache.bulk.SPIAuthorizeRequest
 import io.ontola.cache.bulk.SPIResourceResponseItem
 import io.ontola.cache.bulk.isA
 import io.ontola.cache.bulk.statusCode
-import io.ontola.cache.plugins.Manifest
+import io.ontola.cache.tenantization.Manifest
 import io.ontola.cache.plugins.StorageAdapter
-import io.ontola.cache.plugins.TenantFinderResponse
 import io.ontola.cache.sessions.OIDCTokenResponse
+import io.ontola.cache.tenantization.TenantFinderResponse
 import io.ontola.cache.util.fullUrl
 import io.ontola.cache.util.stem
 import io.ontola.cache.util.withoutProto

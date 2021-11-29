@@ -4,11 +4,11 @@ import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.client.HttpClient
 import io.ktor.client.request.head
-import io.ktor.client.request.header
 import io.ktor.client.statement.HttpResponse
 import io.ktor.html.respondHtml
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Url
 import io.ktor.request.uri
 import io.ktor.response.header
 import io.ktor.response.respond
@@ -29,8 +29,8 @@ import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
-import io.ontola.cache.plugins.tenant
 import io.ontola.cache.sessions.SessionData
+import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import java.io.ByteArrayOutputStream

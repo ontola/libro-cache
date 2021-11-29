@@ -7,7 +7,7 @@ import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.Url
 import io.ontola.cache.plugins.sessionManager
-import io.ontola.cache.plugins.tenant
+import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.copy
 import io.ontola.cache.util.proxySafeHeaders

@@ -11,7 +11,7 @@ import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.sessionManager
-import io.ontola.cache.plugins.tenant
+import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.sessions.logout
 
 suspend fun PipelineContext<Unit, ApplicationCall>.handleLogout() {

@@ -8,7 +8,7 @@ import io.ktor.response.respond
 import io.ktor.routing.Routing
 import io.ktor.routing.get
 import io.ontola.cache.plugins.logger
-import io.ontola.cache.plugins.tenant
+import io.ontola.cache.tenantization.tenant
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 

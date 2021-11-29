@@ -3,10 +3,10 @@ import io.ktor.http.Url
 import io.lettuce.core.RedisURI
 import io.mockk.coEvery
 import io.mockk.mockk
-import io.ontola.cache.plugins.CachedLookupKeys
-import io.ontola.cache.plugins.Manifest
 import io.ontola.cache.plugins.RedisConfig
 import io.ontola.cache.plugins.StorageAdapter
+import io.ontola.cache.tenantization.CachedLookupKeys
+import io.ontola.cache.tenantization.Manifest
 import io.ontola.cache.util.KeyManager
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.serialization.ExperimentalSerializationApi

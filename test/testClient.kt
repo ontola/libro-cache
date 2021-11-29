@@ -17,8 +17,8 @@ import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.SPIAuthorizeRequest
 import io.ontola.cache.bulk.SPIResourceResponseItem
 import io.ontola.cache.configureClient
-import io.ontola.cache.plugins.TenantFinderResponse
 import io.ontola.cache.routes.HeadResponse
+import io.ontola.cache.tenantization.TenantFinderResponse
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.fullUrl
 import io.ontola.cache.util.withoutProto

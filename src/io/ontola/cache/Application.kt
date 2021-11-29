@@ -48,7 +48,6 @@ import io.ontola.cache.plugins.RedisAdapter
 import io.ontola.cache.plugins.ServiceRegistry
 import io.ontola.cache.plugins.Storage
 import io.ontola.cache.plugins.StorageAdapter
-import io.ontola.cache.plugins.Tenantization
 import io.ontola.cache.plugins.requestTimings
 import io.ontola.cache.routes.mountBulk
 import io.ontola.cache.routes.mountIndex
@@ -59,6 +58,7 @@ import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.signedTransformer
 import io.ontola.cache.studio.Studio
+import io.ontola.cache.tenantization.Tenantization
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.isHtmlAccept
 import io.ontola.cache.util.loadAssetsManifests

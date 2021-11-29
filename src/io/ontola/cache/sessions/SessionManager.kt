@@ -17,7 +17,7 @@ import io.ktor.sessions.set
 import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
-import io.ontola.cache.plugins.tenant
+import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.copy
 import io.ontola.cache.util.proxySafeHeaders

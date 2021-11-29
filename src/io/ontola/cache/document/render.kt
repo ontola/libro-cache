@@ -1,10 +1,10 @@
 package io.ontola.cache.document
 
 import io.ktor.application.ApplicationCall
-import io.ontola.cache.plugins.Manifest
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.nonce
 import io.ontola.cache.plugins.sessionManager
+import io.ontola.cache.tenantization.Manifest
 import io.ontola.cache.util.requestUri
 import kotlinx.html.BODY
 import kotlinx.html.HTML

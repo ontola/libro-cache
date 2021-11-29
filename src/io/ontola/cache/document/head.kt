@@ -1,8 +1,8 @@
 package io.ontola.cache.document
 
-import io.ontola.cache.plugins.Manifest
-import io.ontola.cache.plugins.TrackerType
-import io.ontola.cache.plugins.Tracking
+import io.ontola.cache.tenantization.Manifest
+import io.ontola.cache.tenantization.TrackerType
+import io.ontola.cache.tenantization.Tracking
 import kotlinx.html.HEAD
 import kotlinx.html.link
 import kotlinx.html.meta

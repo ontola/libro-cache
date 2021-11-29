@@ -1,8 +1,8 @@
 package io.ontola.cache.studio
 
 import io.ktor.http.Url
-import io.ontola.cache.plugins.Manifest
 import io.ontola.cache.plugins.Storage
+import io.ontola.cache.tenantization.Manifest
 import io.ontola.cache.util.stem
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map

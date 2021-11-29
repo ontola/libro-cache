@@ -53,7 +53,7 @@ data class Claims(
 data class SessionData(
     val accessToken: String,
     val refreshToken: String,
-    val deviceId: String?,
+    val deviceId: String? = null,
 ) {
     fun accessTokenBearer(): String = "Bearer $accessToken"
 
