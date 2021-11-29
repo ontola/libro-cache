@@ -35,6 +35,7 @@ fun Routing.mountHealth() {
             EnvironmentCheck(),
             RedisCheck(),
             HeadRequestCheck(),
+            ManifestCheck(),
         )
 
         checks.forEach { it.run(this) }

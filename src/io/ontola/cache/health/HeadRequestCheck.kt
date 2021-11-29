@@ -6,8 +6,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.routes.headRequest
-import io.ontola.cache.tenantization.Manifest
-import io.ontola.cache.tenantization.getManifest
 import io.ontola.cache.tenantization.getTenants
 
 class HeadRequestCheck : Check() {
@@ -27,7 +25,6 @@ class HeadRequestCheck : Check() {
         if (response.statusCode.value >= HttpStatusCode.BadRequest.value) {
             return Exception("Unexpected status '${response.statusCode}' for 'HEAD /argu'.")
         }
-        context.getManifest<Manifest>(tenant)
 
         return null
     }
