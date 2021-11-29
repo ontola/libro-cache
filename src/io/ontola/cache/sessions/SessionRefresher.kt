@@ -1,10 +1,6 @@
 package io.ontola.cache.sessions
 
 import com.auth0.jwt.JWT
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.features.json.JsonFeature
-import io.ktor.client.features.logging.Logging
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.request
@@ -14,7 +10,6 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ontola.cache.plugins.CacheSession
-import io.ontola.cache.util.configureClientLogging
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -78,16 +73,10 @@ class SessionRefresher(private val configuration: CacheSession.Configuration) {
     }
 
     private suspend fun refreshToken(userToken: String, refreshToken: String): OIDCTokenResponse {
-        val client = HttpClient(CIO) {
-            install(Logging) {
-                configureClientLogging()
-            }
-            install(JsonFeature)
-        }
         val issuer = JWT.decode(userToken).issuer
         val url = Url("$issuer/oauth/token")
 
-        return client.request("${configuration.oidcUrl}${url.fullPath}") {
+        return configuration.client.request("${configuration.oidcUrl}${url.fullPath}") {
             method = HttpMethod.Post
             headers {
                 header(HttpHeaders.Accept, ContentType.Application.Json)

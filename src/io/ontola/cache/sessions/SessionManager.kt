@@ -1,5 +1,6 @@
 package io.ontola.cache.sessions
 
+import com.auth0.jwt.exceptions.TokenExpiredException
 import io.ktor.application.ApplicationCall
 import io.ktor.client.call.receive
 import io.ktor.client.request.header
@@ -20,7 +21,9 @@ import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.copy
+import io.ontola.cache.util.preferredLanguage
 import io.ontola.cache.util.proxySafeHeaders
+import kotlinx.coroutines.runBlocking
 
 class SessionManager(
     private val call: ApplicationCall,
@@ -28,19 +31,19 @@ class SessionManager(
     private val refresher: SessionRefresher = SessionRefresher(configuration),
 ) {
     var session: SessionData?
-        get() = call.sessions.get<SessionData>()
+        get() = refreshIfExpired(call.sessions.get<SessionData>())
         set(value) = call.sessions.set(value)
 
     val host: String?
         get() = call.request.header(HttpHeaders.Host)
 
     val language: String
-        get() = session?.claims(configuration.jwtValidator)?.user?.language
-            ?: call.request.header(HttpHeaders.AcceptLanguage)
+        get() = claims()?.user?.language
+            ?: call.request.header(HttpHeaders.AcceptLanguage)?.preferredLanguage()
             ?: configuration.cacheConfig.defaultLanguage
 
     val isUser: Boolean
-        get() = session?.claims(configuration.jwtValidator)?.user?.type == UserType.User
+        get() = claims()?.user?.type == UserType.User
 
     val logoutRequest: LogoutRequest?
         get() = session?.accessToken?.let {
@@ -50,6 +53,30 @@ class SessionManager(
                 it,
             )
         }
+
+    private fun refreshIfExpired(session: SessionData?): SessionData? {
+        return try {
+            session?.claims(configuration.jwtValidator)
+
+            session
+        } catch (e: TokenExpiredException) {
+            runBlocking { refresher.refresh(session!!) }
+                .also { it.claims(configuration.jwtValidator) }
+        }
+    }
+
+    private fun claims(): Claims? {
+        return session?.let {
+            try {
+                it.claims(configuration.jwtValidator)
+            } catch (e: TokenExpiredException) {
+                session = runBlocking {
+                    refresher.refresh(it)
+                }
+                it.claims(configuration.jwtValidator)
+            }
+        }
+    }
 
     suspend fun ensure() {
         val existing = session

@@ -39,6 +39,7 @@ import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.tenantization.tenant
+import io.ontola.cache.tenantization.tenantOrNull
 import io.ontola.cache.util.Actions
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
@@ -49,7 +50,6 @@ import io.ontola.cache.util.isHtmlAccept
 import io.ontola.cache.util.proxySafeHeaders
 import io.ontola.cache.util.setActionParam
 import io.ontola.cache.util.setParameter
-import java.net.URLEncoder
 import java.util.Locale
 
 private val DataProxyKey = AttributeKey<DataProxy>("DataProxyKey")
@@ -148,7 +148,7 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
         if (location != null && location.isNotEmpty()) {
             return Actions.RedirectAction
                 .setParameter("reload", "true")
-                .setParameter("location", URLEncoder.encode(location, "utf-8"))
+                .setParameter("location", location)
         }
 
         return Actions.RefreshAction
@@ -161,12 +161,12 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
         val originalReq = call.request
         val uri = Url(originalReq.uri)
 
-        val path = configuration.transforms.entries
+        val requestPath = configuration.transforms.entries
             .find { (path, _) -> path.containsMatchIn(originalReq.uri) }
             ?.let { it.value(call.request) }
-            ?: originalReq.uri
+            ?: originalReq.path()
 
-        val response = proxiedRequest(call, path, originalReq.httpMethod, call.receiveChannel())
+        val response = proxiedRequest(call, requestPath, originalReq.httpMethod, call.receiveChannel())
 
         val proxiedHeaders = response.headers
         val contentType = proxiedHeaders[HttpHeaders.ContentType]
@@ -200,7 +200,9 @@ class DataProxy(private val configuration: Configuration, val call: ApplicationC
     }
 
     private suspend fun proxiedRequest(call: ApplicationCall, path: String, method: HttpMethod, body: Any): HttpResponse {
-        call.sessionManager.ensure()
+        if (call.tenantOrNull != null) {
+            call.sessionManager.ensure()
+        }
 
         return configuration.client.request(call.services.route(path)) {
             this.method = method

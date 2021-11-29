@@ -6,6 +6,7 @@ import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature
 import io.ktor.application.call
 import io.ktor.application.feature
+import io.ktor.client.HttpClient
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.sessions.SessionManager
@@ -14,6 +15,7 @@ class CacheSession(private val configuration: Configuration) {
     class Configuration {
         @Deprecated("Until sessions are migrated")
         lateinit var legacyStorageAdapter: StorageAdapter<String, String>
+        lateinit var client: HttpClient
         lateinit var sessionSecret: String
         lateinit var jwtValidator: JWTVerifier
         lateinit var cacheConfig: CacheConfig
@@ -36,6 +38,7 @@ class CacheSession(private val configuration: Configuration) {
                 .apply {
                     this.sessionSecret = cacheConfig.sessions.sessionSecret
                     this.cacheConfig = cacheConfig
+                    this.client = cacheConfig.client
 
                     this.oidcClientId = cacheConfig.sessions.clientId
                     this.oidcClientSecret = cacheConfig.sessions.clientSecret

@@ -48,7 +48,18 @@ data class SessionsConfig(
      * The url of the OIDC identity provider
      */
     val oidcUrl: String,
-)
+) {
+    companion object {
+        fun forTesting(): SessionsConfig = SessionsConfig(
+            sessionSecret = "secret",
+            jwtEncryptionToken = "jwtEncryptionToken",
+            clientId = "0",
+            clientSecret = "",
+            oidcUrl = "https://oidcserver.test",
+            oAuthToken = "",
+        )
+    }
+}
 
 data class RedisConfig(
     /**
@@ -325,14 +336,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
             val cacheSession = cacheConfig.config("session")
 
             return if (testing) {
-                SessionsConfig(
-                    sessionSecret = "secret",
-                    jwtEncryptionToken = "",
-                    clientId = "0",
-                    clientSecret = "",
-                    oidcUrl = "https://oidcserver.test",
-                    oAuthToken = "",
-                )
+                SessionsConfig.forTesting()
             } else {
                 val oidcConfig = services.config("oidc")
 

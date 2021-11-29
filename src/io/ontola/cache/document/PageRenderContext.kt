@@ -8,7 +8,7 @@ import io.ontola.cache.plugins.nonce
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.tenantization.Manifest
 import io.ontola.cache.tenantization.tenant
-import io.ontola.cache.util.requestUri
+import io.ontola.cache.util.requestUriFromTenant
 import kotlinx.serialization.json.Json
 
 data class PageRenderContext(
@@ -26,14 +26,14 @@ fun ApplicationCall.pageRenderContextFromCall(
     seed: String? = null,
     manifest: Manifest? = null,
 ) = PageRenderContext(
-    uri = requestUri(),
+    uri = requestUriFromTenant(),
     nonce = nonce,
     lang = sessionManager.language,
     isUser = sessionManager.isUser,
     manifest = manifest ?: tenant.manifest,
     configuration = PageConfiguration(
         appElement = "root",
-        assets = assets,
+        assets = application.assets,
     ),
     serializer = application.cacheConfig.serializer,
     seed = seed,

@@ -1,5 +1,7 @@
 package io.ontola.cache
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -23,9 +25,11 @@ import io.ontola.cache.bulk.SPIAuthorizeRequest
 import io.ontola.cache.bulk.SPIResourceResponseItem
 import io.ontola.cache.bulk.isA
 import io.ontola.cache.bulk.statusCode
-import io.ontola.cache.tenantization.Manifest
+import io.ontola.cache.plugins.SessionsConfig
 import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.sessions.OIDCTokenResponse
+import io.ontola.cache.sessions.UserType
+import io.ontola.cache.tenantization.Manifest
 import io.ontola.cache.tenantization.TenantFinderResponse
 import io.ontola.cache.util.fullUrl
 import io.ontola.cache.util.stem
@@ -33,12 +37,15 @@ import io.ontola.cache.util.withoutProto
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Clock
+import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Test
 import java.nio.charset.Charset
+import java.util.Date
 import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.hours
 
 class ApplicationTest {
     @Test
@@ -96,7 +103,7 @@ class ApplicationTest {
         coEvery { storage.expire("cache:WebsiteBase:https%3A//mysite.local", 600) } returns null
 
         withTestApplication({ module(testing = true, storage = storage, client = client) }) {
-            handleRequest(HttpMethod.Post, "link-lib/bulk") {
+            handleRequest(HttpMethod.Post, "/link-lib/bulk") {
                 addHeader("authority", "mysite.local")
                 addHeader("X-Forwarded-Proto", "https")
                 addHeader("Accept", "application/hex+x-ndjson")
@@ -165,12 +172,36 @@ class ApplicationTest {
                         )
                     }
                     "https://oidcserver.test/oauth/token" -> {
+                        val config = SessionsConfig.forTesting()
+
+                        val accessToken = JWT
+                            .create()
+                            .withClaim("application_id", config.clientId)
+                            .withIssuedAt(Date.from(Clock.System.now().toJavaInstant()))
+                            .withExpiresAt(Date.from(Clock.System.now().plus(1.hours).toJavaInstant()))
+                            .withClaim("scopes", listOf("user"))
+                            .withClaim(
+                                "user",
+                                mapOf(
+                                    "type" to UserType.Guest.name.lowercase(),
+                                    "iri" to "",
+                                    "@id" to "",
+                                    "id" to "",
+                                    "language" to "en",
+                                )
+                            )
+                            .withClaim("application_id", config.clientId)
+                            .sign(Algorithm.HMAC512(config.jwtEncryptionToken))
+                        val refreshToken = JWT
+                            .create()
+                            .withClaim("application_id", config.clientId)
+                            .sign(Algorithm.HMAC512(config.jwtEncryptionToken))
                         val body = OIDCTokenResponse(
-                            accessToken = "",
+                            accessToken = accessToken,
                             tokenType = "",
                             expiresIn = 100,
-                            refreshToken = "",
-                            scope = "",
+                            refreshToken = refreshToken,
+                            scope = "user",
                             createdAt = Clock.System.now().epochSeconds,
                         )
 

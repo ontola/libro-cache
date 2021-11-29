@@ -17,6 +17,7 @@ import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.document.PageConfiguration
 import io.ontola.cache.document.indexPage
+import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.filename
@@ -68,13 +69,12 @@ class Studio(private val configuration: Configuration) {
             return context.finish()
         }
 
+        val ctx = context.call.pageRenderContextFromCall().apply {
+            seed = source
+        }
+
         context.call.respondHtml(HttpStatusCode.OK) {
-            indexPage(
-                context.call,
-                configuration.pageConfig,
-                manifest,
-                source,
-            )
+            indexPage(ctx)
         }
 
         context.finish()

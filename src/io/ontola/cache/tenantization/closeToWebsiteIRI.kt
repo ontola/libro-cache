@@ -1,32 +1,16 @@
 package io.ontola.cache.tenantization
 
-import io.ktor.http.Headers
 import io.ktor.http.Url
+import io.ktor.request.ApplicationRequest
+import io.ktor.request.path
 import io.ontola.cache.util.origin
 import mu.KLogger
 
 private fun Boolean.toInt(): Int = if (this) 1 else 0
 
-internal fun closeToWebsiteIRI(requestPath: String, headers: Headers, logger: KLogger): String {
-    val path = requestPath.removeSuffix("link-lib/bulk")
-    val authority = listOf("X-Forwarded-Host", "origin", "host", "authority")
-        .find { header -> headers[header] != null }
-        ?.let { header -> headers[header]!! }
-        ?: throw Exception("No header usable for authority present")
-
-//        if (authority.contains(':')) {
-//            return "$authority$path"
-//        }
-
-    val proto = headers["X-Forwarded-Proto"]?.split(',')?.firstOrNull()
-        ?: headers["origin"]?.split(":")?.firstOrNull()
-        ?: throw Exception("No Forwarded host nor authority scheme")
-
-    val authoritativeOrigin = if (authority.contains(':')) {
-        authority
-    } else {
-        "$proto://$authority"
-    }
+internal fun ApplicationRequest.closeToWebsiteIRI(logger: KLogger): String {
+    val authoritativeOrigin = origin()
+    val requestPath = path().removeSuffix("link-lib/bulk")
 
     return headers["Website-IRI"]
         ?.let { websiteIRI ->
@@ -34,5 +18,5 @@ internal fun closeToWebsiteIRI(requestPath: String, headers: Headers, logger: KL
                 logger.warn("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")
             }
             websiteIRI
-        } ?: "$authoritativeOrigin$path".let { it.dropLast(it.endsWith('/').toInt()) }
+        } ?: "$authoritativeOrigin$requestPath".let { it.dropLast(it.endsWith('/').toInt()) }
 }

@@ -1,11 +1,22 @@
 package io.ontola.cache.plugins
 
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.http.Headers
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
+import io.ktor.http.Parameters
+import io.ktor.http.RequestConnectionPoint
+import io.ktor.request.ApplicationReceivePipeline
+import io.ktor.request.ApplicationRequest
+import io.ktor.request.RequestCookies
 import io.ktor.request.path
+import io.ktor.response.ApplicationResponse
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
+import io.ktor.util.Attributes
+import io.ktor.utils.io.ByteReadChannel
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -18,6 +29,59 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class TenantizationTest {
+    private fun createRequest(path: String, headers: Headers): ApplicationRequest {
+        lateinit var request: ApplicationRequest
+
+        val call = object : ApplicationCall {
+            override val application: Application
+                get() = TODO("Not yet implemented")
+            override val attributes: Attributes
+                get() = Attributes()
+            override val parameters: Parameters
+                get() = TODO("Not yet implemented")
+            override val request: ApplicationRequest
+                get() = request
+            override val response: ApplicationResponse
+                get() = TODO("Not yet implemented")
+        }
+
+        request = object : ApplicationRequest {
+            override val call: ApplicationCall
+                get() = call
+            override val cookies: RequestCookies
+                get() = TODO("Not yet implemented")
+            override val headers: Headers
+                get() = headers
+            override val local: RequestConnectionPoint
+                get() = object : RequestConnectionPoint {
+                    override val host: String
+                        get() = "localhost"
+                    override val method: HttpMethod
+                        get() = HttpMethod.Get
+                    override val port: Int
+                        get() = 80
+                    override val remoteHost: String
+                        get() = "localhost"
+                    override val scheme: String
+                        get() = "https"
+                    override val uri: String
+                        get() = path
+                    override val version: String
+                        get() = "1.1"
+                }
+            override val pipeline: ApplicationReceivePipeline
+                get() = TODO("Not yet implemented")
+            override val queryParameters: Parameters
+                get() = TODO("Not yet implemented")
+
+            override fun receiveChannel(): ByteReadChannel {
+                TODO("Not yet implemented")
+            }
+        }
+
+        return request
+    }
+
     @Test
     fun testKtorPathStartsWithSlash() {
         withTestApplication({ module(testing = true) }) {
@@ -32,7 +96,7 @@ class TenantizationTest {
     @Test
     fun closeToWebsiteIRIShouldHaveAuthoritativeHeader() {
         assertFailsWith<Exception>("No header usable for authority present") {
-            closeToWebsiteIRI("/", HeadersBuilder().build(), mockk())
+            createRequest("/", HeadersBuilder().build()).closeToWebsiteIRI(mockk())
         }
     }
 
@@ -42,7 +106,8 @@ class TenantizationTest {
             val headers = HeadersBuilder().apply {
                 append("X-Forwarded-Host", "example.test")
             }.build()
-            closeToWebsiteIRI("/", headers, mockk())
+            createRequest("/", headers)
+                .closeToWebsiteIRI(mockk())
         }
     }
 
@@ -53,7 +118,8 @@ class TenantizationTest {
             append("X-Forwarded-Proto", "https")
             append("Website-IRI", "https://example.test/mypath")
         }.build()
-        val iri = closeToWebsiteIRI("/", headers, mockk())
+        val req = createRequest("/", headers)
+        val iri = req.closeToWebsiteIRI(mockk())
 
         assertEquals("https://example.test/mypath", iri)
     }
@@ -69,7 +135,8 @@ class TenantizationTest {
             append("X-Forwarded-Proto", "https")
             append("Website-IRI", "https://forged.test/mypath")
         }.build()
-        closeToWebsiteIRI("/", headers, logger)
+        val req = createRequest("/", headers)
+        req.closeToWebsiteIRI(logger)
 
         assertContains(warning.captured, "Website-Iri does not correspond")
         assertContains(warning.captured, "https://forged.test/mypath")
@@ -82,7 +149,8 @@ class TenantizationTest {
             append("X-Forwarded-Host", "example.test")
             append("X-Forwarded-Proto", "https")
         }.build()
-        val iri = closeToWebsiteIRI("/", headers, mockk())
+        val req = createRequest("/", headers)
+        val iri = req.closeToWebsiteIRI(mockk())
 
         assertEquals("https://example.test", iri)
     }
@@ -93,7 +161,8 @@ class TenantizationTest {
             append("X-Forwarded-Host", "example.test")
             append("X-Forwarded-Proto", "https")
         }.build()
-        val iri = closeToWebsiteIRI("/link-lib/bulk", headers, mockk())
+        val req = createRequest("/link-lib/bulk", headers)
+        val iri = req.closeToWebsiteIRI(mockk())
 
         assertEquals("https://example.test", iri)
     }
@@ -103,7 +172,8 @@ class TenantizationTest {
         val headers = HeadersBuilder().apply {
             append("Origin", "https://example.test")
         }.build()
-        val iri = closeToWebsiteIRI("/", headers, mockk())
+        val req = createRequest("/", headers)
+        val iri = req.closeToWebsiteIRI(mockk())
 
         assertEquals("https://example.test", iri)
     }

@@ -1,6 +1,5 @@
 package io.ontola.cache.assets
 
-import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature
 import io.ktor.application.feature
@@ -27,11 +26,11 @@ class Assets(private val configuration: Configuration) {
 
 private val AssetsKey = AttributeKey<AssetsManifests>("AssetsKey")
 
-internal val ApplicationCall.assets: AssetsManifests
+internal val ApplicationCallPipeline.assets: AssetsManifests
     get() = attributes.getOrNull(AssetsKey) ?: reportMissingAssets()
 
-private fun ApplicationCall.reportMissingAssets(): Nothing {
-    application.feature(CacheSession) // ensure the feature is installed
+private fun ApplicationCallPipeline.reportMissingAssets(): Nothing {
+    feature(CacheSession) // ensure the feature is installed
     throw AssetsNotYetConfiguredException()
 }
 

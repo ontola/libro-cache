@@ -42,6 +42,9 @@ private val BlacklistedKey = AttributeKey<Boolean>("BlacklistedKey")
 internal val ApplicationCall.tenant: TenantData
     get() = attributes.getOrNull(TenantizationKey) ?: reportMissingTenantization()
 
+internal val ApplicationCall.tenantOrNull: TenantData?
+    get() = attributes.getOrNull(TenantizationKey)
+
 internal val ApplicationCall.blacklisted: Boolean
     get() = attributes.getOrNull(BlacklistedKey) ?: reportMissingTenantization()
 
@@ -74,7 +77,7 @@ class Tenantization(private val configuration: Configuration) {
 
     @Throws(TenantNotFoundException::class)
     private suspend fun PipelineContext<*, ApplicationCall>.getWebsiteBase(): Url {
-        val websiteIRI = closeToWebsiteIRI(call.request.path(), call.request.headers, configuration.logger)
+        val websiteIRI = call.request.closeToWebsiteIRI(configuration.logger)
 
         val websiteBase = cachedLookup(CachedLookupKeys.WebsiteBase, expiration = configuration.tenantExpiration) {
             getTenant(websiteIRI).websiteBase

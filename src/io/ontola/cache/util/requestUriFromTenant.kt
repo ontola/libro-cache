@@ -5,4 +5,4 @@ import io.ktor.http.Url
 import io.ktor.request.uri
 import io.ontola.cache.tenantization.tenant
 
-fun ApplicationCall.requestUri(): Url = tenant.websiteOrigin.copy(encodedPath = request.uri)
+fun ApplicationCall.requestUriFromTenant(): Url = tenant.websiteOrigin.copy(encodedPath = request.uri)
