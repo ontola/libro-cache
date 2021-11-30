@@ -1,3 +1,3 @@
 package io.ontola.cache.health
 
-class Warning : Exception()
+class Warning(override val message: String?) : Exception(message)

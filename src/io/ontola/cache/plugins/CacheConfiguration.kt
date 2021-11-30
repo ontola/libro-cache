@@ -124,6 +124,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
      */
     val testing: Boolean,
     val env: String = if (testing) "testing" else System.getenv("KTOR_ENV") ?: "production",
+    val port: Int,
     val assets: AssetsConfig,
     /**
      * Configuration relating to session management.
@@ -204,6 +205,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
 
             return CacheConfig(
                 assets = assetsConfig(cacheConfig, testing),
+                port = config.config("ktor").config("deployment").property("port").getString().toInt(),
                 testing = testing,
                 sessions = sessionsConfig(cacheConfig, testing),
                 libroRedisURI = libroRedisURI,

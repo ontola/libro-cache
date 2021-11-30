@@ -5,6 +5,7 @@ import io.ktor.application.application
 import io.ktor.application.call
 import io.ktor.client.call.receive
 import io.ktor.client.features.ResponseException
+import io.ktor.client.features.expectSuccess
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
@@ -21,6 +22,7 @@ import io.ontola.cache.util.proxySafeHeaders
 
 internal suspend inline fun <reified K> PipelineContext<*, ApplicationCall>.getManifest(websiteBase: Url): K {
     val manifestRequest = application.cacheConfig.client.get<HttpResponse>(call.services.route("${websiteBase.fullPath}/manifest.json")) {
+        expectSuccess = false
         headers {
             header("Website-IRI", websiteBase)
 

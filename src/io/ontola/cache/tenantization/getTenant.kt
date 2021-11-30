@@ -4,9 +4,7 @@ import io.ktor.application.ApplicationCall
 import io.ktor.application.application
 import io.ktor.application.call
 import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.request.headers
-import io.ktor.http.ContentType
 import io.ktor.http.takeFrom
 import io.ktor.request.header
 import io.ktor.util.InternalAPI
@@ -23,7 +21,6 @@ internal suspend fun PipelineContext<*, ApplicationCall>.getTenant(resourceIri: 
             parameters["iri"] = resourceIri
         }
         headers {
-            header("Accept", ContentType.Application.Json)
             copy("X-Request-Id", context.request)
         }
     }.apply {

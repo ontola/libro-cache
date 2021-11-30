@@ -141,9 +141,9 @@ class Tenantization(private val configuration: Configuration) {
             pipeline.intercept(ApplicationCallPipeline.Features) {
                 val path = this.call.request.path()
                 if (configuration.isBlacklisted(path)) {
-                    this.call.attributes.put(BlacklistedKey, true)
+                    call.attributes.put(BlacklistedKey, true)
                 } else {
-                    this.call.attributes.put(BlacklistedKey, false)
+                    call.attributes.put(BlacklistedKey, false)
                     feature.intercept(this)
                 }
             }
