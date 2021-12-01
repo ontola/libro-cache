@@ -2,6 +2,8 @@ package io.ontola.cache.document
 
 import io.ontola.cache.assets.AssetsManifests
 import io.ontola.cache.tenantization.Manifest
+import io.ontola.color.Color
+import io.ontola.color.isLight
 import kotlinx.html.BODY
 import kotlinx.html.HTML
 import kotlinx.html.body
@@ -106,33 +108,33 @@ fun BODY.preloadBlock(config: PageConfiguration, manifest: Manifest) {
     }
 }
 
-fun luminanceBased(check: String, truthy: String, falsy: String): String {
-//    val test = Color(check)
-//    val R = test.red
-//
-//    val L = 0.2126 * R + 0.7152 * G + 0.0722 * B
+const val LuminanceThreshold = .5
 
-    return falsy
+fun luminanceBased(
+    check: String,
+    truthy: String,
+    falsy: String,
+): String = if (Color.fromCss(check).isLight()) {
+    truthy
+} else {
+    falsy
 }
 
 fun BODY.themeBlock(manifest: Manifest) {
     style {
         attributes["id"] = "theme-config"
 
-        val checkLuminance = true // checkLuminance(ctx.manifest.ontola.primary_color)
-        val background = "#" // navbarBackground(ctx)
-        val navbarBackground =
-            unsafe {
-                raw(
-                    """
-                    :root {
-                      --accent-background-color: ${manifest.ontola.primaryColor};
-                      --accent-color: ${luminanceBased(manifest.ontola.primaryColor, "#222222", "#FFFFFF")};
-                      --navbar-background: ${navbarBackground(manifest)};
-                    }
-                    """.trimIndent()
-                )
-            }
+        unsafe {
+            raw(
+                """
+                :root {
+                  --accent-background-color:${manifest.ontola.primaryColor};
+                  --accent-color:${luminanceBased(manifest.ontola.primaryColor, "#222222", "#FFFFFF")};
+                  --navbar-background:${navbarBackground(manifest)};
+                }
+                """.trimIndent()
+            )
+        }
     }
 }
 
