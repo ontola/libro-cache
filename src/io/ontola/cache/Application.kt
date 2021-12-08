@@ -32,6 +32,7 @@ import io.ktor.response.respond
 import io.ktor.routing.routing
 import io.ktor.sessions.Sessions
 import io.ktor.sessions.cookie
+import io.ktor.websocket.WebSockets
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
@@ -60,6 +61,7 @@ import io.ontola.cache.sessions.signedTransformer
 import io.ontola.cache.tenantization.Tenantization
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.isHtmlAccept
+import io.ontola.cache.util.mountWebSocketProxy
 import kotlin.collections.set
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
@@ -205,6 +207,8 @@ fun Application.module(
             .build()
     }
 
+    install(WebSockets)
+
     install(DataProxy) {
         val loginQuery = ParametersBuilder().apply {
             append("client_id", config.sessions.clientId)
@@ -259,6 +263,7 @@ fun Application.module(
         mountHealth()
         mountManifest()
         mountBulk()
+        mountWebSocketProxy()
         mountLogout()
         mountMaps()
         mountIndex(client)
