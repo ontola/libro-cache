@@ -15,7 +15,7 @@ RUN /app/gradlew --no-daemon stage
 
 FROM openjdk:16-jdk
 
-EXPOSE 8080:8080
+EXPOSE 3080:3080
 
 RUN mkdir /app
 WORKDIR /app
