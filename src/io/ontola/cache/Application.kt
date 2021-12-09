@@ -49,6 +49,7 @@ import io.ontola.cache.plugins.RedisAdapter
 import io.ontola.cache.plugins.ServiceRegistry
 import io.ontola.cache.plugins.Storage
 import io.ontola.cache.plugins.StorageAdapter
+import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.requestTimings
 import io.ontola.cache.routes.mountBulk
 import io.ontola.cache.routes.mountIndex
@@ -183,7 +184,7 @@ fun Application.module(
     install(Sessions) {
         cookie<SessionData>(
             name = "identity",
-            storage = RedisSessionStorage(adapter),
+            storage = RedisSessionStorage(adapter, cacheConfig.redis),
         ) {
             cookie.httpOnly = true
             cookie.secure = true
