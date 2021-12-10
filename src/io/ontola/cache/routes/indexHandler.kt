@@ -17,10 +17,12 @@ import io.ktor.routing.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import io.ktor.util.pipeline.PipelineContext
+import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.CacheRequest
 import io.ontola.cache.bulk.coldHandler
+import io.ontola.cache.bulk.collectResources
+import io.ontola.cache.bulk.entriesToOutputStream
 import io.ontola.cache.bulk.initHeaders
-import io.ontola.cache.bulk.resourcesToOutputStream
 import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.document.indexPage
 import io.ontola.cache.document.pageRenderContextFromCall
@@ -33,6 +35,8 @@ import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.toList
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 
@@ -113,10 +117,14 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
     ctx: PageRenderContext,
     includes: List<String>?,
 ) {
-
     val updatedEntries = ByteArrayOutputStream().use { stream ->
         val entries = if (includes != null) {
-            resourcesToOutputStream(includes.map { CacheRequest(it) }, stream)
+            collectResources(includes.map { CacheRequest(it) })
+                .also {
+                    entriesToOutputStream(it, stream)
+                }
+                .filter { it.cacheControl != CacheControl.Private }
+                .toList()
         } else {
             emptyList()
         }

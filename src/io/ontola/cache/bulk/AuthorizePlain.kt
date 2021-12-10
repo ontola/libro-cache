@@ -16,13 +16,13 @@ import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.util.measured
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
 
 internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizePlain(
     resources: List<String>,
-): List<SPIResourceResponseItem> = measured("authorizePlain;i=${resources.size}") {
+): Flow<SPIResourceResponseItem> = measured("authorizePlain;i=${resources.size}") {
     val lang = call.sessionManager.language
 
     resources
@@ -38,7 +38,8 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizePlain(
                     expectSuccess = false
                 }
             }
-        }.map { (iri, response) ->
+        }
+        .map { (iri, response) ->
             SPIResourceResponseItem(
                 iri = iri,
                 status = response.status.value,
@@ -46,5 +47,5 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizePlain(
                 language = lang,
                 body = response.receive()
             )
-        }.toList()
+        }
 }

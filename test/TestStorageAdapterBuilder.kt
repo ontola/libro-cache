@@ -10,8 +10,12 @@ import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.tenantization.CachedLookupKeys
 import io.ontola.cache.tenantization.Manifest
 import io.ontola.cache.util.KeyManager
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 
 data class TestStorageAdapterBuilder(
@@ -22,6 +26,8 @@ data class TestStorageAdapterBuilder(
     private val keyManager = KeyManager(cacheConfig.redis)
     private val keys = mutableListOf<String>()
     private val values = mutableListOf<String>()
+    private val hKeys = mutableListOf<String>()
+    private val hValues = mutableListOf<Map<String, String>>()
 
     fun addManifest(website: String, manifest: Manifest) {
         memoizedManifests[website] = manifest
@@ -31,6 +37,7 @@ data class TestStorageAdapterBuilder(
         val adapter = mockk<StorageAdapter<String, String>>()
 
         adapter.initGetSet()
+        adapter.initHmGetHSet()
         adapter.initEmptyRedisFeatures()
         adapter.initCacheEntries()
         initManifests()
@@ -75,6 +82,74 @@ data class TestStorageAdapterBuilder(
             } else {
                 values[i]
             }
+        }
+    }
+
+    private fun StorageAdapter<String, String>.initHmGetHSet() {
+        coEvery { hset(capture(hKeys), capture(hValues)) } returns null
+
+        fun hmgetImpl(key: String, fields: List<String>): Flow<Pair<String, String>> {
+            val i = hKeys.indexOf(key)
+            return if (i == -1) {
+                emptyFlow()
+            } else {
+                hValues[i]
+                    .entries
+                    .asFlow()
+                    .filter { fields.contains(it.key) }
+                    .map { Pair(it.key, it.value) }
+            }
+        }
+
+        val key = slot<String>()
+        val hmkey0 = slot<String>()
+        val hmkey1 = slot<String>()
+        val hmkey2 = slot<String>()
+        val hmkey3 = slot<String>()
+        val hmkey4 = slot<String>()
+        val hmkey5 = slot<String>()
+        val hmkey6 = slot<String>()
+        val hmkey7 = slot<String>()
+
+        coEvery {
+            hmget(capture(key), capture(hmkey0))
+        } answers {
+            hmgetImpl(key.captured, listOf(hmkey0.captured))
+        }
+        coEvery {
+            hmget(capture(key), capture(hmkey0), capture(hmkey1))
+        } answers {
+            hmgetImpl(key.captured, listOf(hmkey0.captured, hmkey1.captured))
+        }
+        coEvery {
+            hmget(capture(key), capture(hmkey0), capture(hmkey1), capture(hmkey2))
+        } answers {
+            hmgetImpl(key.captured, listOf(hmkey0.captured, hmkey1.captured, hmkey2.captured))
+        }
+        coEvery {
+            hmget(capture(key), capture(hmkey0), capture(hmkey1), capture(hmkey2), capture(hmkey3))
+        } answers {
+            hmgetImpl(key.captured, listOf(hmkey0.captured, hmkey1.captured, hmkey2.captured, hmkey3.captured))
+        }
+        coEvery {
+            hmget(capture(key), capture(hmkey0), capture(hmkey1), capture(hmkey2), capture(hmkey3), capture(hmkey4))
+        } answers {
+            hmgetImpl(key.captured, listOf(hmkey0.captured, hmkey1.captured, hmkey2.captured, hmkey3.captured, hmkey4.captured))
+        }
+        coEvery {
+            hmget(capture(key), capture(hmkey0), capture(hmkey1), capture(hmkey2), capture(hmkey3), capture(hmkey4), capture(hmkey5))
+        } answers {
+            hmgetImpl(key.captured, listOf(hmkey0.captured, hmkey1.captured, hmkey2.captured, hmkey3.captured, hmkey4.captured, hmkey5.captured))
+        }
+        coEvery {
+            hmget(capture(key), capture(hmkey0), capture(hmkey1), capture(hmkey2), capture(hmkey3), capture(hmkey4), capture(hmkey5), capture(hmkey6))
+        } answers {
+            hmgetImpl(key.captured, listOf(hmkey0.captured, hmkey1.captured, hmkey2.captured, hmkey3.captured, hmkey4.captured, hmkey5.captured, hmkey6.captured))
+        }
+        coEvery {
+            hmget(capture(key), capture(hmkey0), capture(hmkey1), capture(hmkey2), capture(hmkey3), capture(hmkey4), capture(hmkey5), capture(hmkey6), capture(hmkey7))
+        } answers {
+            hmgetImpl(key.captured, listOf(hmkey0.captured, hmkey1.captured, hmkey2.captured, hmkey3.captured, hmkey4.captured, hmkey5.captured, hmkey6.captured, hmkey7.captured))
         }
     }
 

@@ -13,8 +13,12 @@ import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.measured
-import java.io.OutputStream
-import java.nio.charset.Charset
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.toList
 import kotlin.time.ExperimentalTime
 
 @OptIn(KtorExperimentalLocationsAPI::class)
@@ -23,19 +27,25 @@ class Bulk
 
 val hexJson = ContentType.parse("application/hex+x-ndjson")
 
-suspend fun PipelineContext<Unit, ApplicationCall>.resourcesToOutputStream(resources: List<CacheRequest>, outStream: OutputStream): List<CacheEntry>? {
+@OptIn(ExperimentalCoroutinesApi::class)
+suspend fun PipelineContext<Unit, ApplicationCall>.collectResources(resources: List<CacheRequest>): Flow<CacheEntry> {
     val result = readAndPartition(resources)
     call.response.header("Link-Cache", result.stats.toString())
 
     if (result.entirelyPublic) {
         call.logger.debug { "All ${resources.size} resources in cache" }
+
+        return result.cachedPublic.asFlow()
     }
 
-    val updatedEntries = outStream.writer(Charset.defaultCharset()).use {
-        readOrFetch(result, it)
-    }
+    val toAuthorize = result.notCached + result.cachedNotPublic
 
-    return updatedEntries
+    call.logger.debug { "Requesting ${toAuthorize.size} resources" }
+    call.logger.trace { "Requesting ${toAuthorize.joinToString(", ") { it.iri }}" }
+
+    val entries = authorize(toAuthorize.asFlow())
+
+    return merge(result.cachedPublic.asFlow(), entries)
 }
 
 suspend fun PipelineContext<Unit, ApplicationCall>.coldHandler(updatedEntries: List<CacheEntry>?) = measured("handler cold") {
@@ -49,15 +59,18 @@ suspend fun PipelineContext<Unit, ApplicationCall>.coldHandler(updatedEntries: L
 
 @OptIn(ExperimentalTime::class)
 fun bulkHandler(): suspend PipelineContext<Unit, ApplicationCall>.(Bulk) -> Unit = {
-    var updatedEntries: List<CacheEntry>? = null
-
-    measured("handler hot") {
+    val updatedEntries: List<CacheEntry>? = measured("handler hot") {
         val requested = requestedResources()
         call.logger.debug { "Fetching ${requested.size} resources from cache" }
 
-        call.respondOutputStream(hexJson, HttpStatusCode.OK) {
-            updatedEntries = resourcesToOutputStream(requested, this)
-        }
+        collectResources(requested)
+            .also {
+                call.respondOutputStream(hexJson, HttpStatusCode.OK) {
+                    entriesToOutputStream(it, this)
+                }
+            }
+            .filter { it.cacheControl != CacheControl.Private }
+            .toList()
     }
 
     coldHandler(updatedEntries)

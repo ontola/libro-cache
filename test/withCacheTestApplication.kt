@@ -39,7 +39,11 @@ fun <R> withCacheTestApplication(
     withApplication(
         env,
         test = {
-            application.module(testing = true, storage = adapter, client = client)
+            application.module(
+                testing = true,
+                storage = adapter,
+                client = client,
+            )
             test(context)
         },
     )

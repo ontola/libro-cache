@@ -43,10 +43,16 @@ data class TestClientBuilder(
     val resources: MutableList<Triple<String, String, CacheControl>> = mutableListOf(),
     private val headResponses: MutableMap<Url, HeadResponse> = mutableMapOf(),
 ) {
+    var newToken: Pair<String, String>? = null
+
     fun setHeadResponse(url: Url, response: HeadResponse): TestClientBuilder {
         headResponses[url] = response
 
         return this
+    }
+
+    fun setNewAuthorization(accessToken: String, refreshToken: String) {
+        newToken = Pair(accessToken, refreshToken)
     }
 
     fun build(): HttpClient = HttpClient(MockEngine) {
@@ -59,7 +65,7 @@ data class TestClientBuilder(
 
                 when (request.url.encodedPath) {
                     "/_public/spi/find_tenant" -> handleFindTenantRequest(request)
-                    "/spi/bulk" -> handleBulkRequest(request, resources)
+                    "/spi/bulk" -> handleBulkRequest(request, resources, newToken)
                     "/oauth/token" -> handleTokenRequest()
                     else -> error("Unhandled ${request.url.fullUrl}")
                 }
@@ -74,7 +80,7 @@ fun MockRequestHandleScope.handleHeadRequest(request: HttpRequestData, headRespo
     val websiteIRI = Url(request.headers["Website-IRI"] ?: return respond("", HttpStatusCode.NotFound))
     val response = headResponses[Url("$websiteIRI$path")] ?: return respond("", HttpStatusCode.NotFound)
 
-    val test = buildMap<String, List<String>> {
+    val test = buildMap {
         response.newAuthorization?.let {
             put(CacheHttpHeaders.NewAuthorization, listOf(it))
         }
@@ -122,10 +128,11 @@ private fun MockRequestHandleScope.handleFindTenantRequest(request: HttpRequestD
 private suspend fun MockRequestHandleScope.handleBulkRequest(
     request: HttpRequestData,
     resources: List<Triple<String, String, CacheControl>>,
+    newToken: Pair<String, String>?,
 ): HttpResponseData {
     val body = request.body.toByteArray().toString(Charset.defaultCharset())
     val requestPayload = Json.decodeFromString<SPIAuthorizeRequest>(body)
-    val foundResources = resources.map { it.first }.intersect(requestPayload.resources.map { it.iri })
+    val foundResources = resources.map { it.first }.intersect(requestPayload.resources.map { it.iri }.toSet())
 
     val payload = foundResources.map {
         val (iri, payload, cacheControl) = resources.find { (key) -> key == it }!!
@@ -138,10 +145,20 @@ private suspend fun MockRequestHandleScope.handleBulkRequest(
         )
     }
 
+    val headers = if (newToken == null) {
+        jsonContentTypeHeaders
+    } else {
+        headersOf(
+            CacheHttpHeaders.NewAuthorization to listOf(newToken.first),
+            CacheHttpHeaders.NewRefreshToken to listOf(newToken.second),
+            *jsonContentTypeHeaders.entries().map { it.key to it.value }.toTypedArray(),
+        )
+    }
+
     return respond(
         Json.encodeToString(payload),
         HttpStatusCode.OK,
-        headers = jsonContentTypeHeaders,
+        headers = headers,
     )
 }
 
