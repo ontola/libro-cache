@@ -20,6 +20,10 @@ fun HEAD.renderHead(url: String, nonce: String, config: PageConfiguration, manif
         raw(renderedMetaTags(url, manifest, seed))
         raw("\n")
     }
+    meta {
+        name = "csrf-token"
+        content = "TODO"
+    }
 
     headTracking(nonce, manifest.ontola.tracking)
 
