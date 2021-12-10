@@ -1,19 +1,15 @@
 package io.ontola.cache
 
-import TestClientBuilder
-import blankStorage
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.withTestApplication
-import io.ontola.cache.tenantization.Manifest
 import io.ontola.cache.routes.HeadResponse
+import io.ontola.cache.tenantization.Manifest
 import kotlinx.coroutines.runBlocking
-import setManifest
-import setWebsiteBase
+import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -23,15 +19,10 @@ class RenderTest {
         runBlocking {
             val websiteIRI = Url("https://mysite.local")
 
-            val client = TestClientBuilder()
-                .setHeadResponse(Url("$websiteIRI/"), HeadResponse(HttpStatusCode.OK))
-                .build()
-
-            val storage = blankStorage()
-            storage.setWebsiteBase(Url("https://mysite.local"), websiteIRI)
-            storage.setManifest(websiteIRI, Manifest.forWebsite(websiteIRI))
-
-            withTestApplication({ module(testing = true, storage = storage, client = client) }) {
+            withCacheTestApplication({
+                clientBuilder.setHeadResponse(Url("$websiteIRI/"), HeadResponse(HttpStatusCode.OK))
+                storage.addManifest(websiteIRI.toString(), Manifest.forWebsite(websiteIRI))
+            }) {
                 handleRequest(HttpMethod.Get, "/") {
                     addHeader(HttpHeaders.Accept, ContentType.Text.Html.toString())
                     addHeader("authority", "mysite.local")

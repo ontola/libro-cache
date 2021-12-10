@@ -14,15 +14,14 @@ import io.ktor.request.RequestCookies
 import io.ktor.request.path
 import io.ktor.response.ApplicationResponse
 import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.withTestApplication
 import io.ktor.util.Attributes
 import io.ktor.utils.io.ByteReadChannel
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import io.ontola.cache.module
 import io.ontola.cache.tenantization.closeToWebsiteIRI
 import mu.KLogger
+import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -84,7 +83,7 @@ class TenantizationTest {
 
     @Test
     fun testKtorPathStartsWithSlash() {
-        withTestApplication({ module(testing = true) }) {
+        withCacheTestApplication {
             handleRequest(HttpMethod.Get, "/") {
                 addHeader(HttpHeaders.Origin, "https://mysite.local")
             }.apply {

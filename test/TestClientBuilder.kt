@@ -1,4 +1,6 @@
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -17,19 +19,28 @@ import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.SPIAuthorizeRequest
 import io.ontola.cache.bulk.SPIResourceResponseItem
 import io.ontola.cache.configureClient
+import io.ontola.cache.plugins.SessionsConfig
 import io.ontola.cache.routes.HeadResponse
+import io.ontola.cache.sessions.OIDCTokenResponse
+import io.ontola.cache.sessions.UserType
 import io.ontola.cache.tenantization.TenantFinderResponse
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.fullUrl
 import io.ontola.cache.util.withoutProto
+import kotlinx.datetime.Clock
+import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.nio.charset.Charset
+import java.util.Date
+import kotlin.time.Duration.Companion.hours
+
+private val jsonContentTypeHeaders = headersOf("Content-Type" to listOf(ContentType.Application.Json.toString()))
 
 data class TestClientBuilder(
-    private val resources: MutableList<Triple<String, String, CacheControl>> = mutableListOf(),
+    val resources: MutableList<Triple<String, String, CacheControl>> = mutableListOf(),
     private val headResponses: MutableMap<Url, HeadResponse> = mutableMapOf(),
 ) {
     fun setHeadResponse(url: Url, response: HeadResponse): TestClientBuilder {
@@ -49,6 +60,7 @@ data class TestClientBuilder(
                 when (request.url.encodedPath) {
                     "/_public/spi/find_tenant" -> handleFindTenantRequest(request)
                     "/spi/bulk" -> handleBulkRequest(request, resources)
+                    "/oauth/token" -> handleTokenRequest()
                     else -> error("Unhandled ${request.url.fullUrl}")
                 }
             }
@@ -98,12 +110,11 @@ private fun MockRequestHandleScope.handleFindTenantRequest(request: HttpRequestD
     val payload = TenantFinderResponse(
         iriPrefix = Url(iri).withoutProto(),
     )
-    val responseHeaders = headersOf("Content-Type" to listOf(ContentType.Application.Json.toString()))
 
     return respond(
         Json.encodeToString(payload),
         HttpStatusCode.OK,
-        headers = responseHeaders,
+        headers = jsonContentTypeHeaders,
     )
 }
 
@@ -126,11 +137,51 @@ private suspend fun MockRequestHandleScope.handleBulkRequest(
             body = payload,
         )
     }
-    val responseHeaders = headersOf("Content-Type" to listOf(ContentType.Application.Json.toString()))
 
     return respond(
         Json.encodeToString(payload),
         HttpStatusCode.OK,
-        headers = responseHeaders,
+        headers = jsonContentTypeHeaders,
+    )
+}
+
+private fun MockRequestHandleScope.handleTokenRequest(): HttpResponseData {
+    val config = SessionsConfig.forTesting()
+
+    val accessToken = JWT
+        .create()
+        .withClaim("application_id", config.clientId)
+        .withIssuedAt(Date.from(Clock.System.now().toJavaInstant()))
+        .withExpiresAt(Date.from(Clock.System.now().plus(1.hours).toJavaInstant()))
+        .withClaim("scopes", listOf("user"))
+        .withClaim(
+            "user",
+            mapOf(
+                "type" to UserType.Guest.name.lowercase(),
+                "iri" to "",
+                "@id" to "",
+                "id" to "",
+                "language" to "en",
+            )
+        )
+        .withClaim("application_id", config.clientId)
+        .sign(Algorithm.HMAC512(config.jwtEncryptionToken))
+    val refreshToken = JWT
+        .create()
+        .withClaim("application_id", config.clientId)
+        .sign(Algorithm.HMAC512(config.jwtEncryptionToken))
+    val body = OIDCTokenResponse(
+        accessToken = accessToken,
+        tokenType = "",
+        expiresIn = 100,
+        refreshToken = refreshToken,
+        scope = "user",
+        createdAt = Clock.System.now().epochSeconds,
+    )
+
+    return respond(
+        Json.encodeToString(body),
+        HttpStatusCode.OK,
+        headers = jsonContentTypeHeaders,
     )
 }

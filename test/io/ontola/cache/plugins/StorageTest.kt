@@ -1,6 +1,8 @@
 package io.ontola.cache.plugins
 
 import io.ktor.application.ApplicationEnvironment
+import io.ktor.config.MapApplicationConfig
+import io.ktor.server.testing.createTestEnvironment
 import io.ktor.server.testing.withTestApplication
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
@@ -8,6 +10,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.ontola.cache.util.KeyManager
 import kotlinx.coroutines.runBlocking
+import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -34,11 +37,17 @@ class StorageTest {
         }
     }
 
+    private val env = createTestEnvironment {
+        (this.config as MapApplicationConfig).apply {
+            put("ktor.deployment.port", "3080")
+        }
+    }
+
     @Test
     fun storageStringCacheShouldA() {
-        withTestApplication {
+        withCacheTestApplication {
             runBlocking {
-                val ctx = StringStorageTest(environment)
+                val ctx = StringStorageTest(env)
                 ctx.storage.setString("a", value = "value", expiration = null)
 
                 assertEquals("cache:a", ctx.setKey.captured)
@@ -57,7 +66,7 @@ class StorageTest {
     fun storageStringCacheShouldFetchExpiredKeys() {
         withTestApplication {
             runBlocking {
-                val ctx = StringStorageTest(environment)
+                val ctx = StringStorageTest(env)
 
                 ctx.storage.setString("a", value = "value", expiration = 0L)
 
@@ -77,7 +86,7 @@ class StorageTest {
     fun storageStringCacheShouldReturnCachedValue() {
         withTestApplication {
             runBlocking {
-                val ctx = StringStorageTest(environment)
+                val ctx = StringStorageTest(env)
 
                 ctx.storage.setString("a", value = "value", expiration = 1L)
 
