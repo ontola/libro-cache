@@ -3,6 +3,7 @@ package io.ontola.cache.routes
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.client.HttpClient
+import io.ktor.client.features.expectSuccess
 import io.ktor.client.request.head
 import io.ktor.client.statement.HttpResponse
 import io.ktor.html.respondHtml
@@ -59,6 +60,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.headRequest(
 ): HeadResponse {
     val lang = call.sessionManager.language
     val headResponse = client.head<HttpResponse>(call.services.route(uri)) {
+        expectSuccess = false
         initHeaders(call, lang, websiteBase)
     }
 
@@ -110,12 +112,13 @@ fun PipelineContext<Unit, ApplicationCall>.respondServerRedirect(head: HeadRespo
     }
 
     call.response.header(HttpHeaders.Location, head.location)
-    call.response.status(HttpStatusCode.TemporaryRedirect)
+    call.response.status(head.statusCode)
 }
 
 suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
     ctx: PageRenderContext,
     includes: List<String>?,
+    status: HttpStatusCode,
 ) {
     val updatedEntries = ByteArrayOutputStream().use { stream ->
         val entries = if (includes != null) {
@@ -129,7 +132,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
             emptyList()
         }
 
-        call.respondHtml(HttpStatusCode.OK) {
+        call.respondHtml(status) {
             ctx.seed = stream.toString(Charset.forName("UTF-8"))
 
             indexPage(ctx)
@@ -150,7 +153,6 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
 
     val head = headRequest(client)
     updateSessionAccessToken(head)
-    call.response.status(head.statusCode)
 
     if (head.statusCode.isRedirect()) {
         return respondServerRedirect(head)
@@ -163,7 +165,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
 
     val ctx = call.pageRenderContextFromCall()
 
-    respondRenderWithData(ctx, includes)
+    respondRenderWithData(ctx, includes, head.statusCode)
 }
 
 fun Routing.mountIndex(client: HttpClient) {
