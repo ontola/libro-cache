@@ -9,6 +9,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
@@ -23,6 +24,9 @@ import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.measured
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import mu.KotlinLogging
+
+val logger = KotlinLogging.logger {}
 
 internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
     resources: List<String>,
@@ -46,6 +50,13 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
                 )
             }
         )
+    }
+
+    if (res.status != HttpStatusCode.OK) {
+        val msg = "Unexpected bulk status ${res.status.value}, location: ${res.headers["Location"]}"
+        logger.error(msg)
+
+        throw RuntimeException(msg)
     }
 
     val newAuthorization = res.headers[CacheHttpHeaders.NewAuthorization]
