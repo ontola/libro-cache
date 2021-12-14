@@ -38,10 +38,10 @@ class ApplicationTest {
         )
 
         withCacheTestApplication({
-            clientBuilder.resources.addAll(resources)
+            clientBuilder.addResources(resources)
             storage.resources.addAll(resources)
 
-            storage.addManifest("https://mysite.local", Manifest.forWebsite(Url("https://mysite.local")))
+            addManifest(Url("https://mysite.local"), Manifest.forWebsite(Url("https://mysite.local")))
         }) {
             handleRequest(HttpMethod.Post, "/link-lib/bulk") {
                 addHeader("authority", "mysite.local")

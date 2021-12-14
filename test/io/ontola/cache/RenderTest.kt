@@ -21,7 +21,7 @@ class RenderTest {
 
             withCacheTestApplication({
                 clientBuilder.setHeadResponse(Url("$websiteIRI/"), HeadResponse(HttpStatusCode.OK))
-                storage.addManifest(websiteIRI.toString(), Manifest.forWebsite(websiteIRI))
+                addManifest(websiteIRI, Manifest.forWebsite(websiteIRI))
             }) {
                 handleRequest(HttpMethod.Get, "/") {
                     addHeader(HttpHeaders.Accept, ContentType.Text.Html.toString())

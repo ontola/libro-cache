@@ -1,4 +1,5 @@
 
+import io.ktor.http.Url
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -29,14 +30,14 @@ data class TestStorageAdapterBuilder(
     private val hKeys = mutableListOf<String>()
     private val hValues = mutableListOf<Map<String, String>>()
 
-    fun addManifest(website: String, manifest: Manifest) {
-        memoizedManifests[website] = manifest
+    fun addManifest(website: Url, manifest: Manifest) {
+        memoizedManifests[website.toString()] = manifest
     }
 
     fun build(): StorageAdapter<String, String> {
         val adapter = mockk<StorageAdapter<String, String>>()
 
-        adapter.initGetSet()
+        adapter.initGetSetDel()
         adapter.initHmGetHSet()
         adapter.initEmptyRedisFeatures()
         adapter.initCacheEntries()
@@ -69,13 +70,14 @@ data class TestStorageAdapterBuilder(
     }
 
     private fun StorageAdapter<String, String>.initWebsiteBaseMemoization() {
-        coEvery { expire("cache:WebsiteBase:https%3A//mysite.local", 600) } returns null
+        coEvery { expire(any(), 600) } returns null
     }
 
-    private fun StorageAdapter<String, String>.initGetSet() {
+    private fun StorageAdapter<String, String>.initGetSetDel() {
         coEvery { set(capture(keys), capture(values)) } returns null
+
         val key = slot<String>()
-        coEvery { this@initGetSet.get(capture(key)) } answers {
+        coEvery { this@initGetSetDel.get(capture(key)) } answers {
             val i = keys.indexOf(key.captured)
             if (i == -1) {
                 null
@@ -83,6 +85,8 @@ data class TestStorageAdapterBuilder(
                 values[i]
             }
         }
+
+        coEvery { del(capture(key)) } returns null
     }
 
     private fun StorageAdapter<String, String>.initHmGetHSet() {

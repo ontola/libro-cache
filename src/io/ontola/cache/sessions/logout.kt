@@ -5,6 +5,7 @@ import io.ktor.application.call
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.services
@@ -20,6 +21,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.logout(): HttpResponse? {
 
     return call.tenant.client.post<HttpResponse>(call.services.route(revokeUrl.encodedPath)) {
         headers {
+            append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             if (call.sessionManager.isUser) {
                 set(HttpHeaders.Authorization, call.sessionManager.session!!.accessTokenBearer())
             }

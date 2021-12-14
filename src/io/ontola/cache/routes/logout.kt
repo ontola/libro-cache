@@ -1,4 +1,4 @@
-package io.ontola.cache
+package io.ontola.cache.routes
 
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -11,13 +11,11 @@ import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.sessionManager
-import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.sessions.logout
 
 suspend fun PipelineContext<Unit, ApplicationCall>.handleLogout() {
     call.response.header(HttpHeaders.Vary, "Accept,Accept-Encoding,Content-Type")
 
-    call.tenant.client
     val response = logout() ?: return call.respond(HttpStatusCode.BadRequest)
 
     if (response.status == HttpStatusCode.OK) {

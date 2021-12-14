@@ -12,6 +12,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.fullPath
 import io.ktor.request.header
+import io.ktor.sessions.clear
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
@@ -32,7 +33,13 @@ class SessionManager(
 ) {
     var session: SessionData?
         get() = refreshIfExpired(call.sessions.get<SessionData>())
-        set(value) = call.sessions.set(value)
+        set(value) {
+            if (value == null) {
+                call.sessions.clear<SessionData>()
+            } else {
+                call.sessions.set(value)
+            }
+        }
 
     val host: String?
         get() = call.request.header(HttpHeaders.Host)

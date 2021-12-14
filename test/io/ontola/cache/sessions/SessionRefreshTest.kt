@@ -20,7 +20,7 @@ class SessionRefreshTest {
 
         withCacheTestApplication({
             clientBuilder.setNewAuthorization("a", "b")
-            storage.addManifest("https://mysite.local", Manifest.forWebsite(Url("https://mysite.local")))
+            addManifest(Url("https://mysite.local"), Manifest.forWebsite(Url("https://mysite.local")))
         }) {
             handleRequest(HttpMethod.Post, "/link-lib/bulk") {
                 addHeader("authority", "mysite.local")

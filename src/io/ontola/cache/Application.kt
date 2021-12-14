@@ -53,9 +53,11 @@ import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.requestTimings
 import io.ontola.cache.routes.mountBulk
 import io.ontola.cache.routes.mountIndex
+import io.ontola.cache.routes.mountLogout
 import io.ontola.cache.routes.mountManifest
 import io.ontola.cache.routes.mountMaps
 import io.ontola.cache.routes.mountStatic
+import io.ontola.cache.routes.mountTestingRoutes
 import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.signedTransformer
@@ -174,6 +176,7 @@ fun Application.module(
             "/link-lib/cache/status",
             "/d/health",
             "/metrics",
+            "/_testing",
             "/static/",
             "/assets/",
             "/f_assets/",
@@ -230,6 +233,7 @@ fun Application.module(
         )
         excludedPaths = listOf(
             "/link-lib/bulk",
+            "/_testing/setSession",
             "/d/health",
             "static",
         )
@@ -260,6 +264,9 @@ fun Application.module(
     }
 
     routing {
+        if (testing) {
+            mountTestingRoutes()
+        }
         mountStatic()
         mountHealth()
         mountManifest()

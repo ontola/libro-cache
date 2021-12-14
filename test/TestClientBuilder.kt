@@ -1,6 +1,4 @@
 
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -19,40 +17,61 @@ import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.SPIAuthorizeRequest
 import io.ontola.cache.bulk.SPIResourceResponseItem
 import io.ontola.cache.configureClient
-import io.ontola.cache.plugins.SessionsConfig
 import io.ontola.cache.routes.HeadResponse
+import io.ontola.cache.sessions.LogoutRequest
+import io.ontola.cache.sessions.OIDCRequest
 import io.ontola.cache.sessions.OIDCTokenResponse
-import io.ontola.cache.sessions.UserType
+import io.ontola.cache.tenantization.Manifest
 import io.ontola.cache.tenantization.TenantFinderResponse
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.fullUrl
 import io.ontola.cache.util.withoutProto
 import kotlinx.datetime.Clock
-import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.nio.charset.Charset
-import java.util.Date
-import kotlin.time.Duration.Companion.hours
+
+class ClientState(
+    var refreshTokenSuccess: Boolean = true,
+    var initialKeys: Pair<String, String>? = null,
+    val resources: MutableList<Triple<String, String, CacheControl>> = mutableListOf(),
+    val manifests: MutableMap<Url, Manifest> = mutableMapOf(),
+    val headResponses: MutableMap<Url, HeadResponse> = mutableMapOf(),
+    var newToken: Pair<String, String>? = null
+) {
+    var nextKeys: Pair<String, String> = initialKeys ?: generateTestAccessTokenPair()
+        get() = initialKeys?.also { initialKeys = null } ?: generateTestAccessTokenPair()
+}
 
 private val jsonContentTypeHeaders = headersOf("Content-Type" to listOf(ContentType.Application.Json.toString()))
 
 data class TestClientBuilder(
-    val resources: MutableList<Triple<String, String, CacheControl>> = mutableListOf(),
-    private val headResponses: MutableMap<Url, HeadResponse> = mutableMapOf(),
+    val configure: ClientState.() -> Unit,
 ) {
-    var newToken: Pair<String, String>? = null
+    internal val config = ClientState().apply(configure)
+
+    fun addResources(resources: List<Triple<String, String, CacheControl>>) {
+        config.resources.addAll(resources)
+    }
 
     fun setHeadResponse(url: Url, response: HeadResponse): TestClientBuilder {
-        headResponses[url] = response
+        config.headResponses[url] = response
 
         return this
     }
 
+    fun addManifest(website: Url, manifest: Manifest) {
+        config.manifests[website] = manifest
+    }
+
     fun setNewAuthorization(accessToken: String, refreshToken: String) {
-        newToken = Pair(accessToken, refreshToken)
+        config.newToken = Pair(accessToken, refreshToken)
+    }
+
+    fun setRefreshTokenSuccess(value: Boolean) {
+        config.refreshTokenSuccess = value
     }
 
     fun build(): HttpClient = HttpClient(MockEngine) {
@@ -60,13 +79,16 @@ data class TestClientBuilder(
         engine {
             addHandler { request ->
                 if (request.method == HttpMethod.Head) {
-                    return@addHandler handleHeadRequest(request, headResponses)
+                    return@addHandler handleHeadRequest(request, config.headResponses)
                 }
+                val websitePaths = config.manifests.keys.map { "${it.encodedPath}/manifest.json" }.toSet()
 
                 when (request.url.encodedPath) {
                     "/_public/spi/find_tenant" -> handleFindTenantRequest(request)
-                    "/spi/bulk" -> handleBulkRequest(request, resources, newToken)
-                    "/oauth/token" -> handleTokenRequest()
+                    "/spi/bulk" -> handleBulkRequest(request, config.resources, config.newToken)
+                    "/oauth/token" -> handleTokenRequest(request, config)
+                    "/oauth/revoke" -> handleTokenRevocation(request, config)
+                    in websitePaths -> handleManifestRequest(request, config)
                     else -> error("Unhandled ${request.url.fullUrl}")
                 }
             }
@@ -77,7 +99,7 @@ data class TestClientBuilder(
 @OptIn(ExperimentalStdlibApi::class)
 fun MockRequestHandleScope.handleHeadRequest(request: HttpRequestData, headResponses: MutableMap<Url, HeadResponse>): HttpResponseData {
     val path = request.url.fullPath
-    val websiteIRI = Url(request.headers["Website-IRI"] ?: return respond("", HttpStatusCode.NotFound))
+    val websiteIRI = Url(request.headers[CacheHttpHeaders.WebsiteIri] ?: return respond("", HttpStatusCode.NotFound))
     val response = headResponses[Url("$websiteIRI$path")] ?: return respond("", HttpStatusCode.NotFound)
 
     val test = buildMap {
@@ -162,31 +184,42 @@ private suspend fun MockRequestHandleScope.handleBulkRequest(
     )
 }
 
-private fun MockRequestHandleScope.handleTokenRequest(): HttpResponseData {
-    val config = SessionsConfig.forTesting()
+private fun MockRequestHandleScope.handleManifestRequest(request: HttpRequestData, config: ClientState): HttpResponseData {
+    val origin = request.headers[CacheHttpHeaders.WebsiteIri]
+    val path = request.url.encodedPath.removeSuffix("/manifest.json")
+    val manifest = config.manifests[Url("$origin$path")] ?: return respond("", HttpStatusCode.NotFound)
 
-    val accessToken = JWT
-        .create()
-        .withClaim("application_id", config.clientId)
-        .withIssuedAt(Date.from(Clock.System.now().toJavaInstant()))
-        .withExpiresAt(Date.from(Clock.System.now().plus(1.hours).toJavaInstant()))
-        .withClaim("scopes", listOf("user"))
-        .withClaim(
-            "user",
-            mapOf(
-                "type" to UserType.Guest.name.lowercase(),
-                "iri" to "",
-                "@id" to "",
-                "id" to "",
-                "language" to "en",
-            )
+    return respond(
+        Json.encodeToString(manifest),
+        HttpStatusCode.OK,
+        jsonContentTypeHeaders,
+    )
+}
+
+private suspend fun MockRequestHandleScope.handleTokenRevocation(request: HttpRequestData, config: ClientState): HttpResponseData {
+    Json.decodeFromString<LogoutRequest>(request.body.toByteArray().toString(Charset.defaultCharset()))
+
+    return respond("", HttpStatusCode.OK)
+}
+
+private suspend fun MockRequestHandleScope.handleTokenRequest(request: HttpRequestData, config: ClientState): HttpResponseData {
+    val requestBody = Json.decodeFromString<OIDCRequest>(request.body.toByteArray().decodeToString())
+
+    if (requestBody.scope?.contains("guest") == true && !config.refreshTokenSuccess) {
+        val error = mapOf(
+            "error" to "invalid_grant",
+            "error_description" to "The provided authorization grant is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.",
         )
-        .withClaim("application_id", config.clientId)
-        .sign(Algorithm.HMAC512(config.jwtEncryptionToken))
-    val refreshToken = JWT
-        .create()
-        .withClaim("application_id", config.clientId)
-        .sign(Algorithm.HMAC512(config.jwtEncryptionToken))
+
+        return respond(
+            Json.encodeToString(error),
+            HttpStatusCode.BadRequest,
+            jsonContentTypeHeaders,
+        )
+    }
+
+    val (accessToken, refreshToken) = config.nextKeys
+
     val body = OIDCTokenResponse(
         accessToken = accessToken,
         tokenType = "",
