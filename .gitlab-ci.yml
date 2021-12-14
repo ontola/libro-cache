@@ -9,6 +9,9 @@ include:
   - template: Security/Secret-Detection.gitlab-ci.yml
 
 test:
+  before_script:
+    - mkdir -p ./build/client
+    - echo "export const getMetaTags = () => []; export const prerenderMetaTags = () => '';" > ./build/client/metaData.js
   services:
     - redis:latest
 
