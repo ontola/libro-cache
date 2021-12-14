@@ -3,13 +3,14 @@ package io.ontola.cache.sessions
 import com.auth0.jwt.exceptions.TokenExpiredException
 import io.ktor.application.ApplicationCall
 import io.ktor.client.call.receive
+import io.ktor.client.features.expectSuccess
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
-import io.ktor.client.request.request
+import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.fullPath
 import io.ktor.request.header
 import io.ktor.sessions.clear
@@ -19,12 +20,15 @@ import io.ktor.sessions.set
 import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
+import io.ontola.cache.plugins.logger
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.copy
 import io.ontola.cache.util.preferredLanguage
 import io.ontola.cache.util.proxySafeHeaders
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 class SessionManager(
     private val call: ApplicationCall,
@@ -67,8 +71,10 @@ class SessionManager(
 
             session
         } catch (e: TokenExpiredException) {
-            runBlocking { refresher.refresh(session!!) }
-                .also { it.claims(configuration.jwtValidator) }
+            runBlocking {
+                this@SessionManager.session = refresher.refresh(session!!)
+                this@SessionManager.session
+            }.also { it?.claims(configuration.jwtValidator) }
         }
     }
 
@@ -129,13 +135,13 @@ class SessionManager(
         val serviceToken = configuration.oAuthToken
         val path = "${call.tenant.websiteIRI.fullPath}/oauth/token"
 
-        val response = call.application.cacheConfig.client.request<HttpResponse>("${configuration.oidcUrl}$path") {
-            method = HttpMethod.Post
+        val response = call.application.cacheConfig.client.post<HttpResponse>("${configuration.oidcUrl}$path") {
+            expectSuccess = false
 
             headers {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
-                header(HttpHeaders.Authorization, "Bearer $serviceToken")
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer $serviceToken")
 
                 header(CacheHttpHeaders.WebsiteIri, call.tenant.websiteIRI)
 
@@ -149,6 +155,16 @@ class SessionManager(
                 configuration.oidcClientId,
                 configuration.oidcClientSecret,
             )
+        }
+
+        if (response.status == HttpStatusCode.BadRequest) {
+            val error = Json.decodeFromString<BackendErrorResponse>(response.receive())
+            call.logger.warn { "E: ${error.error} - ${error.code} - ${error.errorDescription}" }
+            if (error.error == "invalid_grant") {
+                throw InvalidGrantException()
+            } else {
+                throw RuntimeException("Unexpected body with status 400")
+            }
         }
 
         return response.receive()

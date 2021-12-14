@@ -80,7 +80,7 @@ fun ApplicationRequest.isHTML(): Boolean {
 
 @OptIn(KtorExperimentalLocationsAPI::class, ExperimentalLettuceCoroutinesApi::class, ExperimentalTime::class)
 @Suppress("unused") // Referenced in application.conf
-@kotlin.jvm.JvmOverloads
+@JvmOverloads
 fun Application.module(
     testing: Boolean = false,
     storage: StorageAdapter<String, String>? = null,

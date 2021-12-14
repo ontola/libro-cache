@@ -16,6 +16,7 @@ val configureClient: HttpClientConfig<*>.() -> Unit = {
             Json {
                 isLenient = false
                 ignoreUnknownKeys = false
+                encodeDefaults = true
             }
         )
     }

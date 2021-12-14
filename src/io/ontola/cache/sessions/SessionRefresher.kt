@@ -1,17 +1,25 @@
 package io.ontola.cache.sessions
 
 import com.auth0.jwt.JWT
+import io.ktor.client.call.receive
+import io.ktor.client.features.expectSuccess
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
-import io.ktor.client.request.request
+import io.ktor.client.request.post
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ontola.cache.plugins.CacheSession
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import mu.KotlinLogging
+
+class InvalidGrantException : Exception()
 
 @Serializable
 data class OIDCTokenResponse(
@@ -58,26 +66,33 @@ data class OIDCRequest(
 }
 
 class SessionRefresher(private val configuration: CacheSession.Configuration) {
+    private val logger = KotlinLogging.logger {}
+
     /**
      * Retrieve a new access token for the given session.
      */
-    suspend fun refresh(session: SessionData): SessionData {
+    suspend fun refresh(session: SessionData): SessionData? {
         val userToken = session.accessToken
         val refreshToken = session.refreshToken
-        val refreshResponse = refreshToken(userToken, refreshToken)
+        return try {
+            val refreshResponse = refreshToken(userToken, refreshToken)
 
-        return session.copy(
-            refreshToken = refreshResponse.refreshToken,
-            accessToken = refreshResponse.accessToken,
-        )
+            session.copy(
+                refreshToken = refreshResponse.refreshToken,
+                accessToken = refreshResponse.accessToken,
+            )
+        } catch (e: InvalidGrantException) {
+            null
+        }
     }
 
     private suspend fun refreshToken(userToken: String, refreshToken: String): OIDCTokenResponse {
         val issuer = JWT.decode(userToken).issuer
         val url = Url("$issuer/oauth/token")
 
-        return configuration.client.request("${configuration.oidcUrl}${url.fullPath}") {
-            method = HttpMethod.Post
+        val response = configuration.client.post<HttpResponse>("${configuration.oidcUrl}${url.fullPath}") {
+            expectSuccess = false
+
             headers {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 header(HttpHeaders.Authorization, "Bearer $userToken")
@@ -93,5 +108,17 @@ class SessionRefresher(private val configuration: CacheSession.Configuration) {
                 refreshToken
             )
         }
+
+        if (response.status == HttpStatusCode.BadRequest) {
+            val error = Json.decodeFromString<BackendErrorResponse>(response.receive())
+            logger.warn { "E: ${error.error} - ${error.code} - ${error.errorDescription}" }
+            if (error.error == "invalid_grant") {
+                throw InvalidGrantException()
+            } else {
+                throw RuntimeException("Unexpected body with status 400")
+            }
+        }
+
+        return response.receive()
     }
 }
