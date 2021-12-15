@@ -13,7 +13,7 @@ RUN ./gradlew --no-daemon clean
 COPY . /app
 RUN /app/gradlew --no-daemon stage
 
-FROM openjdk:16-jdk
+FROM ghcr.io/graalvm/graalvm-ce:latest
 
 EXPOSE 3080:3080
 
