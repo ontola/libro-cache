@@ -17,18 +17,18 @@ data class Color(
     companion object {
         fun fromCss(cssString: String): Color = when {
             hexColorLong.matches(cssString) -> {
-                val m = hexColorLong.matchEntire(cssString)!!
+                val (r, g, b) = hexColorLong.matchEntire(cssString)!!
                     .groupValues
                     .slice(1..3)
                     .map(String::hexToUByte)
-                Color(m[0], m[1], m[2])
+                Color(r, g, b)
             }
             hexColorShort.matches(cssString) -> {
-                val m = hexColorShort.matchEntire(cssString)!!
+                val (r, g, b) = hexColorShort.matchEntire(cssString)!!
                     .groupValues
                     .slice(1..3)
                     .map(String::shortHexToUByte)
-                Color(m[0], m[1], m[2])
+                Color(r, g, b)
             }
             else -> TODO("Only hex form css strings are supported")
         }
