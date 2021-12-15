@@ -36,6 +36,7 @@ import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
+import io.ontola.cache.util.measured
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList
 import java.io.ByteArrayOutputStream
@@ -57,7 +58,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.headRequest(
     client: HttpClient,
     uri: String = call.request.uri,
     websiteBase: Url = call.tenant.websiteIRI,
-): HeadResponse {
+): HeadResponse = measured("headRequest") {
     val lang = call.sessionManager.language
     val headResponse = client.head<HttpResponse>(call.services.route(uri)) {
         expectSuccess = false
@@ -66,7 +67,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.headRequest(
 
     call.logger.debug { "Head response status ${headResponse.status}" }
 
-    return HeadResponse(
+    HeadResponse(
         headResponse.status,
         newAuthorization = headResponse.headers[CacheHttpHeaders.NewAuthorization],
         newRefreshToken = headResponse.headers[CacheHttpHeaders.NewRefreshToken],
@@ -132,10 +133,12 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
             emptyList()
         }
 
-        call.respondHtml(status) {
-            ctx.seed = stream.toString(Charset.forName("UTF-8"))
+        measured("render") {
+            call.respondHtml(status) {
+                ctx.seed = stream.toString(Charset.forName("UTF-8"))
 
-            indexPage(ctx)
+                indexPage(ctx)
+            }
         }
 
         entries
