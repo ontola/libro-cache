@@ -257,7 +257,7 @@ fun Application.module(
             "png",
             "rdf",
             "csv",
-            "pdf]",
+            "pdf",
         )
         transforms[Regex("^/login$")] = loginTransform
         transforms[Regex("^/[\\w/]*/login$")] = loginTransform
