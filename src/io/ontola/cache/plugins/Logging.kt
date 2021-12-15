@@ -21,6 +21,9 @@ class Logging {
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Unit.() -> Unit): KLogger {
             val feature = KotlinLogging.logger {}
+            feature.info {
+                "Running on java ${System.getProperty("java.runtime.version")} ${System.getProperty("java.vm.name")}"
+            }
             pipeline.attributes.put(KLoggerKey, feature)
 
             pipeline.intercept(ApplicationCallPipeline.Features) {
