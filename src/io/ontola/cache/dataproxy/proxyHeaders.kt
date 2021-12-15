@@ -34,6 +34,7 @@ internal fun HttpRequestBuilder.proxyHeaders(
         copy(HttpHeaders.Referrer, request)
         copy(HttpHeaders.UserAgent, request)
         copy(CacheHttpHeaders.XDeviceId, request)
+        copy(CacheHttpHeaders.RequestReferrer, request)
 
         copy("Client-Ip", request)
         copy("X-Client-Ip", request)

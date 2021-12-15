@@ -9,4 +9,9 @@ object CacheHttpHeaders {
     const val NewRefreshToken = "New-Refresh-Token"
     const val WebsiteIri = "Website-IRI"
     const val XDeviceId = "X-Device-Id"
+
+    /**
+     * Used in forms to refer to the resource which sprung the request.
+     */
+    const val RequestReferrer = "Request-Referrer"
 }
