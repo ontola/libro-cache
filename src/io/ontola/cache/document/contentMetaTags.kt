@@ -68,10 +68,13 @@ private fun Context.initMetaData(): Value {
     return eval(metaDataSource)
 }
 
-fun contentMetaTags(args: MetaDataArgs): List<TagProps> = buildMetaDataContext().use { context ->
+object MetaDataRenderer {
+    val context = buildMetaDataContext()
     val metaData = context.initMetaData()
+}
 
-    val getMetaTags = metaData.getMember("getMetaTags")
+fun contentMetaTags(args: MetaDataArgs): List<TagProps> {
+    val getMetaTags = MetaDataRenderer.metaData.getMember("getMetaTags")
     assert(getMetaTags.canExecute())
     val test = ProxyObject.fromMap(
         mapOf(
@@ -86,16 +89,14 @@ fun contentMetaTags(args: MetaDataArgs): List<TagProps> = buildMetaDataContext()
     )
     val result = getMetaTags.execute(test)
 
-    (0 until result.arraySize)
+    return (0 until result.arraySize)
         .map { result.getMember(it.toString()) }
         .map { TagProps.fromValue(it) }
 }
 
-fun renderedMetaTags(href: String, manifest: Manifest, data: String): String = buildMetaDataContext().use { context ->
-    val metaData = context.initMetaData()
-
-    val prerenderMetaTags = metaData.getMember("prerenderMetaTags")
+fun renderedMetaTags(href: String, manifest: Manifest, data: String): String {
+    val prerenderMetaTags = MetaDataRenderer.metaData.getMember("prerenderMetaTags")
     assert(prerenderMetaTags.canExecute())
 
-    prerenderMetaTags.execute(href, manifest, data).asString()
+    return prerenderMetaTags.execute(href, manifest, data).asString()
 }
