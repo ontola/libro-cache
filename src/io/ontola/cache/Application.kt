@@ -42,7 +42,7 @@ import io.ontola.cache.plugins.CSP
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.CacheConfiguration
 import io.ontola.cache.plugins.CacheSession
-import io.ontola.cache.plugins.DataProxy
+import io.ontola.cache.dataproxy.DataProxy
 import io.ontola.cache.plugins.DeviceId
 import io.ontola.cache.plugins.Logging
 import io.ontola.cache.plugins.RedisAdapter
