@@ -37,12 +37,12 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
 import io.ontola.cache.assets.Assets
+import io.ontola.cache.dataproxy.DataProxy
 import io.ontola.cache.health.mountHealth
 import io.ontola.cache.plugins.CSP
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.CacheConfiguration
 import io.ontola.cache.plugins.CacheSession
-import io.ontola.cache.dataproxy.DataProxy
 import io.ontola.cache.plugins.DeviceId
 import io.ontola.cache.plugins.Logging
 import io.ontola.cache.plugins.RedisAdapter

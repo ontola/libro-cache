@@ -1,24 +1,23 @@
 package io.ontola.cache.dataproxy
 
-import io.ktor.application.ApplicationCall
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpHeaders
-import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.util.Actions
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.hasAction
 import io.ontola.cache.util.setActionParam
 import io.ontola.cache.util.setParameter
+import mu.KotlinLogging
 
-internal fun ApplicationCall.newAuthorizationBulk(response: HttpResponse): String? {
-    val newAuthorization = response.headers[CacheHttpHeaders.NewAuthorization] ?: return null
+val logger = KotlinLogging.logger {}
 
-    sessionManager.setAuthorization(
-        accessToken = newAuthorization,
-        refreshToken = response.headers[CacheHttpHeaders.NewRefreshToken]
-            ?: throw Exception("Received New-Authorization header without New-Refresh-Header"),
-    )
+data class BulkControls(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String?,
+)
 
+private fun responseAction(response: HttpResponse): String? {
     val isRedirect = (response.status.value in 300..399)
 
     if (isRedirect) {
@@ -37,4 +36,17 @@ internal fun ApplicationCall.newAuthorizationBulk(response: HttpResponse): Strin
     }
 
     return Actions.RefreshAction
+}
+
+internal fun newAuthorizationBulk(response: HttpResponse): BulkControls? {
+    val newAuthorization = response.headers[CacheHttpHeaders.NewAuthorization] ?: return null
+    val refreshToken = response.headers[CacheHttpHeaders.NewRefreshToken]
+        ?: throw Exception("Received New-Authorization header without New-Refresh-Header")
+
+
+    return BulkControls(
+        newAuthorization,
+        refreshToken,
+        responseAction(response),
+    )
 }

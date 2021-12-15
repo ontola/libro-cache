@@ -26,6 +26,7 @@ import io.ktor.util.filter
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
 import io.ontola.cache.plugins.logger
+import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.isDownloadRequest
@@ -82,10 +83,15 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
                         append(HttpHeaders.ContentDisposition, ContentDisposition.Attachment.disposition)
                     }
 
-                    val action = call.newAuthorizationBulk(response)
+                    newAuthorizationBulk(response)?.let {
+                        call.sessionManager.setAuthorization(
+                            it.accessToken,
+                            it.refreshToken,
+                        )
 
-                    if (action != null) {
-                        set(CacheHttpHeaders.ExecAction, action)
+                        it.action?.let { action ->
+                            set(CacheHttpHeaders.ExecAction, action)
+                        }
                     }
 
                     appendAll(proxiedHeaders.filter { key, _ ->
