@@ -11,6 +11,7 @@ import io.ontola.cache.util.configureClientLogging
 import kotlinx.serialization.json.Json
 
 val configureClient: HttpClientConfig<*>.() -> Unit = {
+    followRedirects = false
     install(JsonFeature) {
         serializer = KotlinxSerializer(
             Json {
