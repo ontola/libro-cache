@@ -84,10 +84,12 @@ fun ApplicationRequest.isHTML(): Boolean {
 fun Application.module(
     testing: Boolean = false,
     storage: StorageAdapter<String, String>? = null,
+    persistentStorage: StorageAdapter<String, String>? = null,
     client: HttpClient = createClient(),
 ) {
     val config = CacheConfig.fromEnvironment(environment.config, testing, client)
     val adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
+    val sessionAdapter = persistentStorage ?: RedisAdapter(RedisClient.create(config.persistentRedisURI).connect().coroutines())
 
     install(Logging)
 
@@ -187,7 +189,7 @@ fun Application.module(
     install(Sessions) {
         cookie<SessionData>(
             name = "identity",
-            storage = RedisSessionStorage(adapter, cacheConfig.redis),
+            storage = RedisSessionStorage(sessionAdapter, cacheConfig.redis),
         ) {
             cookie.httpOnly = true
             cookie.secure = true

@@ -66,6 +66,7 @@ fun <R> withCacheTestApplication(
             application.module(
                 testing = true,
                 storage = adapter,
+                persistentStorage = adapter,
                 client = client,
             )
 

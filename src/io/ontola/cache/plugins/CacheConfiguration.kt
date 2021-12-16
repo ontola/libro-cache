@@ -135,9 +135,9 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
      */
     val redis: RedisConfig,
     /**
-     * The redis uri where libro writes sessions to.
+     * The redis uri where to write persistent data to (sessions, settings, documents).
      */
-    val libroRedisURI: RedisURI,
+    val persistentRedisURI: RedisURI,
     /**
      * The redis uri used for streaming between services.
      */
@@ -201,14 +201,14 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
         ): CacheConfig {
             val cacheConfig = config.config("cache")
 
-            val (libroRedisURI, streamRedisURI, redisConfig) = redisConfig(cacheConfig, testing)
+            val (persistentRedisURI, streamRedisURI, redisConfig) = redisConfig(cacheConfig, testing)
 
             return CacheConfig(
                 assets = assetsConfig(cacheConfig, testing),
                 port = config.config("ktor").config("deployment").property("port").getString().toInt(),
                 testing = testing,
                 sessions = sessionsConfig(cacheConfig, testing),
-                libroRedisURI = libroRedisURI,
+                persistentRedisURI = persistentRedisURI,
                 streamRedisURI = streamRedisURI,
                 redis = redisConfig,
                 services = cacheConfig.config("services"),
@@ -257,9 +257,9 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
 
             val testRedisURI = RedisURI.create("redis://redis")
 
-            val libroRedisDb = 0
-            val libroRedisURI = testRedisURI.apply {
-                database = libroRedisDb
+            val persistentRedisDb = 0
+            val persistentRedisURI = testRedisURI.apply {
+                database = persistentRedisDb
             }
 
             val streamRedisDb = 0
@@ -273,7 +273,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
                 invalidationGroup = "testGroup",
             )
 
-            Triple(libroRedisURI, streamRedisURI, redisConfig)
+            Triple(persistentRedisURI, streamRedisURI, redisConfig)
         } else {
             val redisConfigProp = cacheConfig.config("services").config("redis")
             val redisHost = redisConfigProp.property("host").getString()
@@ -282,7 +282,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
             val redisUsername = redisConfigProp.propertyOrNull("username")?.getString()
             val redisPassword = redisConfigProp.propertyOrNull("password")?.getString()?.toCharArray()
             val redisSsl = redisConfigProp.propertyOrNull("ssl")?.getString()?.toBoolean()
-            val libroRedisDb = redisConfigProp.property("libroDb").getString().toInt()
+            val persistentRedisDb = redisConfigProp.property("persistentDb").getString().toInt()
             val streamRedisDb = redisConfigProp.property("streamDb").getString().toInt()
             fun redisUrl(db: Int) = RedisURI
                 .builder()
@@ -301,7 +301,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
                 .build()
 
             val redisURI = redisUrl(redisDb)
-            val libroRedisURI = redisUrl(libroRedisDb)
+            val persistentRedisURI = redisUrl(persistentRedisDb)
             val streamRedisURI = redisUrl(streamRedisDb)
 
             val redisConfig = RedisConfig(
@@ -310,7 +310,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
                 invalidationGroup = redisConfigProp.property("invalidationGroup").getString(),
             )
 
-            Triple(libroRedisURI, streamRedisURI, redisConfig)
+            Triple(persistentRedisURI, streamRedisURI, redisConfig)
         }
 
         private fun mapsConfig(
