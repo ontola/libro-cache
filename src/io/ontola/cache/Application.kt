@@ -89,7 +89,7 @@ fun Application.module(
 ) {
     val config = CacheConfig.fromEnvironment(environment.config, testing, client)
     val adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
-    val sessionAdapter = persistentStorage ?: RedisAdapter(RedisClient.create(config.persistentRedisURI).connect().coroutines())
+    val persistentAdapter = persistentStorage ?: RedisAdapter(RedisClient.create(config.persistentRedisURI).connect().coroutines())
 
     install(Logging)
 
@@ -128,6 +128,7 @@ fun Application.module(
 
     install(Storage) {
         this.adapter = adapter
+        this.persistentAdapter = persistentAdapter
         this.expiration = config.cacheExpiration
     }
 
@@ -189,7 +190,7 @@ fun Application.module(
     install(Sessions) {
         cookie<SessionData>(
             name = "identity",
-            storage = RedisSessionStorage(sessionAdapter, cacheConfig.redis),
+            storage = RedisSessionStorage(persistentAdapter, cacheConfig.redis),
         ) {
             cookie.httpOnly = true
             cookie.secure = true

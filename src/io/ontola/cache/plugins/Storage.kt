@@ -87,6 +87,7 @@ class Storage(
 
     class Configuration {
         lateinit var adapter: StorageAdapter<String, String>
+        lateinit var persistentAdapter: StorageAdapter<String, String>
         lateinit var keyManager: KeyManager
         var expiration: Long? = null
     }
@@ -194,15 +195,26 @@ class Storage(
             )
             pipeline.attributes.put(StorageKey, feature)
 
+            val persistentFeature = Storage(
+                config.persistentAdapter,
+                config.keyManager,
+                config.expiration,
+            )
+            pipeline.attributes.put(PersistedStorageKey, persistentFeature)
+
             return feature
         }
     }
 }
 
 private val StorageKey = AttributeKey<Storage>("StorageKey")
+private val PersistedStorageKey = AttributeKey<Storage>("PersistedStorageKey")
 
 internal val ApplicationCallPipeline.storage: Storage
     get() = attributes.getOrNull(StorageKey) ?: reportMissingRegistry()
+
+internal val ApplicationCallPipeline.persistentStorage: Storage
+    get() = attributes.getOrNull(PersistedStorageKey) ?: reportMissingRegistry()
 
 private fun reportMissingRegistry(): Nothing {
     throw StorageNotYetConfiguredException()
