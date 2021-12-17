@@ -25,8 +25,9 @@ data class PageRenderContext(
 fun ApplicationCall.pageRenderContextFromCall(
     seed: String? = null,
     manifest: Manifest? = null,
+    uri: Url = requestUriFromTenant(),
 ) = PageRenderContext(
-    uri = requestUriFromTenant(),
+    uri = uri,
     nonce = nonce,
     lang = sessionManager.language,
     isUser = sessionManager.isUser,

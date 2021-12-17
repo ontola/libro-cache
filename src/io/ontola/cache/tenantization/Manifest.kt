@@ -28,7 +28,7 @@ data class OntolaManifest(
     @SerialName("secondary_color")
     val secondaryColor: String = "#d96833",
     @SerialName("styled_headers")
-    val styledHeaders: String? = null,
+    val styledHeaders: Boolean? = null,
     val theme: String? = null,
     @SerialName("theme_options")
     val themeOptions: String? = null,
@@ -50,6 +50,7 @@ data class Icon(
     val src: String,
     val sizes: String,
     val type: String,
+    val purpose: String? = null,
 )
 
 @Serializable

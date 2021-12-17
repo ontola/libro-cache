@@ -3,15 +3,20 @@ package io.ontola.cache.studio
 import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature
+import io.ktor.application.application
 import io.ktor.application.call
 import io.ktor.application.feature
 import io.ktor.features.origin
 import io.ktor.html.respondHtml
+import io.ktor.http.ContentType
+import io.ktor.http.DEFAULT_PORT
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
+import io.ktor.http.Url
 import io.ktor.request.path
 import io.ktor.response.respond
+import io.ktor.response.respondOutputStream
 import io.ktor.response.respondText
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
@@ -19,8 +24,20 @@ import io.ontola.cache.document.PageConfiguration
 import io.ontola.cache.document.indexPage
 import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.plugins.CacheSession
-import io.ontola.cache.plugins.storage
+import io.ontola.cache.plugins.cacheConfig
+import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.util.filename
+import io.ontola.cache.util.measured
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.encodeToStream
+
+private fun Int.onlyNonDefaultPort(): Int {
+    if (this == 80 || this == 443) {
+        return DEFAULT_PORT
+    }
+
+    return this
+}
 
 class Studio(private val configuration: Configuration) {
     class Configuration {
@@ -28,22 +45,31 @@ class Studio(private val configuration: Configuration) {
         lateinit var pageConfig: PageConfiguration
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     private suspend fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
-        val origin = context.call.request.origin
-        val uri = URLBuilder(
-            protocol = URLProtocol.createOrDefault(origin.scheme),
-            host = origin.host,
-            port = origin.port,
-            encodedPath = context.call.request.path(),
-        ).build().copy(parameters = context.call.request.queryParameters)
+        lateinit var uri: Url
+        val docKey = context.measured("studio lookup") {
+            val origin = context.call.request.origin
+            uri = URLBuilder(
+                protocol = URLProtocol.createOrDefault(origin.scheme),
+                host = origin.host,
+                port = origin.port.onlyNonDefaultPort(),
+                encodedPath = context.call.request.path(),
+            ).build().copy(parameters = context.call.request.queryParameters)
 
-        val docKey = configuration.documentRepo.documentKeyForRoute(uri) ?: return context.proceed()
+            configuration.documentRepo.documentKeyForRoute(uri)
+        }
+
+        docKey ?: return context.proceed()
+
 
         if (uri.filename() == "manifest.json") {
             val manifest = configuration.documentRepo.getManifest(docKey)
 
             if (manifest != null) {
-                context.call.respond(manifest)
+                context.call.respondOutputStream(ContentType.Application.Json) {
+                    context.application.cacheConfig.serializer.encodeToStream(manifest, this)
+                }
             } else {
                 context.call.respond(HttpStatusCode.NotFound)
             }
@@ -69,12 +95,20 @@ class Studio(private val configuration: Configuration) {
             return context.finish()
         }
 
-        val ctx = context.call.pageRenderContextFromCall().apply {
-            seed = source
+        val data = context.measured("sourceToHextuples") {
+         sourceToHextuples(source, uri)
         }
 
-        context.call.respondHtml(HttpStatusCode.OK) {
-            indexPage(ctx)
+        val ctx = context.call.pageRenderContextFromCall(
+            seed = data,
+            manifest = manifest,
+            uri = uri,
+        )
+
+        context.measured("respondHtml") {
+            context.call.respondHtml(HttpStatusCode.OK) {
+                indexPage(ctx)
+            }
         }
 
         context.finish()
@@ -85,7 +119,7 @@ class Studio(private val configuration: Configuration) {
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Studio {
             val configuration = Configuration().apply {
-                documentRepo = DocumentRepo(pipeline.storage)
+                documentRepo = DocumentRepo(pipeline.persistentStorage)
             }.apply(configure)
             val feature = Studio(configuration)
 
@@ -99,9 +133,6 @@ class Studio(private val configuration: Configuration) {
 }
 
 private val StudioKey = AttributeKey<String>("StudioKey")
-
-internal val ApplicationCall.studio: String
-    get() = attributes.getOrNull(StudioKey) ?: reportMissingNonce()
 
 private fun ApplicationCall.reportMissingNonce(): Nothing {
     application.feature(CacheSession) // ensure the feature is installed

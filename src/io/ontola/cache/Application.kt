@@ -61,6 +61,7 @@ import io.ontola.cache.routes.mountTestingRoutes
 import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.signedTransformer
+import io.ontola.cache.studio.Studio
 import io.ontola.cache.tenantization.Tenantization
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.isHtmlAccept
@@ -172,21 +173,6 @@ fun Application.module(
     install(ForwardedHeaderSupport)
     install(XForwardedHeaderSupport)
 
-    install(Tenantization) {
-        blacklist = listOf(
-            "/favicon.ico",
-            "/link-lib/cache/clear",
-            "/link-lib/cache/status",
-            "/d/health",
-            "/metrics",
-            "/_testing",
-            "/static/",
-            "/assets/",
-            "/f_assets/",
-            "/__webpack_hmr"
-        )
-    }
-
     install(Sessions) {
         cookie<SessionData>(
             name = "identity",
@@ -212,6 +198,23 @@ fun Application.module(
         jwtValidator = JWT.require(jwtToken)
             .withClaim("application_id", config.sessions.clientId)
             .build()
+    }
+
+    install(Studio)
+
+    install(Tenantization) {
+        blacklist = listOf(
+            "/favicon.ico",
+            "/link-lib/cache/clear",
+            "/link-lib/cache/status",
+            "/d/health",
+            "/metrics",
+            "/_testing",
+            "/static/",
+            "/assets/",
+            "/f_assets/",
+            "/__webpack_hmr"
+        )
     }
 
     install(WebSockets)
