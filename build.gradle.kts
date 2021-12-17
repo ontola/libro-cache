@@ -1,20 +1,22 @@
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackOutput.Target.UMD
 
 val bugsnag_version: String by project
+val coroutines_version: String by project
 val datetime_version: String by project
 val graal_version: String by project
-val ktor_version: String by project
 val kotlin_css_version: String by project
+val kotlin_logging_version: String by project
 val kotlin_version: String by project
-val coroutines_version: String by project
+val ktor_version: String by project
+val lettuce_version: String by project
 val logback_version: String by project
 val serialization_version: String by project
 
 plugins {
     application
 
-    kotlin("multiplatform") version "1.6.0"
-    kotlin("plugin.serialization") version "1.6.0"
+    kotlin("multiplatform") version "1.6.10"
+    kotlin("plugin.serialization") version "1.6.10"
 }
 
 kotlin {
@@ -53,7 +55,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:$datetime_version")
 
                 implementation("ch.qos.logback:logback-classic:$logback_version")
-                implementation("io.github.microutils:kotlin-logging:2.0.12")
+                implementation("io.github.microutils:kotlin-logging:$kotlin_logging_version")
                 implementation("io.ktor:ktor-server-cio:$ktor_version")
                 implementation("io.ktor:ktor-auth-jwt:$ktor_version")
                 implementation("io.ktor:ktor-client-core:$ktor_version")
@@ -82,7 +84,7 @@ kotlin {
 
                 implementation("commons-codec:commons-codec:1.15")
 
-                implementation("io.lettuce:lettuce-core:6.1.1.RELEASE")
+                implementation("io.lettuce:lettuce-core:$lettuce_version")
 
                 implementation("com.bugsnag:bugsnag:$bugsnag_version")
             }
@@ -105,8 +107,8 @@ kotlin {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(16))
-        vendor.set(JvmVendorSpec.ADOPTOPENJDK)
+        languageVersion.set(JavaLanguageVersion.of(17))
+        vendor.set(JvmVendorSpec.matching("GraalVM Community"))
     }
 }
 

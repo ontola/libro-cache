@@ -13,7 +13,8 @@ RUN ./gradlew --no-daemon clean
 COPY . /app
 RUN /app/gradlew --no-daemon stage
 
-FROM ghcr.io/graalvm/graalvm-ce:latest
+# Keep in sync with graal_version in gradle.properties
+FROM ghcr.io/graalvm/graalvm-ce:21.3
 
 EXPOSE 3080:3080
 
