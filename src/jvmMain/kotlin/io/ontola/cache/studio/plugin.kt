@@ -5,7 +5,6 @@ import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature
 import io.ktor.application.application
 import io.ktor.application.call
-import io.ktor.application.feature
 import io.ktor.features.origin
 import io.ktor.html.respondHtml
 import io.ktor.http.ContentType
@@ -23,12 +22,12 @@ import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.document.PageConfiguration
 import io.ontola.cache.document.indexPage
 import io.ontola.cache.document.pageRenderContextFromCall
-import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.util.filename
 import io.ontola.cache.util.measured
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.encodeToStream
 
 private fun Int.onlyNonDefaultPort(): Int {
@@ -95,12 +94,17 @@ class Studio(private val configuration: Configuration) {
             return context.finish()
         }
 
-        val data = context.measured("sourceToHextuples") {
-         sourceToHextuples(source, uri)
+        val data = context.measured("source to hextuples") {
+            sourceToHextuples(source, uri)
+        }
+
+        val seed = context.measured("hex to json string") {
+            val serializer = context.application.cacheConfig.serializer
+            data.joinToString("\n") { serializer.encodeToString(it) }
         }
 
         val ctx = context.call.pageRenderContextFromCall(
-            seed = data,
+            seed = seed,
             manifest = manifest,
             uri = uri,
         )
@@ -131,13 +135,3 @@ class Studio(private val configuration: Configuration) {
         }
     }
 }
-
-private val StudioKey = AttributeKey<String>("StudioKey")
-
-private fun ApplicationCall.reportMissingNonce(): Nothing {
-    application.feature(CacheSession) // ensure the feature is installed
-    throw NonceNotYetConfiguredException()
-}
-
-class NonceNotYetConfiguredException :
-    IllegalStateException("Studio is not yet ready: you are asking it to early before the Studio feature.")

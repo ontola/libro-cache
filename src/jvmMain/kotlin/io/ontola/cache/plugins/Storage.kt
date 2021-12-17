@@ -13,6 +13,7 @@ import io.ontola.cache.util.KeyManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
+import mu.KotlinLogging
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
@@ -78,6 +79,8 @@ class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : Storag
 
 typealias TempString = Pair<Long, String>
 
+private val logger = KotlinLogging.logger {}
+
 class Storage(
     private val adapter: StorageAdapter<String, String>,
     private val keyManager: KeyManager,
@@ -92,7 +95,10 @@ class Storage(
         var expiration: Long? = null
     }
 
-    suspend fun clear(): String? = adapter.flushdbAsync()
+    suspend fun clear(): String? {
+        logger.warn { "Executing cache clear" }
+        return adapter.flushdbAsync()
+    }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     suspend fun getCacheEntry(iri: String, lang: String): CacheEntry? {

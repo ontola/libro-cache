@@ -45,6 +45,21 @@ object ParseToGraph {
     }
 }
 
-fun sourceToHextuples(source: String, uri: Url, origin: String? = null): String {
-    return ParseToGraph.sourceToHextuples.execute(source, uri.toString(), origin).asString()
+fun sourceToHextuples(source: String, uri: Url, origin: String? = null): List<Array<String>> {
+    val test = ParseToGraph.sourceToHextuples.execute(source, uri.toString(), origin)
+    val hextuples = buildList<Array<String>> {
+        for (i in 0 until test.arraySize) {
+            val elem = test.getArrayElement(i)
+            add(arrayOf(
+                elem.getArrayElement(0).asString(),
+                elem.getArrayElement(1).asString(),
+                elem.getArrayElement(2).asString(),
+                elem.getArrayElement(3).asString(),
+                elem.getArrayElement(4).asString(),
+                elem.getArrayElement(5).asString(),
+            ))
+        }
+    }
+
+    return hextuples
 }
