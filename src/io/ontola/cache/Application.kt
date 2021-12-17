@@ -94,6 +94,20 @@ fun Application.module(
 
     install(Logging)
 
+    install(CallLogging) {
+        configureCallLogging()
+        filter { call -> call.request.path().startsWith("/") }
+        format { call ->
+            when (val status = call.response.status()) {
+                HttpStatusCode.Found -> "$status: ${call.request.toLogString()} -> ${call.response.headers[HttpHeaders.Location]}"
+                else -> {
+                    val timings = call.requestTimings.joinToString { (name, time) -> "$name: ${time}ms" }
+                    "$status - ${call.request.toLogString()} - timings: ($timings)"
+                }
+            }
+        }
+    }
+
     install(StatusPages) {
         exception<TenantNotFoundException> {
             call.respond(HttpStatusCode.NotFound)
@@ -144,20 +158,6 @@ fun Application.module(
         deflate {
             priority = 10.0
             minimumSize(1024)
-        }
-    }
-
-    install(CallLogging) {
-        configureCallLogging()
-        filter { call -> call.request.path().startsWith("/") }
-        format { call ->
-            when (val status = call.response.status()) {
-                HttpStatusCode.Found -> "$status: ${call.request.toLogString()} -> ${call.response.headers[HttpHeaders.Location]}"
-                else -> {
-                    val timings = call.requestTimings.joinToString { (name, time) -> "$name: ${time}ms" }
-                    "$status - ${call.request.toLogString()} - timings: ($timings)"
-                }
-            }
         }
     }
 

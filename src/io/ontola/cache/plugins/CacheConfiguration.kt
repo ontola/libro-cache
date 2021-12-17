@@ -12,7 +12,7 @@ import io.lettuce.core.RedisURI
 import io.ontola.cache.createClient
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
 data class SessionsConfig(
@@ -168,7 +168,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
      * The amount of seconds after which tenant finder lookups should expire.
      * Set to zero to disable caching.
      */
-    val tenantExpiration: Long = Duration.minutes(10).inWholeSeconds,
+    val tenantExpiration: Long = 10.minutes.inWholeSeconds,
     /**
      * Client to use for requests to external systems.
      */

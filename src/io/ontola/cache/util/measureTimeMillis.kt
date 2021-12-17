@@ -6,27 +6,40 @@ import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.requestTimings
 
+/**
+ * Measures how long the block will run and adds it to the request timings.
+ * @param name The name to use in the timings. Spaces will be converted to underscores.
+ */
 suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measured(name: String, block: suspend () -> T): T {
     var res: T
     val time = kotlin.system.measureTimeMillis {
         res = block()
     }
-    this.call.requestTimings.add(name to time)
+    call.requestTimings.add(name.replace(' ', '_') to time)
 
     return res
 }
 
-suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(name: String, block: suspend () -> T, missed: suspend () -> T): T {
-    var res: T
+suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(name: String, block: suspend () -> T, onMissed: suspend () -> T): T {
+    var res: T? = null
+    var exception: Exception? = null
     var time = 0L
     var missed = false
     time += kotlin.system.measureTimeMillis {
-        res = block()
+        try {
+            res = block()
+        } catch(e: Exception) {
+            exception = e
+        }
     }
     if (res == null) {
         missed = true
         time += kotlin.system.measureTimeMillis {
-            res = missed()
+            try {
+                res = onMissed()
+            } catch(e: Exception) {
+                exception = e
+            }
         }
     }
     val postfix = if (missed) "miss" else "hit"
@@ -37,7 +50,11 @@ suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(name: Str
             "[cache] $postfix for $name"
         }
     }
-    this.call.requestTimings.add("$name;$postfix" to time)
+    call.requestTimings.add("$name;$postfix" to time)
 
-    return res
+    if (exception != null) {
+        throw exception as Exception
+    }
+
+    return res as T
 }
