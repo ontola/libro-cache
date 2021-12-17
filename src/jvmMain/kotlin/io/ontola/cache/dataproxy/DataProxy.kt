@@ -1,11 +1,7 @@
 package io.ontola.cache.dataproxy
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.ApplicationFeature
-import io.ktor.application.call
 import io.ktor.client.request.forms.FormDataContent
-import io.ktor.client.statement.readText
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentDisposition
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
@@ -15,13 +11,18 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.http.Url
 import io.ktor.http.content.OutgoingContent
-import io.ktor.request.ApplicationRequest
-import io.ktor.request.httpMethod
-import io.ktor.request.path
-import io.ktor.request.receiveChannel
-import io.ktor.request.uri
-import io.ktor.response.respond
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.ApplicationPlugin
+import io.ktor.server.application.call
+import io.ktor.server.request.ApplicationRequest
+import io.ktor.server.request.httpMethod
+import io.ktor.server.request.path
+import io.ktor.server.request.receiveChannel
+import io.ktor.server.request.uri
+import io.ktor.server.response.respond
 import io.ktor.util.AttributeKey
+import io.ktor.util.InternalAPI
 import io.ktor.util.filter
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
@@ -55,12 +56,13 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
         )
         val response = config.proxiedRequest(call!!, "/link-lib/bulk", HttpMethod.Post, body)
 
-        return response.readText()
+        return response.bodyAsText()
     }
 
     /**
      * Proxies the request to the data server
      */
+    @OptIn(InternalAPI::class)
     private suspend fun interceptRequest(call: ApplicationCall) {
         val originalReq = call.request
         val uri = Url(originalReq.uri)
@@ -106,7 +108,7 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
         )
     }
 
-    companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, DataProxy> {
+    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, DataProxy> {
         override val key = AttributeKey<DataProxy>("DataProxy")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): DataProxy {

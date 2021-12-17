@@ -1,22 +1,23 @@
 package io.ontola.cache.routes
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
 import io.ktor.client.HttpClient
-import io.ktor.client.features.expectSuccess
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.head
-import io.ktor.client.statement.HttpResponse
-import io.ktor.html.respondHtml
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.URLBuilder
 import io.ktor.http.Url
-import io.ktor.request.uri
-import io.ktor.response.header
-import io.ktor.response.respond
-import io.ktor.routing.Routing
-import io.ktor.routing.get
-import io.ktor.sessions.sessions
-import io.ktor.sessions.set
+import io.ktor.http.encodedPath
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.html.respondHtml
+import io.ktor.server.request.uri
+import io.ktor.server.response.header
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Routing
+import io.ktor.server.routing.get
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.CacheRequest
@@ -60,7 +61,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.headRequest(
     websiteBase: Url = call.tenant.websiteIRI,
 ): HeadResponse = measured("headRequest") {
     val lang = call.sessionManager.language
-    val headResponse = client.head<HttpResponse>(call.services.route(uri)) {
+    val headResponse = client.head(call.services.route(uri)) {
         expectSuccess = false
         initHeaders(call, lang, websiteBase)
     }
@@ -162,7 +163,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
     }
 
     val includes = listOf(
-        call.tenant.websiteIRI.copy(encodedPath = call.request.uri).toString(),
+        URLBuilder(call.tenant.websiteIRI).apply { encodedPath = call.request.uri }.buildString(),
         call.tenant.websiteIRI.toString() + "/ns/core",
     ) + (head.includeResources ?: emptyList())
 

@@ -1,11 +1,11 @@
 package io.ontola.cache.plugins
 
 import com.bugsnag.Bugsnag
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.ApplicationFeature
-import io.ktor.application.call
 import io.ktor.client.HttpClient
-import io.ktor.config.ApplicationConfig
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.ApplicationPlugin
+import io.ktor.server.application.call
+import io.ktor.server.config.ApplicationConfig
 import io.ktor.util.AttributeKey
 import io.ktor.utils.io.printStack
 import io.lettuce.core.RedisURI
@@ -376,7 +376,7 @@ class CacheConfiguration {
         lateinit var config: CacheConfig
     }
 
-    companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, CacheConfiguration> {
+    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, CacheConfiguration> {
         override val key = AttributeKey<CacheConfiguration>("CacheConfiguration")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): CacheConfiguration {

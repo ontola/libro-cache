@@ -1,10 +1,10 @@
 package io.ontola.cache.plugins
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.ApplicationFeature
-import io.ktor.application.call
-import io.ktor.application.feature
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.ApplicationPlugin
+import io.ktor.server.application.call
+import io.ktor.server.application.plugin
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import java.util.UUID
@@ -133,7 +133,7 @@ class CSP(private val configuration: Configuration) {
 
     }
 
-    companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, CSP> {
+    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, CSP> {
         override val key = AttributeKey<CSP>("CSP")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): CSP {
@@ -155,7 +155,7 @@ internal val ApplicationCall.nonce: String
     get() = attributes.getOrNull(CSPKey) ?: reportMissingNonce()
 
 private fun ApplicationCall.reportMissingNonce(): Nothing {
-    application.feature(CacheSession) // ensure the feature is installed
+    application.plugin(CacheSession) // ensure the feature is installed
     throw NonceNotYetConfiguredException()
 }
 

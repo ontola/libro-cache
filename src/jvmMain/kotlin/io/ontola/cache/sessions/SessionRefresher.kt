@@ -1,18 +1,19 @@
 package io.ontola.cache.sessions
 
 import com.auth0.jwt.JWT
-import io.ktor.client.call.receive
-import io.ktor.client.features.expectSuccess
+import io.ktor.client.call.body
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
-import io.ktor.client.statement.HttpResponse
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.Url
+import io.ktor.http.URLBuilder
 import io.ktor.http.fullPath
 import io.ontola.cache.plugins.CacheSession
+import io.ontola.util.appendPath
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -88,29 +89,32 @@ class SessionRefresher(private val configuration: CacheSession.Configuration) {
 
     private suspend fun refreshToken(userToken: String, refreshToken: String): OIDCTokenResponse {
         val issuer = JWT.decode(userToken).issuer
-        val url = Url("$issuer/oauth/token")
+        val tokenUri = URLBuilder(issuer).apply { appendPath("oauth", "token") }.build()
+        val oidcTokenUri = URLBuilder(configuration.oidcUrl)
+            .apply { appendPath(tokenUri.fullPath.split("/")) }
+            .build()
 
-        val response = configuration.client.post<HttpResponse>("${configuration.oidcUrl}${url.fullPath}") {
+        val response = configuration.client.post(oidcTokenUri) {
             expectSuccess = false
 
             headers {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 header(HttpHeaders.Authorization, "Bearer $userToken")
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
-                header(HttpHeaders.XForwardedHost, url.host)
+                header(HttpHeaders.XForwardedHost, tokenUri.host)
                 header(HttpHeaders.XForwardedProto, "https")
                 header("X-Forwarded-Ssl", "on")
             }
 
-            body = OIDCRequest.refreshRequest(
+            setBody(OIDCRequest.refreshRequest(
                 configuration.oidcClientId,
                 configuration.oidcClientSecret,
                 refreshToken
-            )
+            ))
         }
 
         if (response.status == HttpStatusCode.BadRequest) {
-            val error = Json.decodeFromString<BackendErrorResponse>(response.receive())
+            val error = Json.decodeFromString<BackendErrorResponse>(response.body())
             logger.warn { "E: ${error.error} - ${error.code} - ${error.errorDescription}" }
             if (error.error == "invalid_grant") {
                 throw InvalidGrantException()
@@ -119,6 +123,6 @@ class SessionRefresher(private val configuration: CacheSession.Configuration) {
             }
         }
 
-        return response.receive()
+        return response.body()
     }
 }

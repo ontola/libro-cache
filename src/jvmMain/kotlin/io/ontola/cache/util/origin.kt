@@ -1,6 +1,6 @@
 package io.ontola.cache.util
 
-import io.ktor.request.ApplicationRequest
+import io.ktor.server.request.ApplicationRequest
 
 internal fun ApplicationRequest.origin(): String {
     val authority = listOf("X-Forwarded-Host", "origin", "host", "authority")

@@ -1,6 +1,6 @@
 package io.ontola.cache.sessions
 
-import io.ktor.sessions.SessionStorage
+import io.ktor.server.sessions.SessionStorage
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.readAvailable

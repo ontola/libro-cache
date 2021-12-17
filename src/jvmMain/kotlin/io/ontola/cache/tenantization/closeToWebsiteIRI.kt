@@ -1,8 +1,8 @@
 package io.ontola.cache.tenantization
 
 import io.ktor.http.Url
-import io.ktor.request.ApplicationRequest
-import io.ktor.request.path
+import io.ktor.server.request.ApplicationRequest
+import io.ktor.server.request.path
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.origin
 import mu.KLogger

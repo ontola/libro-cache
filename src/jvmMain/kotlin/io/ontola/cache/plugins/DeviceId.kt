@@ -1,13 +1,13 @@
 package io.ontola.cache.plugins
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.ApplicationFeature
-import io.ktor.application.call
-import io.ktor.application.feature
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
-import io.ktor.sessions.set
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.ApplicationPlugin
+import io.ktor.server.application.call
+import io.ktor.server.application.plugin
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import java.util.UUID
@@ -27,7 +27,7 @@ class DeviceId(private val configuration: Configuration) {
         return id
     }
 
-    companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, DeviceId> {
+    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, DeviceId> {
         override val key = AttributeKey<DeviceId>("DeviceId")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): DeviceId {
@@ -49,7 +49,7 @@ internal val ApplicationCall.deviceId: String
     get() = attributes.getOrNull(DeviceIdKey) ?: reportMissingDeviceId()
 
 private fun ApplicationCall.reportMissingDeviceId(): Nothing {
-    application.feature(CacheSession) // ensure the feature is installed
+    application.plugin(CacheSession) // ensure the feature is installed
     throw DeviceIdNotYetConfiguredException()
 }
 

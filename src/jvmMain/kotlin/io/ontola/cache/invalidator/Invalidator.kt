@@ -1,6 +1,6 @@
 package io.ontola.cache.invalidator
 
-import io.ktor.application.Application
+import io.ktor.server.application.Application
 import io.lettuce.core.Consumer
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient

@@ -2,7 +2,7 @@ package io.ontola.cache.document
 
 import com.oracle.truffle.js.lang.JavaScriptLanguage.MODULE_MIME_TYPE
 import com.oracle.truffle.js.runtime.JSContextOptions.ESM_EVAL_RETURNS_EXPORTS_NAME
-import io.ontola.cache.tenantization.Manifest
+import io.ontola.apex.webmanifest.Manifest
 import org.graalvm.polyglot.Context
 import org.graalvm.polyglot.Source
 import org.graalvm.polyglot.Value

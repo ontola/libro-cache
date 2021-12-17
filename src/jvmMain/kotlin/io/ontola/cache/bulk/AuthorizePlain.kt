@@ -1,16 +1,15 @@
 package io.ontola.cache.bulk
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.client.call.receive
-import io.ktor.client.features.expectSuccess
+import io.ktor.client.call.body
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.url
-import io.ktor.client.statement.HttpResponse
 import io.ktor.http.Url
 import io.ktor.http.fullPath
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.services
@@ -29,7 +28,7 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizePlain(
         .asFlow()
         .map {
             it to measured("authorizePlain - $it") {
-                call.application.cacheConfig.client.get<HttpResponse> {
+                call.application.cacheConfig.client.get {
                     url(call.services.route(Url(it).fullPath))
                     initHeaders(call, lang)
                     headers {
@@ -45,7 +44,7 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizePlain(
                 status = response.status.value,
                 cache = CacheControl.Private,
                 language = lang,
-                body = response.receive()
+                body = response.body()
             )
         }
 }

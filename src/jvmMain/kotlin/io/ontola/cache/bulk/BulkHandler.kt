@@ -1,13 +1,13 @@
 package io.ontola.cache.bulk
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.locations.KtorExperimentalLocationsAPI
-import io.ktor.locations.Location
-import io.ktor.response.header
-import io.ktor.response.respondOutputStream
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.locations.KtorExperimentalLocationsAPI
+import io.ktor.server.locations.Location
+import io.ktor.server.response.header
+import io.ktor.server.response.respondOutputStream
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.sessionManager

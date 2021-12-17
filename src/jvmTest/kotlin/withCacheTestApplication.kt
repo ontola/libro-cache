@@ -1,20 +1,20 @@
 
-import io.ktor.config.MapApplicationConfig
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
+import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.cookiesSession
 import io.ktor.server.testing.createTestEnvironment
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.setBody
 import io.ktor.server.testing.withApplication
+import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.module
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.sessions.SessionData
-import io.ontola.cache.tenantization.Manifest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.test.assertEquals

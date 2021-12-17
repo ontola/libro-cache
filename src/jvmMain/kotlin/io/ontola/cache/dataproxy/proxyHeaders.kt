@@ -1,10 +1,10 @@
 package io.ontola.cache.dataproxy
 
-import io.ktor.application.ApplicationCall
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
+import io.ktor.server.application.ApplicationCall
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders

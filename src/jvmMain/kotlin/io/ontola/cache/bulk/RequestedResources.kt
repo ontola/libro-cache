@@ -1,8 +1,8 @@
 package io.ontola.cache.bulk
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.request.receiveParameters
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.request.receiveParameters
 import io.ktor.util.pipeline.PipelineContext
 import java.net.URLDecoder
 import java.nio.charset.Charset

@@ -1,8 +1,8 @@
 package io.ontola.cache.util
 
-import io.ktor.client.features.logging.LogLevel
-import io.ktor.client.features.logging.Logging
-import io.ktor.features.CallLogging
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.server.plugins.CallLogging
 import mu.KotlinLogging
 import org.slf4j.event.Level
 

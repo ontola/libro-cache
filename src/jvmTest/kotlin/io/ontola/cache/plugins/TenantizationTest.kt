@@ -1,18 +1,18 @@
 package io.ontola.cache.plugins
 
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
 import io.ktor.http.Headers
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.Parameters
 import io.ktor.http.RequestConnectionPoint
-import io.ktor.request.ApplicationReceivePipeline
-import io.ktor.request.ApplicationRequest
-import io.ktor.request.RequestCookies
-import io.ktor.request.path
-import io.ktor.response.ApplicationResponse
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.ApplicationReceivePipeline
+import io.ktor.server.request.ApplicationRequest
+import io.ktor.server.request.RequestCookies
+import io.ktor.server.request.path
+import io.ktor.server.response.ApplicationResponse
 import io.ktor.server.testing.handleRequest
 import io.ktor.util.Attributes
 import io.ktor.utils.io.ByteReadChannel
@@ -42,6 +42,10 @@ class TenantizationTest {
                 get() = request
             override val response: ApplicationResponse
                 get() = TODO("Not yet implemented")
+
+            override fun afterFinish(handler: (cause: Throwable?) -> Unit) {
+                TODO("Not yet implemented")
+            }
         }
 
         request = object : ApplicationRequest {
@@ -71,6 +75,8 @@ class TenantizationTest {
             override val pipeline: ApplicationReceivePipeline
                 get() = TODO("Not yet implemented")
             override val queryParameters: Parameters
+                get() = TODO("Not yet implemented")
+            override val rawQueryParameters: Parameters
                 get() = TODO("Not yet implemented")
 
             override fun receiveChannel(): ByteReadChannel {

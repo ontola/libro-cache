@@ -1,25 +1,32 @@
 package io.ontola.cache.sessions
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.URLBuilder
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.proxySafeHeaders
+import io.ontola.util.appendPath
 
 suspend fun PipelineContext<Unit, ApplicationCall>.logout(): HttpResponse? {
     val logoutRequest = call.sessionManager.logoutRequest ?: return null
 
     val websiteIRI = call.tenant.websiteIRI
-    val revokeUrl = websiteIRI.copy(encodedPath = websiteIRI.encodedPath + "/oauth/revoke")
+    val revokeUrl = URLBuilder(websiteIRI)
+        .apply {
+            appendPath("oauth", "revoke")
+        }
+        .build()
 
-    return call.tenant.client.post<HttpResponse>(call.services.route(revokeUrl.encodedPath)) {
+    return call.tenant.client.post(call.services.route(revokeUrl.encodedPath)) {
         headers {
             append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             if (call.sessionManager.isUser) {
@@ -27,6 +34,6 @@ suspend fun PipelineContext<Unit, ApplicationCall>.logout(): HttpResponse? {
             }
             proxySafeHeaders(call.request)
         }
-        body = logoutRequest
+        setBody(logoutRequest)
     }
 }

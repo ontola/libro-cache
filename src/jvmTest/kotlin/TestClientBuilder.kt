@@ -13,6 +13,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.http.headersOf
+import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.SPIAuthorizeRequest
 import io.ontola.cache.bulk.SPIResourceResponseItem
@@ -21,7 +22,6 @@ import io.ontola.cache.routes.HeadResponse
 import io.ontola.cache.sessions.LogoutRequest
 import io.ontola.cache.sessions.OIDCRequest
 import io.ontola.cache.sessions.OIDCTokenResponse
-import io.ontola.cache.tenantization.Manifest
 import io.ontola.cache.tenantization.TenantFinderResponse
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.fullUrl

@@ -1,7 +1,7 @@
 package io.ontola.cache.sessions
 
-import io.ktor.sessions.SessionTransportTransformer
-import io.ktor.sessions.SessionTransportTransformerMessageAuthentication
+import io.ktor.server.sessions.SessionTransportTransformer
+import io.ktor.server.sessions.SessionTransportTransformerMessageAuthentication
 
 fun signedTransformer(
     signingSecret: String,

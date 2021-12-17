@@ -1,8 +1,8 @@
 package io.ontola.cache.health
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.application
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.application
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.routes.headRequest

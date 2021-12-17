@@ -1,7 +1,7 @@
 package io.ontola.cache.plugins
 
-import io.ktor.application.ApplicationEnvironment
-import io.ktor.config.MapApplicationConfig
+import io.ktor.server.application.ApplicationEnvironment
+import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.testing.createTestEnvironment
 import io.ktor.server.testing.withTestApplication
 import io.mockk.CapturingSlot

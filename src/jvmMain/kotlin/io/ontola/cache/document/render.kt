@@ -1,7 +1,7 @@
 package io.ontola.cache.document
 
+import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.assets.AssetsManifests
-import io.ontola.cache.tenantization.Manifest
 import io.ontola.color.Color
 import io.ontola.color.isLight
 import kotlinx.html.BODY

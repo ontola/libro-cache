@@ -1,22 +1,22 @@
 package io.ontola.cache.sessions
 
 import com.auth0.jwt.exceptions.TokenExpiredException
-import io.ktor.application.ApplicationCall
-import io.ktor.client.call.receive
-import io.ktor.client.features.expectSuccess
+import io.ktor.client.call.body
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
-import io.ktor.client.statement.HttpResponse
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.fullPath
-import io.ktor.request.header
-import io.ktor.sessions.clear
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
-import io.ktor.sessions.set
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.header
+import io.ktor.server.sessions.clear
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
@@ -135,7 +135,7 @@ class SessionManager(
         val serviceToken = configuration.oAuthToken
         val path = "${call.tenant.websiteIRI.fullPath}/oauth/token"
 
-        val response = call.application.cacheConfig.client.post<HttpResponse>("${configuration.oidcUrl}$path") {
+        val response = call.application.cacheConfig.client.post("${configuration.oidcUrl}$path") {
             expectSuccess = false
 
             headers {
@@ -151,14 +151,14 @@ class SessionManager(
                 copy("X-Requested-With", call.request)
             }
 
-            body = OIDCRequest.guestRequest(
+            setBody(OIDCRequest.guestRequest(
                 configuration.oidcClientId,
                 configuration.oidcClientSecret,
-            )
+            ))
         }
 
         if (response.status == HttpStatusCode.BadRequest) {
-            val error = Json.decodeFromString<BackendErrorResponse>(response.receive())
+            val error = Json.decodeFromString<BackendErrorResponse>(response.body())
             call.logger.warn { "E: ${error.error} - ${error.code} - ${error.errorDescription}" }
             if (error.error == "invalid_grant") {
                 throw InvalidGrantException()
@@ -167,6 +167,6 @@ class SessionManager(
             }
         }
 
-        return response.receive()
+        return response.body()
     }
 }

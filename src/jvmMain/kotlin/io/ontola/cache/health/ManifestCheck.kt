@@ -1,10 +1,10 @@
 package io.ontola.cache.health
 
-import io.ktor.application.ApplicationCall
-import io.ktor.client.features.ResponseException
+import io.ktor.client.plugins.ResponseException
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
 import io.ktor.util.pipeline.PipelineContext
-import io.ontola.cache.tenantization.Manifest
+import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.tenantization.getManifest
 import io.ontola.cache.tenantization.getTenants
 

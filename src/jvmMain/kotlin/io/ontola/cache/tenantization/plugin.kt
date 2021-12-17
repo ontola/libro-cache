@@ -1,18 +1,20 @@
 @file:UseSerializers(UrlSerializer::class)
 package io.ontola.cache.tenantization
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.ApplicationFeature
-import io.ktor.application.application
-import io.ktor.application.call
-import io.ktor.application.feature
-import io.ktor.client.features.ResponseException
+import io.ktor.client.plugins.ResponseException
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.URLBuilder
 import io.ktor.http.Url
-import io.ktor.request.path
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.ApplicationPlugin
+import io.ktor.server.application.application
+import io.ktor.server.application.call
+import io.ktor.server.application.plugin
+import io.ktor.server.request.path
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
+import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.BadGatewayException
 import io.ontola.cache.TenantNotFoundException
 import io.ontola.cache.plugins.cacheConfig
@@ -49,7 +51,7 @@ internal val ApplicationCall.blacklisted: Boolean
     get() = attributes.getOrNull(BlacklistedKey) ?: reportMissingTenantization()
 
 private fun ApplicationCall.reportMissingTenantization(): Nothing {
-    application.feature(Tenantization) // ensure the feature is installed
+    application.plugin(Tenantization) // ensure the feature is installed
     throw TenantizationNotYetConfiguredException()
 }
 
@@ -102,7 +104,7 @@ class Tenantization(private val configuration: Configuration) {
         try {
             val websiteBase = context.getWebsiteBase()
 
-            val baseOrigin = websiteBase.copy(encodedPath = "")
+            val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
             val currentIRI = Url("$baseOrigin${context.call.request.path()}")
             val manifest = getManifest(context, websiteBase)
 
@@ -129,7 +131,7 @@ class Tenantization(private val configuration: Configuration) {
         }
     }
 
-    companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, Tenantization> {
+    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, Tenantization> {
         override val key = AttributeKey<Tenantization>("Tenantization")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Tenantization {

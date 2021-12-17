@@ -1,22 +1,22 @@
 package io.ontola.cache.studio
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.ApplicationFeature
-import io.ktor.application.application
-import io.ktor.application.call
-import io.ktor.features.origin
-import io.ktor.html.respondHtml
 import io.ktor.http.ContentType
 import io.ktor.http.DEFAULT_PORT
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
-import io.ktor.request.path
-import io.ktor.response.respond
-import io.ktor.response.respondOutputStream
-import io.ktor.response.respondText
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.ApplicationPlugin
+import io.ktor.server.application.application
+import io.ktor.server.application.call
+import io.ktor.server.html.respondHtml
+import io.ktor.server.plugins.origin
+import io.ktor.server.request.path
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondOutputStream
+import io.ktor.server.response.respondText
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.document.PageConfiguration
@@ -53,8 +53,10 @@ class Studio(private val configuration: Configuration) {
                 protocol = URLProtocol.createOrDefault(origin.scheme),
                 host = origin.host,
                 port = origin.port.onlyNonDefaultPort(),
-                encodedPath = context.call.request.path(),
-            ).build().copy(parameters = context.call.request.queryParameters)
+                pathSegments = context.call.request.path().split("/"),
+            ).apply {
+                parameters.appendAll(context.call.request.queryParameters)
+            }.build()
 
             configuration.documentRepo.documentKeyForRoute(uri)
         }
@@ -118,7 +120,7 @@ class Studio(private val configuration: Configuration) {
         context.finish()
     }
 
-    companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, Studio> {
+    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, Studio> {
         override val key = AttributeKey<Studio>("Studio")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Studio {

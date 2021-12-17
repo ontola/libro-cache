@@ -6,7 +6,7 @@ import io.ktor.http.Url
 import io.ktor.http.formUrlEncode
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.setBody
-import io.ontola.cache.tenantization.Manifest
+import io.ontola.apex.webmanifest.Manifest
 import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals

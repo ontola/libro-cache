@@ -1,10 +1,10 @@
 package io.ontola.cache.bulk
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.fullPath
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.services
 import io.ontola.cache.util.scopeBlankNodes

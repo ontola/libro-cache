@@ -1,11 +1,11 @@
 package io.ontola.cache.health
 
-import io.ktor.application.call
-import io.ktor.html.respondHtml
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.routing.Routing
-import io.ktor.routing.get
+import io.ktor.server.application.call
+import io.ktor.server.html.respondHtml
+import io.ktor.server.routing.Routing
+import io.ktor.server.routing.get
 import kotlinx.css.Color
 import kotlinx.css.CssBuilder
 import kotlinx.css.backgroundColor

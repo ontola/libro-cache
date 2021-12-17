@@ -1,10 +1,10 @@
 package io.ontola.cache.routes
 
-import io.ktor.http.content.CompressedFileType
-import io.ktor.http.content.files
-import io.ktor.http.content.preCompressed
-import io.ktor.http.content.static
-import io.ktor.routing.Routing
+import io.ktor.server.http.content.CompressedFileType
+import io.ktor.server.http.content.files
+import io.ktor.server.http.content.preCompressed
+import io.ktor.server.http.content.static
+import io.ktor.server.routing.Routing
 
 fun Routing.mountStatic() {
     static("f_assets") {

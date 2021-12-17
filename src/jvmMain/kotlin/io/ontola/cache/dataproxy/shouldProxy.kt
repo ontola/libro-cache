@@ -1,15 +1,15 @@
 package io.ontola.cache.dataproxy
 
-import io.ktor.application.ApplicationCall
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.Url
 import io.ktor.http.parseHeaderValue
-import io.ktor.request.accept
-import io.ktor.request.document
-import io.ktor.request.header
-import io.ktor.request.path
-import io.ktor.request.uri
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.accept
+import io.ktor.server.request.document
+import io.ktor.server.request.header
+import io.ktor.server.request.path
+import io.ktor.server.request.uri
 
 internal fun Configuration.shouldProxy(call: ApplicationCall): Boolean {
     val accept = parseHeaderValue(call.request.accept() ?: "*/*")

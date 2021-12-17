@@ -6,7 +6,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.server.testing.handleRequest
-import io.ontola.cache.tenantization.Manifest
+import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.util.CacheHttpHeaders
 import withCacheTestApplication
 import kotlin.test.Test

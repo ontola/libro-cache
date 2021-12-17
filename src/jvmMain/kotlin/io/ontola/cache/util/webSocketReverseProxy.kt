@@ -2,17 +2,17 @@ package io.ontola.cache.util
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
-import io.ktor.client.features.websocket.WebSockets
-import io.ktor.client.features.websocket.webSocket
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLProtocol
-import io.ktor.request.httpMethod
-import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.websocket.webSocket
+import io.ktor.server.request.httpMethod
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.websocket.webSocket
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.tenantization.tenant

@@ -1,12 +1,12 @@
 package io.ontola.cache.plugins
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.ApplicationFeature
-import io.ktor.application.call
-import io.ktor.application.feature
-import io.ktor.config.ApplicationConfig
 import io.ktor.http.Url
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.ApplicationPlugin
+import io.ktor.server.application.call
+import io.ktor.server.application.plugin
+import io.ktor.server.config.ApplicationConfig
 import io.ktor.util.AttributeKey
 import kotlin.properties.Delegates
 
@@ -104,7 +104,7 @@ class ServiceRegistry(private val configuration: Configuration) {
         }
     }
 
-    companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, ServiceRegistry> {
+    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, ServiceRegistry> {
         override val key = AttributeKey<ServiceRegistry>("ServiceRegistry")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): ServiceRegistry {
@@ -126,7 +126,7 @@ internal val ApplicationCall.services: Services
     get() = attributes.getOrNull(ServiceRegistryKey) ?: reportMissingRegistry()
 
 private fun ApplicationCall.reportMissingRegistry(): Nothing {
-    application.feature(ServiceRegistry) // ensure the feature is installed
+    application.plugin(ServiceRegistry) // ensure the feature is installed
     throw ServiceRegistryNotYetConfiguredException()
 }
 class ServiceRegistryNotYetConfiguredException :

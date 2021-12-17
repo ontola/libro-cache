@@ -4,12 +4,12 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.CacheEntry
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.tenantization.CachedLookupKeys
-import io.ontola.cache.tenantization.Manifest
 import io.ontola.cache.util.KeyManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow

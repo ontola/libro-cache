@@ -2,37 +2,34 @@ package io.ontola.cache
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import io.ktor.application.Application
-import io.ktor.application.call
-import io.ktor.application.install
 import io.ktor.client.HttpClient
-import io.ktor.features.CallLogging
-import io.ktor.features.Compression
-import io.ktor.features.DefaultHeaders
-import io.ktor.features.ForwardedHeaderSupport
-import io.ktor.features.StatusPages
-import io.ktor.features.XForwardedHeaderSupport
-import io.ktor.features.deflate
-import io.ktor.features.gzip
-import io.ktor.features.maxAge
-import io.ktor.features.minimumSize
-import io.ktor.features.toLogString
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.ParametersBuilder
-import io.ktor.http.Url
+import io.ktor.http.URLBuilder
 import io.ktor.http.fullPath
-import io.ktor.locations.KtorExperimentalLocationsAPI
-import io.ktor.locations.Locations
-import io.ktor.request.ApplicationRequest
-import io.ktor.request.header
-import io.ktor.request.path
-import io.ktor.response.respond
-import io.ktor.routing.routing
-import io.ktor.sessions.Sessions
-import io.ktor.sessions.cookie
-import io.ktor.websocket.WebSockets
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.locations.Locations
+import io.ktor.server.logging.toLogString
+import io.ktor.server.plugins.CallLogging
+import io.ktor.server.plugins.Compression
+import io.ktor.server.plugins.DefaultHeaders
+import io.ktor.server.plugins.ForwardedHeaderSupport
+import io.ktor.server.plugins.StatusPages
+import io.ktor.server.plugins.XForwardedHeaderSupport
+import io.ktor.server.plugins.deflate
+import io.ktor.server.plugins.gzip
+import io.ktor.server.plugins.minimumSize
+import io.ktor.server.request.ApplicationRequest
+import io.ktor.server.request.header
+import io.ktor.server.request.path
+import io.ktor.server.response.respond
+import io.ktor.server.routing.routing
+import io.ktor.server.sessions.Sessions
+import io.ktor.server.sessions.cookie
+import io.ktor.server.sessions.maxAge
+import io.ktor.server.websocket.WebSockets
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
@@ -73,13 +70,13 @@ import kotlin.time.ExperimentalTime
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
 fun ApplicationRequest.isHTML(): Boolean {
-    val accept = headers["accept"] ?: ""
-    val contentType = headers["content-type"] ?: ""
+    val accept = header(HttpHeaders.Accept) ?: ""
+    val contentType = header(HttpHeaders.ContentType) ?: ""
 
     return accept.isHtmlAccept() || contentType.contains("text/html")
 }
 
-@OptIn(KtorExperimentalLocationsAPI::class, ExperimentalLettuceCoroutinesApi::class, ExperimentalTime::class)
+@OptIn(ExperimentalLettuceCoroutinesApi::class, ExperimentalTime::class)
 @Suppress("unused") // Referenced in application.conf
 @JvmOverloads
 fun Application.module(
@@ -109,19 +106,19 @@ fun Application.module(
     }
 
     install(StatusPages) {
-        exception<TenantNotFoundException> {
+        exception<TenantNotFoundException> { call, _ ->
             call.respond(HttpStatusCode.NotFound)
         }
-        exception<BadGatewayException> {
+        exception<BadGatewayException> { call, _ ->
             call.respond(HttpStatusCode.BadGateway)
         }
-        exception<AuthenticationException> {
+        exception<AuthenticationException> { call, _ ->
             call.respond(HttpStatusCode.Unauthorized)
         }
-        exception<AuthorizationException> {
+        exception<AuthorizationException> { call, _ ->
             call.respond(HttpStatusCode.Forbidden)
         }
-        exception<Exception> { cause ->
+        exception<Exception> { call, cause ->
             config.notify(cause)
             call.respond(HttpStatusCode.InternalServerError)
         }
@@ -220,18 +217,17 @@ fun Application.module(
     install(WebSockets)
 
     install(DataProxy) {
-        val loginQuery = ParametersBuilder().apply {
-            append("client_id", config.sessions.clientId)
-            append("client_secret", config.sessions.clientSecret)
-            append("grant_type", "password")
-            append("scope", "user")
-        }.build()
         val loginTransform = { req: ApplicationRequest ->
             val websiteIri = req.header("website-iri")
 
-            Url("$websiteIri/oauth/token")
-                .copy(parameters = loginQuery)
-                .fullPath
+            URLBuilder("$websiteIri/oauth/token").apply {
+                parameters.apply {
+                    append("client_id", config.sessions.clientId)
+                    append("client_secret", config.sessions.clientSecret)
+                    append("grant_type", "password")
+                    append("scope", "user")
+                }
+            }.build().fullPath
         }
 
         binaryPaths = listOf(

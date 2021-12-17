@@ -1,8 +1,8 @@
 package io.ontola.cache.plugins
 
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.ApplicationFeature
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.ApplicationPlugin
 import io.ktor.util.AttributeKey
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.FlushMode
@@ -185,7 +185,7 @@ class Storage(
         return adapter.hget(prefixed, hashKey)
     }
 
-    companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, Storage> {
+    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, Storage> {
         override val key = AttributeKey<Storage>("Storage")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Storage {

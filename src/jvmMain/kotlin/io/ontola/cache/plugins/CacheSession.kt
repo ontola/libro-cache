@@ -1,12 +1,12 @@
 package io.ontola.cache.plugins
 
 import com.auth0.jwt.interfaces.JWTVerifier
-import io.ktor.application.ApplicationCall
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.ApplicationFeature
-import io.ktor.application.call
-import io.ktor.application.feature
 import io.ktor.client.HttpClient
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.ApplicationPlugin
+import io.ktor.server.application.call
+import io.ktor.server.application.plugin
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.sessions.SessionManager
@@ -29,7 +29,7 @@ class CacheSession(private val configuration: Configuration) {
         context.call.attributes.put(CacheSessionKey, SessionManager(context.call, configuration))
     }
 
-    companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, CacheSession> {
+    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, CacheSession> {
         override val key = AttributeKey<CacheSession>("CacheSession")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): CacheSession {
@@ -63,7 +63,7 @@ internal val ApplicationCall.sessionManager: SessionManager
     get() = attributes.getOrNull(CacheSessionKey) ?: reportMissingSession()
 
 private fun ApplicationCall.reportMissingSession(): Nothing {
-    application.feature(CacheSession) // ensure the feature is installed
+    application.plugin(CacheSession) // ensure the feature is installed
     throw CacheSessionNotYetConfiguredException()
 }
 class CacheSessionNotYetConfiguredException :

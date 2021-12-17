@@ -1,11 +1,11 @@
 package io.ontola.cache.plugins
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.ApplicationFeature
-import io.ktor.application.call
-import io.ktor.response.ApplicationSendPipeline
-import io.ktor.response.header
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.RouteScopedPlugin
+import io.ktor.server.application.call
+import io.ktor.server.response.ApplicationSendPipeline
+import io.ktor.server.response.header
 import io.ktor.util.AttributeKey
 import mu.KLogger
 import mu.KotlinLogging
@@ -16,7 +16,7 @@ import kotlin.system.measureTimeMillis
  * Application-broad feature.
  */
 class Logging {
-    companion object Feature : ApplicationFeature<ApplicationCallPipeline, Unit, KLogger> {
+    companion object Plugin : RouteScopedPlugin<Unit, KLogger> {
         override val key = AttributeKey<KLogger>("KLogger")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Unit.() -> Unit): KLogger {
@@ -26,13 +26,13 @@ class Logging {
             }
             pipeline.attributes.put(KLoggerKey, feature)
 
-            pipeline.intercept(ApplicationCallPipeline.Features) {
+            pipeline.intercept(ApplicationCallPipeline.Plugins) {
                 call.attributes.put(KLoggerKey, feature)
                 call.attributes.put(TimingsKey, mutableListOf(Pair("tot", Instant.now().toEpochMilli())))
                 val time = measureTimeMillis {
                     proceed()
                 }
-                this.call.attributes[TimingsKey][0] = Pair("tot", time)
+                call.attributes[TimingsKey][0] = Pair("tot", time)
             }
             pipeline.sendPipeline.intercept(ApplicationSendPipeline.After) {
                 call.attributes[TimingsKey][0] = Pair("tot", Instant.now().toEpochMilli() - call.attributes[TimingsKey][0].second)
@@ -52,7 +52,7 @@ private val KLoggerKey = AttributeKey<KLogger>("KLoggerKey")
 private val TimingsKey = AttributeKey<MutableList<Pair<String, Long>>>("TimingsKey")
 
 internal val ApplicationCallPipeline.logger: KLogger
-    get() = attributes.getOrNull(KLoggerKey) ?: reportMissingRegistry()
+    get() = this.attributes.getOrNull(KLoggerKey) ?: reportMissingRegistry()
 
 internal val ApplicationCall.logger: KLogger
     get() = application.logger

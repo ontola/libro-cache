@@ -1,7 +1,7 @@
 package io.ontola.cache.sessions
 
-import io.ktor.application.ApplicationCall
-import io.ktor.request.header
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.header
 import io.ontola.cache.plugins.CacheSession
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json

@@ -6,10 +6,10 @@ import io.ktor.http.Url
 import io.ktor.http.formUrlEncode
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.setBody
+import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.isA
 import io.ontola.cache.bulk.statusCode
-import io.ontola.cache.tenantization.Manifest
 import org.junit.Test
 import withCacheTestApplication
 import kotlin.test.assertEquals

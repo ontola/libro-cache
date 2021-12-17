@@ -5,7 +5,7 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.Url
-import io.ktor.request.ApplicationRequest
+import io.ktor.server.request.ApplicationRequest
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.isDownloadRequest
 import io.ontola.cache.util.isHtmlAccept
