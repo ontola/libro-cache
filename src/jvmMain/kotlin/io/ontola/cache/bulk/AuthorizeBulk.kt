@@ -1,8 +1,6 @@
 package io.ontola.cache.bulk
 
 import io.ktor.client.call.body
-import io.ktor.client.request.header
-import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -42,10 +40,6 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
     val res: HttpResponse = call.application.cacheConfig.client.post(call.services.route(bulkUri)) {
         contentType(ContentType.Application.Json)
         initHeaders(call, lang)
-        headers {
-            header("Accept", ContentType.Application.Json)
-            header("Content-Type", ContentType.Application.Json)
-        }
         setBody(SPIAuthorizeRequest(
             resources = resources.map { r ->
                 SPIResourceRequestItem(
