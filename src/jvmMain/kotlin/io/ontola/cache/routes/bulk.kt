@@ -6,8 +6,7 @@ import io.ktor.server.application.call
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
-import io.ktor.server.routing.post
-import io.ontola.cache.bulk.bulkHandler
+import io.ontola.cache.bulk.mountBulkHandler
 import io.ontola.cache.plugins.storage
 
 fun Routing.mountBulk() {
@@ -21,5 +20,5 @@ fun Routing.mountBulk() {
         call.respondText(test ?: "no message given", ContentType.Text.Plain, HttpStatusCode.OK)
     }
 
-    post(bulkHandler())
+    mountBulkHandler()
 }
