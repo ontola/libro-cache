@@ -25,6 +25,7 @@ import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.header
 import io.ktor.server.request.path
 import io.ktor.server.response.respond
+import io.ktor.server.routing.IgnoreTrailingSlash
 import io.ktor.server.routing.routing
 import io.ktor.server.sessions.Sessions
 import io.ktor.server.sessions.cookie
@@ -127,6 +128,8 @@ fun Application.module(
     install(CacheConfiguration) {
         this.config = config
     }
+
+    install(IgnoreTrailingSlash)
 
     install(Assets)
 
