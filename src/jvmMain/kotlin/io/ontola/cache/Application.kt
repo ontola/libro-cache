@@ -237,6 +237,7 @@ fun Application.module(
         }
 
         binaryPaths = listOf(
+            "/assets/",
             "/media_objects/",
         )
         excludedPaths = listOf(

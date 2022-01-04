@@ -8,7 +8,6 @@ import io.ktor.http.Url
 import io.ktor.server.request.ApplicationRequest
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.isDownloadRequest
-import io.ontola.cache.util.isHtmlAccept
 
 class Configuration {
     var transforms = mutableMapOf<Regex, (req: ApplicationRequest) -> String>()
@@ -30,7 +29,7 @@ class Configuration {
         expectSuccess = false
     }
 
-    fun isBinaryRequest(uri: Url, accept: String?): Boolean {
-        return (binaryPaths.any { uri.encodedPath.contains(it) } && !accept.isHtmlAccept()) || uri.isDownloadRequest()
+    fun isBinaryRequest(uri: Url): Boolean {
+        return binaryPaths.any { uri.encodedPath.contains(it) } || uri.isDownloadRequest()
     }
 }
