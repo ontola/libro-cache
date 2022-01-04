@@ -43,6 +43,7 @@ import io.ontola.cache.plugins.CacheConfiguration
 import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.plugins.DeviceId
 import io.ontola.cache.plugins.Logging
+import io.ontola.cache.plugins.Redirect
 import io.ontola.cache.plugins.RedisAdapter
 import io.ontola.cache.plugins.ServiceRegistry
 import io.ontola.cache.plugins.Storage
@@ -146,6 +147,8 @@ fun Application.module(
         this.persistentAdapter = persistentAdapter
         this.expiration = config.cacheExpiration
     }
+
+    install(Redirect)
 
     install(CSP)
 
