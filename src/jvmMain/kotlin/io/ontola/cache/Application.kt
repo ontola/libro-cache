@@ -10,6 +10,7 @@ import io.ktor.http.URLBuilder
 import io.ktor.http.fullPath
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import io.ktor.server.html.respondHtml
 import io.ktor.server.locations.Locations
 import io.ktor.server.logging.toLogString
 import io.ktor.server.plugins.CallLogging
@@ -24,7 +25,6 @@ import io.ktor.server.plugins.minimumSize
 import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.header
 import io.ktor.server.request.path
-import io.ktor.server.response.respond
 import io.ktor.server.routing.IgnoreTrailingSlash
 import io.ktor.server.routing.routing
 import io.ktor.server.sessions.Sessions
@@ -60,6 +60,7 @@ import io.ontola.cache.routes.mountTestingRoutes
 import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.signedTransformer
+import io.ontola.cache.statuspages.errorPage
 import io.ontola.cache.studio.Studio
 import io.ontola.cache.tenantization.Tenantization
 import io.ontola.cache.util.configureCallLogging
@@ -109,20 +110,24 @@ fun Application.module(
 
     install(StatusPages) {
         exception<TenantNotFoundException> { call, _ ->
-            call.respond(HttpStatusCode.NotFound)
+            call.respondHtml(HttpStatusCode.NotFound) {
+                errorPage(HttpStatusCode.NotFound)
+            }
         }
         exception<BadGatewayException> { call, _ ->
-            call.respond(HttpStatusCode.BadGateway)
+            call.respondHtml(HttpStatusCode.BadGateway) {
+                errorPage(HttpStatusCode.BadGateway)
+            }
         }
         exception<AuthenticationException> { call, _ ->
-            call.respond(HttpStatusCode.Unauthorized)
+            call.respondHtml(HttpStatusCode.Unauthorized) {
+                errorPage(HttpStatusCode.Unauthorized)
+            }
         }
         exception<AuthorizationException> { call, _ ->
-            call.respond(HttpStatusCode.Forbidden)
-        }
-        exception<Exception> { call, cause ->
-            config.notify(cause)
-            call.respond(HttpStatusCode.InternalServerError)
+            call.respondHtml(HttpStatusCode.Forbidden) {
+                errorPage(HttpStatusCode.Forbidden)
+            }
         }
     }
 
