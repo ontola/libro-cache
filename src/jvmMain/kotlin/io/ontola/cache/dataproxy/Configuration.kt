@@ -12,6 +12,7 @@ import io.ontola.cache.util.isDownloadRequest
 class Configuration {
     var transforms = mutableMapOf<Regex, (req: ApplicationRequest) -> String>()
     var binaryPaths: List<String> = emptyList()
+    var blindPostPaths: List<String> = emptyList()
     var contentTypes: List<ContentType> = emptyList()
     var extensions: List<String> = emptyList()
     var excludedPaths: List<String> = emptyList()

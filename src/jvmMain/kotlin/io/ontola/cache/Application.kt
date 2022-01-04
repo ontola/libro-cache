@@ -240,6 +240,9 @@ fun Application.module(
             "/assets/",
             "/media_objects/",
         )
+        blindPostPaths = listOf(
+            "/follows/",
+        )
         excludedPaths = listOf(
             "/link-lib/bulk",
             "/_testing/setSession",
