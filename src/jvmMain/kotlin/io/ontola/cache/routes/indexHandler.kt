@@ -18,6 +18,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
+import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.CacheRequest
@@ -149,6 +150,10 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
 }
 
 suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClient) {
+    if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
+        return
+    }
+
     if (!call.request.isHTML()) {
         return call.respond(HttpStatusCode.NotFound)
     }
