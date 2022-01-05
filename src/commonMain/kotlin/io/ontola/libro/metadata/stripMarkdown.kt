@@ -49,5 +49,5 @@ fun stripMarkdown(value: String?): String {
         .replace(codeBlocks, "$2")
         .replace(inlineCode, "$1")
         .replace(multiNewlines, "\n\n")
-        .replace(newlineNormalize, " ");
+        .replace(newlineNormalize, " ")
 }

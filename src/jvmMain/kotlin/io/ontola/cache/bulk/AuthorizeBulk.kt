@@ -40,14 +40,16 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
     val res: HttpResponse = call.application.cacheConfig.client.post(call.services.route(bulkUri)) {
         contentType(ContentType.Application.Json)
         initHeaders(call, lang)
-        setBody(SPIAuthorizeRequest(
-            resources = resources.map { r ->
-                SPIResourceRequestItem(
-                    iri = r,
-                    include = true,
-                )
-            }
-        ))
+        setBody(
+            SPIAuthorizeRequest(
+                resources = resources.map { r ->
+                    SPIResourceRequestItem(
+                        iri = r,
+                        include = true,
+                    )
+                }
+            )
+        )
     }
 
     if (res.status != HttpStatusCode.OK) {
