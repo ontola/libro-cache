@@ -249,22 +249,22 @@ val preloaderCss = CssBuilder().apply {
 
     ".spinner .rect2" {
 //        -webkit-animation-delay: -1.1s;
-        put("animation-delay", "-1.1")
+        put("animation-delay", "-1.1s")
     }
 
     ".spinner .rect3" {
 //        -webkit-animation-delay: -1.0s;
-        put("animation-delay", "-1.0")
+        put("animation-delay", "-1.0s")
     }
 
     ".spinner .rect4" {
 //        -webkit-animation-delay: -0.9s;
-        put("animation-delay", "-0.9")
+        put("animation-delay", "-0.9s")
     }
 
     ".spinner .rect5" {
 //        -webkit-animation-delay: -0.8s;
-        put("animation-delay", "-0.8")
+        put("animation-delay", "-0.8s")
     }
 
 //    "@-webkit-keyframes sk-stretchdelay" {
