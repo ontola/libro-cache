@@ -2,7 +2,6 @@ package io.ontola.cache.plugins
 
 import io.ktor.http.Headers
 import io.ktor.http.HeadersBuilder
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.Parameters
 import io.ktor.http.RequestConnectionPoint
@@ -11,9 +10,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.ApplicationReceivePipeline
 import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.RequestCookies
-import io.ktor.server.request.path
 import io.ktor.server.response.ApplicationResponse
-import io.ktor.server.testing.handleRequest
 import io.ktor.util.Attributes
 import io.ktor.utils.io.ByteReadChannel
 import io.mockk.every
@@ -21,7 +18,6 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.ontola.cache.tenantization.closeToWebsiteIRI
 import mu.KLogger
-import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -85,17 +81,6 @@ class TenantizationTest {
         }
 
         return request
-    }
-
-    @Test
-    fun testKtorPathStartsWithSlash() {
-        withCacheTestApplication {
-            handleRequest(HttpMethod.Get, "/") {
-                addHeader(HttpHeaders.Origin, "https://mysite.local")
-            }.apply {
-                assertEquals("/", this.request.path())
-            }
-        }
     }
 
     @Test
