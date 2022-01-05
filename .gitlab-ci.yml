@@ -18,3 +18,16 @@ test:
 spotbugs-sast:
   services:
     - redis:latest
+
+pages:
+  image: openjdk:16-jdk
+  stage: deploy
+  script:
+    - ./gradlew dokkaHtml
+    - rm -rf public
+    - mv build/dokka/html public
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
