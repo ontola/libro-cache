@@ -35,6 +35,10 @@ interface StorageAdapter<K : Any, V : Any> {
 
     suspend fun keys(pattern: K): Flow<String>
 
+    suspend fun lgetall(key: String): List<String>
+
+    suspend fun lrange(key: String, start: Long, stop: Long): List<String>
+
     suspend fun set(key: K, value: V): String?
 }
 
@@ -70,6 +74,14 @@ class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : Storag
 
     override suspend fun keys(pattern: String): Flow<String> {
         return client.keys(pattern)
+    }
+
+    override suspend fun lgetall(key: String): List<String> {
+        return client.lrange(key, 0, -1)
+    }
+
+    override suspend fun lrange(key: String, start: Long, stop: Long): List<String> {
+        return client.lrange(key, start, stop)
     }
 
     override suspend fun set(key: String, value: String): String? {
@@ -183,6 +195,12 @@ class Storage(
         val prefixed = keyManager.toKey(*key)
 
         return adapter.hget(prefixed, hashKey)
+    }
+
+    suspend fun getAllListValues(vararg key: String): List<String> {
+        val prefixed = keyManager.toKey(*key)
+
+        return adapter.lgetall(prefixed)
     }
 
     companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, Storage> {

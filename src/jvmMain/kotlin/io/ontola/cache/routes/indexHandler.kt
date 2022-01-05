@@ -30,6 +30,7 @@ import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.document.indexPage
 import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.isHTML
+import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.services
@@ -39,8 +40,12 @@ import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.measured
+import io.ontola.rdf.hextuples.Hextuple
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 
@@ -137,7 +142,17 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
 
         measured("render") {
             call.respondHtml(status) {
-                ctx.seed = stream.toString(Charset.forName("UTF-8"))
+                ctx.data = stream
+                    .toString(Charset.forName("UTF-8"))
+                    .split("\n")
+                    .mapNotNull {
+                        try {
+                            Hextuple.fromArray(Json.decodeFromString(it))
+                        } catch(e: SerializationException) {
+                            call.application.cacheConfig.notify(e)
+                            null
+                        }
+                    }
 
                 indexPage(ctx)
             }

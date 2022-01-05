@@ -7,7 +7,7 @@ COPY ./gradle /app/gradle
 COPY ./gradlew /app/
 COPY ./build.gradle.kts /app/
 COPY ./gradle.properties /app/
-COPY ./settings.gradle /app/
+COPY ./settings.gradle.kts /app/
 RUN ./gradlew --no-daemon clean
 
 COPY . /app

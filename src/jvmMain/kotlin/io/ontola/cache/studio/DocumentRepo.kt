@@ -4,6 +4,7 @@ import io.ktor.http.Url
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.plugins.Storage
 import io.ontola.cache.util.stem
+import io.ontola.rdf.hextuples.Hextuple
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -14,8 +15,9 @@ private const val startsWith = "start"
 private const val wildcard = "*"
 
 class DocumentRepo(val storage: Storage) {
-    suspend fun getSource(id: String): String? {
-        return storage.getHashValue(docsPrefix, id, hashKey = "source")
+    suspend fun getData(id: String): List<Hextuple> {
+        return storage.getAllListValues(docsPrefix, id)
+            .map { Json.decodeFromString(it) }
     }
 
     suspend fun getManifest(id: String): Manifest? {

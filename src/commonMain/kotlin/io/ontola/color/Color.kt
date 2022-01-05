@@ -1,7 +1,7 @@
 package io.ontola.color
 
-val hexColorLong = Regex("^#([\\p{XDigit}]{2})([\\p{XDigit}]{2})([\\p{XDigit}]{2})$")
-val hexColorShort = Regex("^#(\\p{XDigit})(\\p{XDigit})(\\p{XDigit})$")
+val hexColorLong = Regex("^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$")
+val hexColorShort = Regex("^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$")
 
 fun String.hexToUByte() = toInt(16).toUByte()
 fun String.shortHexToUByte() = repeat(2).hexToUByte()

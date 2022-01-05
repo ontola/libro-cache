@@ -4,6 +4,7 @@ import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.assets.AssetsManifests
 import io.ontola.color.Color
 import io.ontola.color.isLight
+import io.ontola.rdf.hextuples.Hextuple
 import kotlinx.html.BODY
 import kotlinx.html.HTML
 import kotlinx.html.body
@@ -138,12 +139,12 @@ fun BODY.themeBlock(manifest: Manifest) {
     }
 }
 
-fun BODY.seedBlock(nonce: String, seed: String) {
+fun BODY.seedBlock(nonce: String, data: List<Hextuple>) {
     script(type = "application/hex+x-ndjson") {
         this.nonce = nonce
         attributes["id"] = "seed"
         unsafe {
-            +seed
+            +data.joinToString("\n") { Json.encodeToString(it.toArray()) }
         }
     }
     script(type = "application/javascript") {
@@ -187,12 +188,12 @@ fun HTML.indexPage(ctx: PageRenderContext) {
     val nonce = ctx.nonce
     val config = ctx.configuration
     val manifest = ctx.manifest
-    val seed = ctx.seed ?: ""
+    val data = ctx.data ?: emptyList()
 
-    this.lang = ctx.lang
+    lang = ctx.lang
 
     head {
-        renderHead(url, nonce, config, manifest, seed)
+        renderHead(url, nonce, config, manifest, ctx.lang, data)
     }
     body {
         attributes["style"] = "margin: 0;"
@@ -200,7 +201,7 @@ fun HTML.indexPage(ctx: PageRenderContext) {
         themeBlock(manifest)
         preloadBlock(config, manifest)
         serviceWorkerBlock(nonce, manifest)
-        seedBlock(nonce, seed)
+        seedBlock(nonce, data)
         assetsBlock(nonce, config)
 //            deferredBodyStyles(nonceStr)
         manifestBlock(nonce, manifest, ctx.serializer)

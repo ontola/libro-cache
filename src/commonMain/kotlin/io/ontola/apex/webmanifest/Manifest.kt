@@ -14,7 +14,7 @@ data class Manifest(
     val backgroundColor: String = "#eef0f2",
     val dir: String = "rtl",
     val display: String = "standalone",
-    val icons: List<Icon>? = null,
+    val icons: Array<Icon>? = null,
     val lang: String = "en-US",
     val name: String = "Libro",
     val ontola: OntolaManifest,

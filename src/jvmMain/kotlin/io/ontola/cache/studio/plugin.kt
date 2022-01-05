@@ -27,7 +27,6 @@ import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.util.filename
 import io.ontola.cache.util.measured
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.encodeToStream
 
 private fun Int.onlyNonDefaultPort(): Int {
@@ -88,25 +87,16 @@ class Studio(private val configuration: Configuration) {
             return context.finish()
         }
 
-        val source = configuration.documentRepo.getSource(docKey)
+        val data = configuration.documentRepo.getData(docKey)
         val manifest = configuration.documentRepo.getManifest(docKey) ?: error("Document without manifest")
 
-        if (source == null) {
+        if (data.isEmpty()) {
             context.call.respond(HttpStatusCode.NotFound)
             return context.finish()
         }
 
-        val data = context.measured("source to hextuples") {
-            sourceToHextuples(source, uri)
-        }
-
-        val seed = context.measured("hex to json string") {
-            val serializer = context.application.cacheConfig.serializer
-            data.joinToString("\n") { serializer.encodeToString(it) }
-        }
-
         val ctx = context.call.pageRenderContextFromCall(
-            seed = seed,
+            data = data,
             manifest = manifest,
             uri = uri,
         )

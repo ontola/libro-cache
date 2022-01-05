@@ -3,7 +3,11 @@ package io.ontola.cache.document
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.apex.webmanifest.TrackerType
 import io.ontola.apex.webmanifest.Tracking
+import io.ontola.libro.metadata.getMetaTags
+import io.ontola.libro.metadata.metaDataFromData
+import io.ontola.rdf.hextuples.Hextuple
 import kotlinx.html.HEAD
+import kotlinx.html.itemProp
 import kotlinx.html.link
 import kotlinx.html.meta
 import kotlinx.html.script
@@ -13,13 +17,17 @@ import kotlinx.html.unsafe
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-fun HEAD.renderHead(url: String, nonce: String, config: PageConfiguration, manifest: Manifest, seed: String) {
+fun HEAD.renderHead(
+    url: String,
+    nonce: String,
+    config: PageConfiguration,
+    manifest: Manifest,
+    lang: String,
+    data: List<Hextuple>,
+) {
     opening(manifest)
 
-    unsafe {
-        raw(renderedMetaTags(url, manifest, seed))
-        raw("\n")
-    }
+    contentMetaTags(url, manifest, data, lang)
     meta {
         name = "csrf-token"
         content = "TODO"
@@ -37,6 +45,30 @@ fun HEAD.renderHead(url: String, nonce: String, config: PageConfiguration, manif
     webAppConfig(manifest)
     preloader(nonce)
     appIcons(manifest)
+}
+
+private fun HEAD.contentMetaTags(
+    url: String,
+    manifest: Manifest,
+    data: List<Hextuple>,
+    lang: String,
+) {
+    val metaData = metaDataFromData(url, manifest, data, lang)
+    val tags = getMetaTags(metaData)
+
+    for (tag in tags) {
+        when (tag.type) {
+            "title" -> title { +tag.children!! }
+            "link" -> link(href = tag.href, rel = tag.rel) {
+                tag.itemProp?.let { itemProp = it }
+            }
+            "meta" -> meta(name = tag.name, content = tag.content) {
+                tag.property?.let {
+                    attributes["property"] = it
+                }
+            }
+        }
+    }
 }
 
 private fun HEAD.preloader(nonce: String) {
@@ -70,7 +102,6 @@ private fun HEAD.appIcons(manifest: Manifest) {
 
 private fun HEAD.opening(manifest: Manifest) {
     meta(charset = "utf-8")
-    title(manifest.name)
     link(rel = "manifest", href = "${manifest.scope}/manifest.json")
     meta(name = "website", content = manifest.ontola.websiteIRI.toString())
     manifest.ontola.preconnect?.forEach { link(rel = "preconnect", href = it) }

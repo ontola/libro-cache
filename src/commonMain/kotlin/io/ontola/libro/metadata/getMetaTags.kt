@@ -5,7 +5,9 @@ import io.ontola.apex.webmanifest.Icon
 //const raw = (list: NamedNode[]): string[] => list.map((n) => n.value);
 
 fun getMetaTags(data: MetaData): List<TagProps> = buildList {
-    val title = arrayOf(data.name, data.appName).filterNotNull().joinToString(" | ")
+    val title = arrayOf(data.name, data.appName)
+        .filterNotNull()
+        .joinToString(" | ")
 
     add(TagProps(
         children = data.name?.ifBlank { null } ?: data.appName,
@@ -82,7 +84,7 @@ fun getMetaTags(data: MetaData): List<TagProps> = buildList {
     }
 }
 
-fun findLargestIcon(icons: List<Icon>): String? = null
+fun findLargestIcon(icons: Array<Icon>): String? = null
 
 //const findLargestIcon = (icons: Icon[]): string | undefined => {
 //    for (const size of APP_ICON_SIZE_PRIORITY) {
@@ -113,8 +115,3 @@ fun findLargestIcon(icons: List<Icon>): String? = null
 //
 //    return `<${type} ${attrs.join(' ')}>`;
 //};
-//
-//const findValue = (subjectQuads: string[], predicates: string[]): string | undefined => subjectQuads
-//.filter((q) => predicates.includes(q[QuadPosition.predicate]))
-//.find((q) => q[QuadPosition.object])
-//?.[QuadPosition.object];
