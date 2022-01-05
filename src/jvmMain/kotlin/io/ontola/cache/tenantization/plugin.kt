@@ -30,8 +30,6 @@ import mu.KotlinLogging
 import kotlin.properties.Delegates
 import kotlin.time.ExperimentalTime
 
-fun ensureTrailingSlash(value: String) = if (value.endsWith('/')) value else "$value/"
-
 @Serializable
 data class TenantFinderRequest(
     @SerialName("iri")

@@ -12,6 +12,8 @@ import io.ktor.util.pipeline.PipelineContext
 
 private const val redirectPrefix = "redirect"
 
+fun removeTrailingSlash(value: String) = if (value.endsWith('/')) value.dropLast(1) else value
+
 class Redirect(
     private val storage: Storage,
 ) {
@@ -20,7 +22,7 @@ class Redirect(
     }
 
     private suspend fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
-        val uri = "${context.call.request.origin.host}${context.call.request.path()}"
+        val uri = removeTrailingSlash("${context.call.request.origin.host}${context.call.request.path()}")
         val redirectLocation = storage.getString(redirectPrefix, uri)
 
         redirectLocation ?: return context.proceed()
