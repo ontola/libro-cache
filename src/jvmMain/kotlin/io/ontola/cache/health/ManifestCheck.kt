@@ -22,7 +22,7 @@ class ManifestCheck : Check() {
                 return Exception("Backend token invalid")
             }
 
-            return Exception("Expected manifest status 200, was ${e.response.status}");
+            return Exception("Expected manifest status 200, was ${e.response.status}")
         }
 
         return null

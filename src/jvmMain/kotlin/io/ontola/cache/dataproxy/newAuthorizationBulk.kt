@@ -43,7 +43,6 @@ internal fun newAuthorizationBulk(response: HttpResponse): BulkControls? {
     val refreshToken = response.headers[CacheHttpHeaders.NewRefreshToken]
         ?: throw Exception("Received New-Authorization header without New-Refresh-Header")
 
-
     return BulkControls(
         newAuthorization,
         refreshToken,

@@ -106,11 +106,13 @@ class SessionRefresher(private val configuration: CacheSession.Configuration) {
                 header("X-Forwarded-Ssl", "on")
             }
 
-            setBody(OIDCRequest.refreshRequest(
-                configuration.oidcClientId,
-                configuration.oidcClientSecret,
-                refreshToken
-            ))
+            setBody(
+                OIDCRequest.refreshRequest(
+                    configuration.oidcClientId,
+                    configuration.oidcClientSecret,
+                    refreshToken
+                )
+            )
         }
 
         if (response.status == HttpStatusCode.BadRequest) {

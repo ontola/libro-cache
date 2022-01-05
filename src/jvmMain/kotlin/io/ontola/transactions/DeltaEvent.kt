@@ -2,10 +2,6 @@ package io.ontola.transactions
 
 import kotlinx.serialization.Serializable
 
-//@Serializable
-//@JvmInline
-//value class IRI(val iri: String)
-
 @Serializable
 data class Transaction(
     val operations: Set<Operation>,

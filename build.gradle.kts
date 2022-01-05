@@ -120,7 +120,7 @@ java {
     }
 }
 
-tasks{
+tasks {
     shadowJar {
         manifest {
             attributes(Pair("Main-Class", "io.ktor.server.cio.EngineMain"))
@@ -146,14 +146,6 @@ repositories {
     jcenter()
     maven("https://jitpack.io")
 }
-
-//val compileKotlin: KotlinCompile by tasks
-//compileKotlin.kotlinOptions {
-//    freeCompilerArgs = listOf(
-//        "-Xinline-classes",
-//        "-Xopt-in=kotlin.RequiresOptIn",
-//    )
-//}
 
 tasks.named<JavaExec>("run") {
     dependsOn(tasks.named<Jar>("jvmJar"))

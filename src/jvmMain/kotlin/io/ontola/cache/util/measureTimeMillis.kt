@@ -29,7 +29,7 @@ suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(vararg na
     time += kotlin.system.measureTimeMillis {
         try {
             res = block()
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             exception = e
         }
     }
@@ -38,7 +38,7 @@ suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(vararg na
         time += kotlin.system.measureTimeMillis {
             try {
                 res = onMissed()
-            } catch(e: Exception) {
+            } catch (e: Exception) {
                 exception = e
             }
         }

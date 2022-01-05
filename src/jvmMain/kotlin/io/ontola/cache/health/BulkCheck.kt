@@ -39,9 +39,11 @@ class BulkCheck : Check() {
                 header("X-Forwarded-Ssl", "on")
             }
 
-            setBody(listOf(
-                "resource[]" to tenant.toString()
-            ).formUrlEncode())
+            setBody(
+                listOf(
+                    "resource[]" to tenant.toString()
+                ).formUrlEncode()
+            )
         }
 
         if (response.status != HttpStatusCode.OK) {

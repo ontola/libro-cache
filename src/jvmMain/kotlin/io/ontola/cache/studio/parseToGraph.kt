@@ -8,7 +8,6 @@ import org.graalvm.polyglot.Source
 import org.graalvm.polyglot.Value
 import kotlin.io.path.Path
 
-
 private fun buildMetaDataContext(): Context = Context
     .newBuilder("js")
     .option(JSContextOptions.ESM_EVAL_RETURNS_EXPORTS_NAME, "true")
@@ -50,14 +49,16 @@ fun sourceToHextuples(source: String, uri: Url, origin: String? = null): List<Ar
     val hextuples = buildList<Array<String>> {
         for (i in 0 until test.arraySize) {
             val elem = test.getArrayElement(i)
-            add(arrayOf(
-                elem.getArrayElement(0).asString(),
-                elem.getArrayElement(1).asString(),
-                elem.getArrayElement(2).asString(),
-                elem.getArrayElement(3).asString(),
-                elem.getArrayElement(4).asString(),
-                elem.getArrayElement(5).asString(),
-            ))
+            add(
+                arrayOf(
+                    elem.getArrayElement(0).asString(),
+                    elem.getArrayElement(1).asString(),
+                    elem.getArrayElement(2).asString(),
+                    elem.getArrayElement(3).asString(),
+                    elem.getArrayElement(4).asString(),
+                    elem.getArrayElement(5).asString(),
+                )
+            )
         }
     }
 

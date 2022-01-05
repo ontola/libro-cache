@@ -62,7 +62,6 @@ class Studio(private val configuration: Configuration) {
 
         docKey ?: return context.proceed()
 
-
         if (uri.filename() == "manifest.json") {
             val manifest = configuration.documentRepo.getManifest(docKey)
 

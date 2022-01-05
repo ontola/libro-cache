@@ -130,7 +130,6 @@ class CSP(private val configuration: Configuration) {
     }
 
     fun buildCSPHeader(nonce: String) {
-
     }
 
     companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, CSP> {

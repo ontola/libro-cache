@@ -96,9 +96,11 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
                         }
                     }
 
-                    appendAll(proxiedHeaders.filter { key, _ ->
-                        !config.unsafeList.contains(key.lowercase(Locale.getDefault()))
-                    })
+                    appendAll(
+                        proxiedHeaders.filter { key, _ ->
+                            !config.unsafeList.contains(key.lowercase(Locale.getDefault()))
+                        }
+                    )
                 }
                 override val status: HttpStatusCode = response.status
                 override suspend fun writeTo(channel: ByteWriteChannel) {

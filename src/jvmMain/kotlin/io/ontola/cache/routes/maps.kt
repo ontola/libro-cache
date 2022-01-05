@@ -38,10 +38,12 @@ private suspend fun ApplicationCall.createMapsToken(mapsConfig: MapsConfig): Acc
     val expiresAt = Clock.System.now().plus(1.hours).toString()
 
     val response = config.client.post(mapsConfig.tokenEndpoint) {
-        setBody(AccessTokenRequest(
-            scopes = mapsConfig.scopes,
-            expires = expiresAt,
-        ))
+        setBody(
+            AccessTokenRequest(
+                scopes = mapsConfig.scopes,
+                expires = expiresAt,
+            )
+        )
     }
 
     val token = response.body<AccessTokenResponse>()

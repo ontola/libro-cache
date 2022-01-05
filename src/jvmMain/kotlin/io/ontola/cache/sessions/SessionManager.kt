@@ -151,10 +151,12 @@ class SessionManager(
                 copy("X-Requested-With", call.request)
             }
 
-            setBody(OIDCRequest.guestRequest(
-                configuration.oidcClientId,
-                configuration.oidcClientSecret,
-            ))
+            setBody(
+                OIDCRequest.guestRequest(
+                    configuration.oidcClientId,
+                    configuration.oidcClientSecret,
+                )
+            )
         }
 
         if (response.status == HttpStatusCode.BadRequest) {
