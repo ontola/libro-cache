@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackOutput.Target.UMD
-
 val bugsnag_version: String by project
 val coroutines_version: String by project
 val datetime_version: String by project
@@ -17,25 +15,18 @@ plugins {
 
     kotlin("multiplatform") version "1.6.10"
     kotlin("plugin.serialization") version "1.6.10"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
 kotlin {
     jvm {
+        application
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
         }
         withJava()
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
-        }
-    }
-
-    js(IR) {
-        binaries.executable()
-        browser {
-            webpackTask {
-                output.libraryTarget = UMD
-            }
         }
     }
 
@@ -115,17 +106,20 @@ kotlin {
                 implementation("org.jetbrains.kotlin:kotlin-test")
             }
         }
-        val jsMain by getting {
-            dependencies {
-            }
-        }
-        val jsTest by getting
     }
 }
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
+tasks{
+    shadowJar {
+        manifest {
+            attributes(Pair("Main-Class", "io.ktor.server.cio.EngineMain"))
+        }
     }
 }
 
@@ -161,4 +155,4 @@ tasks.named<JavaExec>("run") {
     classpath(tasks.named<Jar>("jvmJar"))
 }
 
-task("stage").dependsOn("installDist")
+task("stage").dependsOn("shadowJar")

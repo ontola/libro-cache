@@ -21,6 +21,6 @@ EXPOSE 3080:3080
 RUN mkdir /app
 WORKDIR /app
 
-COPY --from=builder /app/build/install/cache/ /app/
+COPY --from=builder /app/build/libs/cache-*all.jar /app/cache.jar
 
-CMD ["./bin/cache"]
+CMD ["java", "-jar", "cache.jar"]
