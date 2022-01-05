@@ -13,6 +13,7 @@ import io.ktor.server.application.install
 import io.ktor.server.html.respondHtml
 import io.ktor.server.locations.Locations
 import io.ktor.server.logging.toLogString
+import io.ktor.server.metrics.micrometer.MicrometerMetrics
 import io.ktor.server.plugins.CallLogging
 import io.ktor.server.plugins.Compression
 import io.ktor.server.plugins.DefaultHeaders
@@ -92,6 +93,10 @@ fun Application.module(
     val adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
     val persistentAdapter = persistentStorage ?: RedisAdapter(RedisClient.create(config.persistentRedisURI).connect().coroutines())
 
+    install(MicrometerMetrics) {
+        registry = Metrics.metricsRegistry
+    }
+
     install(Logging)
 
     install(CallLogging) {
@@ -101,8 +106,9 @@ fun Application.module(
             when (val status = call.response.status()) {
                 HttpStatusCode.Found -> "$status: ${call.request.toLogString()} -> ${call.response.headers[HttpHeaders.Location]}"
                 else -> {
+                    val ua = call.request.header("X-Forwarded-UA") ?: call.request.header("User-Agent") ?: "-"
                     val timings = call.requestTimings.joinToString { (name, time) -> "$name: ${time}ms" }
-                    "$status - ${call.request.toLogString()} - timings: ($timings)"
+                    "$status - ${call.request.toLogString()} - timings: ($timings) - UA: $ua"
                 }
             }
         }
@@ -215,6 +221,7 @@ fun Application.module(
             "/favicon.ico",
             "/link-lib/cache/clear",
             "/link-lib/cache/status",
+            "/link-lib/cache/metrics",
             "/d/health",
             "/metrics",
             "/_testing",

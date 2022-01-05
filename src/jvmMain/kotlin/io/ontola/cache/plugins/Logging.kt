@@ -28,17 +28,17 @@ class Logging {
 
             pipeline.intercept(ApplicationCallPipeline.Plugins) {
                 call.attributes.put(KLoggerKey, feature)
-                call.attributes.put(TimingsKey, mutableListOf(Pair("tot", Instant.now().toEpochMilli())))
+                call.attributes.put(TimingsKey, mutableListOf(Pair(listOf("tot"), Instant.now().toEpochMilli())))
                 val time = measureTimeMillis {
                     proceed()
                 }
-                call.attributes[TimingsKey][0] = Pair("tot", time)
+                call.attributes[TimingsKey][0] = Pair(listOf("tot"), time)
             }
             pipeline.sendPipeline.intercept(ApplicationSendPipeline.After) {
-                call.attributes[TimingsKey][0] = Pair("tot", Instant.now().toEpochMilli() - call.attributes[TimingsKey][0].second)
+                call.attributes[TimingsKey][0] = Pair(listOf("tot"), Instant.now().toEpochMilli() - call.attributes[TimingsKey][0].second)
                 call.response.header(
                     "Server-Timing",
-                    call.attributes[TimingsKey].joinToString(", ") { "${it.first};dur=${it.second}" },
+                    call.attributes[TimingsKey].joinToString(", ") { "${it.first.joinToString(";")};dur=${it.second}" },
                 )
             }
 
@@ -49,7 +49,7 @@ class Logging {
 
 private val KLoggerKey = AttributeKey<KLogger>("KLoggerKey")
 
-private val TimingsKey = AttributeKey<MutableList<Pair<String, Long>>>("TimingsKey")
+private val TimingsKey = AttributeKey<MutableList<Pair<List<String>, Long>>>("TimingsKey")
 
 internal val ApplicationCallPipeline.logger: KLogger
     get() = this.attributes.getOrNull(KLoggerKey) ?: reportMissingRegistry()
@@ -57,7 +57,7 @@ internal val ApplicationCallPipeline.logger: KLogger
 internal val ApplicationCall.logger: KLogger
     get() = application.logger
 
-internal val ApplicationCall.requestTimings: MutableList<Pair<String, Long>>
+internal val ApplicationCall.requestTimings: MutableList<Pair<List<String>, Long>>
     get() = attributes.getOrNull(TimingsKey) ?: throw IllegalStateException("No timing stored in request")
 
 private fun reportMissingRegistry(): Nothing {

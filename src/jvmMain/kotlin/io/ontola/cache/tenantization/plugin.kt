@@ -171,10 +171,10 @@ private fun PipelineContext<*, ApplicationCall>.cachedLookup(
     return { dependency ->
         measuredHit(
             prefix.name,
-            {
+            block = {
                 application.storage.getString(prefix.name, dependency)
             },
-            {
+            onMissed = {
                 block(dependency)?.also {
                     application.storage.setString(prefix.name, dependency, value = it, expiration = expiration)
                 }

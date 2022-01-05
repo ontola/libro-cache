@@ -10,17 +10,18 @@ import io.ontola.cache.plugins.requestTimings
  * Measures how long the block will run and adds it to the request timings.
  * @param name The name to use in the timings. Spaces will be converted to underscores.
  */
-suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measured(name: String, block: suspend () -> T): T {
+suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measured(vararg name: String, block: suspend () -> T): T {
     var res: T
     val time = kotlin.system.measureTimeMillis {
         res = block()
     }
-    call.requestTimings.add(name.replace(' ', '_') to time)
+    call.requestTimings.add(name.toList() to time)
 
     return res
 }
 
-suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(name: String, block: suspend () -> T, onMissed: suspend () -> T): T {
+@OptIn(ExperimentalStdlibApi::class)
+suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(vararg name: String, block: suspend () -> T, onMissed: suspend () -> T): T {
     var res: T? = null
     var exception: Exception? = null
     var time = 0L
@@ -50,7 +51,11 @@ suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(name: Str
             "[cache] $postfix for $name"
         }
     }
-    call.requestTimings.add("$name;$postfix" to time)
+    val measureName = buildList {
+        addAll(name)
+        add(postfix)
+    }.toList()
+    call.requestTimings.add(measureName to time)
 
     if (exception != null) {
         throw exception as Exception

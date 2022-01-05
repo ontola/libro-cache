@@ -8,6 +8,7 @@ val kotlin_version: String by project
 val ktor_version: String by project
 val lettuce_version: String by project
 val logback_version: String by project
+val prometheus_version: String by project
 val serialization_version: String by project
 
 plugins {
@@ -80,6 +81,8 @@ kotlin {
                 implementation("io.ktor:ktor-server-call-logging:$ktor_version")
                 implementation("io.ktor:ktor-server-forwarded-header:$ktor_version")
                 implementation("io.ktor:ktor-server-sessions:$ktor_version")
+                implementation("io.ktor:ktor-server-metrics-micrometer:$ktor_version")
+                implementation("io.micrometer:micrometer-registry-prometheus:$prometheus_version")
 
                 implementation("io.ktor:ktor-client-cio:$ktor_version")
                 implementation("io.ktor:ktor-client-gson:$ktor_version")

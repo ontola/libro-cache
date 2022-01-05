@@ -8,6 +8,7 @@ import io.lettuce.core.XGroupCreateArgs
 import io.lettuce.core.XReadArgs
 import io.lettuce.core.api.coroutines
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
+import io.ontola.cache.Metrics
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.RedisConfig
 import io.ontola.cache.util.KeyManager
@@ -92,6 +93,7 @@ fun Application.module(testing: Boolean = false) {
                     streamRedisConn
                         .xreadgroup(consumer, args, stream)
                         .collect { msg ->
+                            Metrics.messages.increment()
                             val resource = msg.body["resource"] ?: throw SerializationException("Message missing key 'resource'")
 
                             when (val type = msg.body["type"]) {
@@ -99,6 +101,7 @@ fun Application.module(testing: Boolean = false) {
                                 Deleted::class.qualifiedName -> {
                                     cacheRedisConn.del(keyManager.toEntryKey(resource, "en"))
                                     cacheRedisConn.del(keyManager.toEntryKey(resource, "nl"))
+                                    Metrics.invalidations.increment()
                                 }
                                 else -> logger.warn("Ignored message with type '$type'")
                             }
