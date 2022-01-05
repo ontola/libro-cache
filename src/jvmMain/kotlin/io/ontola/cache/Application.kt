@@ -161,8 +161,6 @@ fun Application.module(
 
     install(Redirect)
 
-    install(CSP)
-
     install(Locations)
 
     install(Compression) {
@@ -231,6 +229,8 @@ fun Application.module(
             "/__webpack_hmr"
         )
     }
+
+    install(CSP)
 
     install(WebSockets)
 
