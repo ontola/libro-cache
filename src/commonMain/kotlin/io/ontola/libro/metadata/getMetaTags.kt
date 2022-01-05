@@ -106,4 +106,8 @@ fun getMetaTags(data: MetaData): List<TagProps> = buildList {
     }
 }
 
-fun findLargestIcon(icons: Array<Icon>): String? = null
+fun findLargestIcon(icons: Array<Icon>): String? = appIconSizePriority
+    .firstNotNullOfOrNull { size ->
+        icons.find { icon -> icon.sizes == size }
+    }
+    ?.src
