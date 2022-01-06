@@ -147,7 +147,11 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
                     .split("\n")
                     .mapNotNull {
                         try {
-                            Hextuple.fromArray(Json.decodeFromString(it))
+                            if (it.isNotBlank()) {
+                                Hextuple.fromArray(Json.decodeFromString(it))
+                            } else {
+                                null
+                            }
                         } catch (e: SerializationException) {
                             call.application.cacheConfig.notify(e)
                             null
