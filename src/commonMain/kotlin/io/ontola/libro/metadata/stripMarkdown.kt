@@ -1,7 +1,5 @@
 package io.ontola.libro.metadata
 
-import kotlin.js.JsExport
-
 val header = Regex("\\n={2,}")
 val tildeFencedCodeblocks = Regex("~{3}.*\\n")
 val backtickFencedCodeblocks = Regex("`{3}.*\\n")
@@ -24,7 +22,6 @@ val multiNewlines = Regex("\n{2,}")
 val newlineNormalize = Regex("[\r\n]")
 
 // Modified from https://github.com/stiang/remove-markdown/blob/master/index.js
-@JsExport
 fun stripMarkdown(value: String?): String {
     if (value == null) {
         return ""

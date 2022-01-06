@@ -12,10 +12,16 @@ build:
   before_script:
     - apk add git
     - git describe --always > server_version.txt
+  artifacts:
+    paths:
+      - build
 
 test:
   services:
     - redis:latest
+  artifacts:
+    paths:
+      - build
 
 spotbugs-sast:
   services:
