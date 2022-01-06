@@ -1,15 +1,11 @@
 package io.ontola.cache.plugins
 
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.ApplicationCallPipeline
-import io.ktor.server.application.ApplicationPlugin
-import io.ktor.server.application.application
-import io.ktor.server.application.call
+import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.plugin
 import io.ktor.server.request.host
 import io.ktor.server.response.header
 import io.ktor.util.AttributeKey
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.apex.webmanifest.TrackerType
 import io.ontola.cache.plugins.CSPSettings.toCSPHeader
@@ -26,13 +22,23 @@ class CSPContext(
 
 class CSPEntry(val constant: String? = null, val dynamic: ((ctx: CSPContext) -> String?)? = null)
 
+object CSPValue {
+    const val Self = "'self'"
+    const val Blob = "blob:"
+    const val Data = "data:"
+    const val UnsafeEval = "'unsafe-eval'"
+    const val UnsafeInline = "'unsafe-inline'"
+
+    fun nonce(nonce: String) = "nonce-$nonce"
+}
+
 object CSPSettings {
     private val oneOffs = listOf(
         "upgrade-insecure-requests"
     )
 
     private val defaultSrc = listOf(
-        CSPEntry("'self'")
+        CSPEntry(CSPValue.Self)
     )
 
     private val childSrc = listOf(
@@ -40,7 +46,7 @@ object CSPSettings {
         CSPEntry("https://www.youtube.com"),
     )
     private val connectSrc = listOf(
-        CSPEntry("'self'"),
+        CSPEntry(CSPValue.Self),
         CSPEntry("https://api.notubiz.nl"),
         CSPEntry("https://api.openraadsinformatie.nl"),
         CSPEntry("https://www.facebook.com"),
@@ -52,7 +58,7 @@ object CSPSettings {
     )
 
     private val fontSrc = listOf(
-        CSPEntry("'self'"),
+        CSPEntry(CSPValue.Self),
         CSPEntry("https://maxcdn.bootstrapcdn.com"),
         CSPEntry("https://fonts.gstatic.com"),
     )
@@ -63,9 +69,9 @@ object CSPSettings {
         CSPEntry("https://webforms.pipedrive.com"),
     )
     private val imgSrc = listOf(
-        CSPEntry("'self'"),
-        CSPEntry("blob:"),
-        CSPEntry("data:"),
+        CSPEntry(CSPValue.Self),
+        CSPEntry(CSPValue.Blob),
+        CSPEntry(CSPValue.Data),
         CSPEntry("*"),
     )
     private val objectSrc = listOf(
@@ -82,9 +88,9 @@ object CSPSettings {
         CSPEntry("allow-scripts"),
     )
     private val scriptSrc = listOf(
-        CSPEntry("'self'"),
-        CSPEntry("'unsafe-eval'"),
-        CSPEntry { ctx -> "nonce-${ctx.nonce}" },
+        CSPEntry(CSPValue.Self),
+        CSPEntry(CSPValue.UnsafeEval),
+        CSPEntry { ctx -> CSPValue.nonce(ctx.nonce) },
         CSPEntry("https://cdn.polyfill.io"),
         // Bugsnag CDN
         CSPEntry("https://d2wy8f7a9ursnm.cloudfront.net"),
@@ -104,25 +110,25 @@ object CSPSettings {
                 ?.filter { it.type == TrackerType.Matomo || it.type == TrackerType.PiwikPro }
                 ?.joinToString(" ") { "https://${it.host}" }
         },
-        CSPEntry { ctx -> if (ctx.development) "'unsafe-inline'" else null },
-        CSPEntry { ctx -> if (ctx.development) "'unsafe-eval'" else null },
-        CSPEntry { ctx -> if (ctx.development) "blob:" else null },
+        CSPEntry { ctx -> if (ctx.development) CSPValue.UnsafeInline else null },
+        CSPEntry { ctx -> if (ctx.development) CSPValue.UnsafeEval else null },
+        CSPEntry { ctx -> if (ctx.development) CSPValue.Blob else null },
     )
 
     private val styleSrc = listOf(
-        CSPEntry("'self'"),
+        CSPEntry(CSPValue.Self),
         // Due to using inline css with background-image url()
-        CSPEntry("'unsafe-inline'"),
+        CSPEntry(CSPValue.UnsafeInline),
         CSPEntry("maxcdn.bootstrapcdn.com"),
         CSPEntry("fonts.googleapis.com"),
-        CSPEntry { ctx -> if (ctx.development) "blob:" else null },
+        CSPEntry { ctx -> if (ctx.development) CSPValue.Blob else null },
     )
     private val workerSrc = listOf(
-        CSPEntry("'self'"),
-        CSPEntry { ctx -> if (ctx.development) "blob:" else null },
+        CSPEntry(CSPValue.Self),
+        CSPEntry { ctx -> if (ctx.development) CSPValue.Blob else null },
     )
     private val mediaSrc = listOf(
-        CSPEntry("'self'"),
+        CSPEntry(CSPValue.Self),
     )
 
     fun CSPContext.toCSPHeader(): String = buildString {
@@ -161,36 +167,21 @@ object CSPSettings {
     }
 }
 
-class CSP(private val configuration: Configuration) {
-    class Configuration
+val CSP = createApplicationPlugin("CSP") {
+    val isDevelopment = application.developmentMode
 
-    private fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
+    onCall { call ->
         val nonce = UUID.randomUUID().toString()
-        context.call.attributes.put(CSPKey, nonce)
+        call.attributes.put(CSPKey, nonce)
 
         val ctx = CSPContext(
-            context.application.developmentMode,
+            isDevelopment,
             nonce,
-            context.call.request.host(),
-            if (context.call.blacklisted) null else context.call.tenant.manifest,
+            call.request.host(),
+            if (call.blacklisted) null else call.tenant.manifest,
         )
 
-        context.call.response.header("Content-Security-Policy", ctx.toCSPHeader())
-    }
-
-    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, CSP> {
-        override val key = AttributeKey<CSP>("CSP")
-
-        override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): CSP {
-            val configuration = Configuration().apply(configure)
-            val feature = CSP(configuration)
-
-            pipeline.intercept(ApplicationCallPipeline.Features) {
-                feature.intercept(this)
-            }
-
-            return feature
-        }
+        call.response.header("Content-Security-Policy", ctx.toCSPHeader())
     }
 }
 
