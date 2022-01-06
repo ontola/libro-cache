@@ -4,12 +4,13 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.server.config.MapApplicationConfig
+import io.ktor.server.engine.applicationEngineEnvironment
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.cookiesSession
-import io.ktor.server.testing.createTestEnvironment
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.setBody
 import io.ktor.server.testing.withApplication
+import io.ktor.util.logging.KtorSimpleLogger
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.module
 import io.ontola.cache.plugins.CacheConfig
@@ -39,10 +40,13 @@ fun <R> withCacheTestApplication(
     configure: MockConfiguration.() -> Unit = {},
     test: TestApplicationEngine.(context: TestContext) -> R,
 ) {
-    val env = createTestEnvironment {
-        (this.config as MapApplicationConfig).apply {
-            put("ktor.deployment.port", "3080")
-        }
+    val env = applicationEngineEnvironment {
+        config = MapApplicationConfig(
+            "ktor.deployment.environment" to "test",
+            "ktor.deployment.port" to "3080",
+        )
+        log = KtorSimpleLogger("ktor.test")
+        developmentMode = false
     }
 
     val clientBuilder = TestClientBuilder {

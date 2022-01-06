@@ -22,5 +22,6 @@ RUN mkdir /app
 WORKDIR /app
 
 COPY --from=builder /app/build/libs/cache-*all.jar /app/cache.jar
+COPY ./server_version.txt /app/server_version.txt
 
 CMD ["java", "-jar", "cache.jar"]

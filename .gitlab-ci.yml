@@ -8,6 +8,11 @@ include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
 
+build:
+  before_script:
+    - apk add git
+    - git describe --always > server_version.txt
+
 test:
   services:
     - redis:latest

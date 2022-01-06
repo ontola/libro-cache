@@ -156,9 +156,13 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
     val enableInvalidator: Boolean,
     val maps: MapsConfig? = null,
     /**
-     * Key of the error reporting service.
+     * Key of the server error reporting service.
      */
-    val reportingKey: String? = null,
+    val serverReportingKey: String? = null,
+    /**
+     * Key of the client error reporting service.
+     */
+    val clientReportingKey: String? = null,
     /**
      * The amount of seconds after which cache entries should expire.
      * Omit to disable expiration.
@@ -178,14 +182,16 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
         isLenient = false
         ignoreUnknownKeys = false
     },
+    val serverVersion: String?,
+    val clientVersion: String?,
 ) {
     private val logger = KotlinLogging.logger {}
 
-    private val reportingService: Bugsnag? = if (reportingKey.isNullOrBlank()) {
+    private val reportingService: Bugsnag? = if (serverReportingKey.isNullOrBlank()) {
         logger.warn("No reporting key")
         null
     } else {
-        Bugsnag(reportingKey)
+        Bugsnag(serverReportingKey)
     }
 
     inline val envKind get() = this.env
@@ -215,9 +221,12 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
                 defaultLanguage = defaultLanguage(cacheConfig, testing),
                 enableInvalidator = true, // TODO
                 maps = mapsConfig(cacheConfig, testing),
-                reportingKey = cacheConfig.propertyOrNull("reportingKey")?.toString(),
+                serverReportingKey = cacheConfig.config("reporting").propertyOrNull("serverReportingKey")?.getString(),
+                clientReportingKey = cacheConfig.config("reporting").propertyOrNull("clientReportingKey")?.getString(),
                 cacheExpiration = cacheConfig.propertyOrNull("cacheExpiration")?.toString()?.toLongOrNull(),
                 client = client,
+                serverVersion = Versions.ServerVersion,
+                clientVersion = Versions.ClientVersion,
             )
         }
 

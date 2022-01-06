@@ -37,6 +37,13 @@ fun ApplicationCall.pageRenderContextFromCall(
         appElement = "root",
         assets = application.assets,
         tileServerUrl = application.cacheConfig.maps?.tokenEndpoint,
+        bugsnagOpts = application.cacheConfig.clientReportingKey?.let {
+            BugsnagOpts(
+                apiKey = it,
+                releaseStage = application.cacheConfig.env,
+                appVersion = application.cacheConfig.clientVersion,
+            )
+        },
     ),
     serializer = application.cacheConfig.serializer,
     data = data,

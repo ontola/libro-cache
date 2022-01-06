@@ -22,7 +22,7 @@ class EnvironmentCheck : Check() {
 
             if (env != "development") {
                 checkValue("invalidationChannel", config.redis.invalidationChannel)
-                checkValue("reportingKey", config.reportingKey)
+                checkValue("reportingKey", config.serverReportingKey)
                 checkValue("mapboxKey", config.maps?.key)
                 checkValue("mapboxUsername", config.maps?.username)
             }

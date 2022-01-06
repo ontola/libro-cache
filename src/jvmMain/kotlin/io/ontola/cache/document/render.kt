@@ -28,7 +28,7 @@ import kotlin.collections.set
 @Serializable
 data class BugsnagOpts(
     val apiKey: String,
-    val appVersion: String,
+    val appVersion: String?,
     val releaseStage: String,
 )
 

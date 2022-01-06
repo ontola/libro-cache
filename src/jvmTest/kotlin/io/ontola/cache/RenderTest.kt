@@ -7,11 +7,14 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.server.testing.handleRequest
 import io.ontola.apex.webmanifest.Manifest
+import io.ontola.cache.plugins.CSPValue
 import io.ontola.cache.routes.HeadResponse
 import kotlinx.coroutines.runBlocking
 import withCacheTestApplication
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class RenderTest {
     @Test
@@ -29,6 +32,24 @@ class RenderTest {
                     addHeader(HttpHeaders.XForwardedProto, "https")
                 }.apply {
                     assertEquals(HttpStatusCode.OK, response.status())
+
+                    val cspHeader = response.headers["Content-Security-Policy"]
+                    assertNotNull(cspHeader)
+
+                    val cspComponents = cspHeader.split("; ")
+                    val flags = cspComponents.first()
+                    assertEquals("upgrade-insecure-requests", flags)
+
+                    val components = cspComponents
+                        .drop(1)
+                        .associate {
+                            val component = it.split(' ')
+
+                            Pair(component.first(), component.drop(1))
+                        }
+
+                    assertContains(components["default-src"]!!, CSPValue.Self)
+                    assertContains(components["connect-src"]!!, "https://sessions.bugsnag.com")
                 }
             }
         }

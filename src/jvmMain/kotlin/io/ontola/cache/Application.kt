@@ -50,6 +50,7 @@ import io.ontola.cache.plugins.RedisAdapter
 import io.ontola.cache.plugins.ServiceRegistry
 import io.ontola.cache.plugins.Storage
 import io.ontola.cache.plugins.StorageAdapter
+import io.ontola.cache.plugins.Versions
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.requestTimings
 import io.ontola.cache.routes.mountBulk
@@ -90,6 +91,7 @@ fun Application.module(
     persistentStorage: StorageAdapter<String, String>? = null,
     client: HttpClient = createClient(),
 ) {
+    Versions.print()
     val config = CacheConfig.fromEnvironment(environment.config, testing, client)
     val adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
     val persistentAdapter = persistentStorage ?: RedisAdapter(RedisClient.create(config.persistentRedisURI).connect().coroutines())
