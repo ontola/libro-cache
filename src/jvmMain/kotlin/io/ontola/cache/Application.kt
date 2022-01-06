@@ -18,6 +18,7 @@ import io.ktor.server.plugins.CallLogging
 import io.ktor.server.plugins.Compression
 import io.ktor.server.plugins.DefaultHeaders
 import io.ktor.server.plugins.ForwardedHeaderSupport
+import io.ktor.server.plugins.HSTS
 import io.ktor.server.plugins.StatusPages
 import io.ktor.server.plugins.XForwardedHeaderSupport
 import io.ktor.server.plugins.deflate
@@ -112,6 +113,11 @@ fun Application.module(
                 }
             }
         }
+    }
+
+    install(HSTS) {
+        maxAgeInSeconds = 365.days.inWholeSeconds
+        includeSubDomains = true
     }
 
     install(StatusPages) {
