@@ -188,6 +188,12 @@ fun Application.module(
         header("X-Frame-Options", "DENY")
         header("X-Powered-By", "Ontola")
         header("X-XSS-Protection", "1; mode=block")
+        Versions.ServerVersion?.let {
+            header("X-Server-Version", it)
+        }
+        Versions.ClientVersion?.let {
+            header("X-Client-Version", it)
+        }
     }
 
     install(ForwardedHeaderSupport)

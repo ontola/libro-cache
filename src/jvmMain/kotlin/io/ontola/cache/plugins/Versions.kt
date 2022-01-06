@@ -23,8 +23,8 @@ fun getVersion(name: String): String? {
 }
 
 object Versions {
-    val ClientVersion = getVersion("client")
-    val ServerVersion = getVersion("server")
+    val ClientVersion = getVersion("client")?.trimEnd('\n')
+    val ServerVersion = getVersion("server")?.trimEnd('\n')
 
     fun print() {
         logger.info("Server version: $ServerVersion")
@@ -44,5 +44,4 @@ fun fromLocalGitRepo(name: String): String? {
         .inputStream
         .readAllBytes()
         .toString(Charset.defaultCharset())
-        .trimEnd('\n')
 }
