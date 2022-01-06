@@ -36,6 +36,7 @@ fun ApplicationCall.pageRenderContextFromCall(
     configuration = PageConfiguration(
         appElement = "root",
         assets = application.assets,
+        tileServerUrl = application.cacheConfig.maps?.tokenEndpoint,
     ),
     serializer = application.cacheConfig.serializer,
     data = data,
