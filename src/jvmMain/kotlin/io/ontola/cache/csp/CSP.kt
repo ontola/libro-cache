@@ -34,7 +34,7 @@ val CSP = createApplicationPlugin("CSP") {
         "csp-endpoint",
         10886400,
         listOf(
-            ReportEndpoint(""),
+            ReportEndpoint("/csp-reports"),
         ),
     )
     val cspReportToHeader = Json.encodeToString(cspReportEntry)

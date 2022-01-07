@@ -38,6 +38,7 @@ import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
 import io.ontola.cache.assets.Assets
 import io.ontola.cache.csp.CSP
+import io.ontola.cache.csp.cspReportEndpointPath
 import io.ontola.cache.csp.mountCSP
 import io.ontola.cache.dataproxy.DataProxy
 import io.ontola.cache.health.mountHealth
@@ -228,6 +229,7 @@ fun Application.module(
             "/d/health",
             "/metrics",
             "/_testing",
+            "/csp-reports",
             "/__webpack_hmr",
         )
     }
@@ -244,6 +246,7 @@ fun Application.module(
 
     install(Tenantization) {
         blacklist = listOf(
+            cspReportEndpointPath,
             "/favicon.ico",
             "/link-lib/cache/clear",
             "/link-lib/cache/status",
@@ -251,6 +254,7 @@ fun Application.module(
             "/d/health",
             "/metrics",
             "/_testing",
+            "/csp-reports",
             "/static/",
             "/assets/",
             "/f_assets/",
@@ -286,7 +290,9 @@ fun Application.module(
         excludedPaths = listOf(
             "/link-lib/bulk",
             "/_testing/setSession",
+            cspReportEndpointPath,
             "/d/health",
+            "/csp-reports",
             "static",
         )
         contentTypes = listOf(

@@ -10,6 +10,7 @@ import io.ktor.util.AttributeKey
 import io.ktor.utils.io.printStack
 import io.lettuce.core.RedisURI
 import io.ontola.cache.createClient
+import io.ontola.cache.csp.CSPReportException
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import kotlin.time.Duration.Companion.minutes
@@ -194,7 +195,26 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
         logger.warn("No reporting key")
         null
     } else {
-        Bugsnag(serverReportingKey)
+        Bugsnag(serverReportingKey).apply {
+            addCallback {
+                when (val exception = it.exception!!) {
+                    is CSPReportException -> {
+                        val report = exception.report
+
+                        it.addToTab("cspReport", "blockedUri", report.blockedUri)
+                        it.addToTab("cspReport", "columnNumber", report.columnNumber)
+                        it.addToTab("cspReport", "documentUri", report.documentUri)
+                        it.addToTab("cspReport", "lineNumber", report.lineNumber)
+                        it.addToTab("cspReport", "originalPolicy", report.originalPolicy)
+                        it.addToTab("cspReport", "referrer", report.referrer)
+                        it.addToTab("cspReport", "scriptSample", report.scriptSample)
+                        it.addToTab("cspReport", "sourceFile", report.sourceFile)
+                        it.addToTab("cspReport", "violatedDirective", report.violatedDirective)
+                    }
+                    else -> Unit
+                }
+            }
+        }
     }
 
     inline val envKind get() = this.env
