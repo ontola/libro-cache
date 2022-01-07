@@ -365,6 +365,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
             }
         }
     }
+
     /**
      * Prints the message and notifies the reporting service if available.
      */
@@ -376,6 +377,22 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
             e.printStack()
         } else {
             reportingService.notify(e)
+        }
+    }
+
+    fun print() {
+        logger.info {
+            arrayOf(
+                "Config",
+                "Env: $envKind",
+                "Testing mode: $testing",
+                "Default lang: $defaultLanguage",
+                "Invalidator: $enableInvalidator",
+                "Cache exp: ${if (cacheExpiration == null) "never" else "$cacheExpiration seconds"}",
+                "Tenant exp: ${if (tenantExpiration == 0L) "caching disabled" else "$tenantExpiration seconds"}",
+                "Server reporting: $serverReportingKey",
+                "Client reporting: $clientReportingKey",
+            ).joinToString(", ")
         }
     }
 }
