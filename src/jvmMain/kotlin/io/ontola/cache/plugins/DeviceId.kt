@@ -5,6 +5,7 @@ import io.ktor.server.application.ApplicationCallPipeline
 import io.ktor.server.application.ApplicationPlugin
 import io.ktor.server.application.call
 import io.ktor.server.application.plugin
+import io.ktor.server.request.path
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
@@ -13,11 +14,19 @@ import io.ktor.util.pipeline.PipelineContext
 import java.util.UUID
 
 class DeviceId(private val configuration: Configuration) {
-    class Configuration
+    class Configuration {
+        var blacklist: List<String> = emptyList()
+    }
 
     private fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
-        val deviceId = context.call.sessions.get<String>() ?: generateSessionId(context)
-        context.call.attributes.put(DeviceIdKey, deviceId)
+        if (!isBlacklisted(context.call.request.path())) {
+            val deviceId = context.call.sessions.get<String>() ?: generateSessionId(context)
+            context.call.attributes.put(DeviceIdKey, deviceId)
+        }
+    }
+
+    private fun isBlacklisted(path: String): Boolean {
+        return configuration.blacklist.any { fragment -> path.startsWith(fragment) }
     }
 
     private fun generateSessionId(context: PipelineContext<Unit, ApplicationCall>): String {

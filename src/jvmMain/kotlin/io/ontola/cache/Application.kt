@@ -37,9 +37,10 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
 import io.ontola.cache.assets.Assets
+import io.ontola.cache.csp.CSP
+import io.ontola.cache.csp.mountCSP
 import io.ontola.cache.dataproxy.DataProxy
 import io.ontola.cache.health.mountHealth
-import io.ontola.cache.plugins.CSP
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.CacheConfiguration
 import io.ontola.cache.plugins.CacheSession
@@ -69,12 +70,9 @@ import io.ontola.cache.tenantization.Tenantization
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.isHtmlAccept
 import io.ontola.cache.util.mountWebSocketProxy
-import mu.KotlinLogging
 import kotlin.collections.set
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
-
-private val logger = KotlinLogging.logger {}
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
@@ -188,10 +186,8 @@ fun Application.module(
     install(DefaultHeaders) {
         header("Referrer-Policy", "strict-origin-when-cross-origin")
         header("X-Content-Type-Options", "nosniff")
-        header("X-Engine", "Ktor")
         header("X-Frame-Options", "DENY")
         header("X-Powered-By", "Ontola")
-        header("X-XSS-Protection", "1; mode=block")
         Versions.ServerVersion?.let {
             header("X-Server-Version", it)
         }
@@ -210,9 +206,12 @@ fun Application.module(
         ) {
             cookie.httpOnly = true
             cookie.secure = true
+            cookie.extensions["SameSite"] = "Strict"
         }
         cookie<String>("deviceId") {
             cookie.httpOnly = true
+            cookie.secure = true
+            cookie.extensions["SameSite"] = "Strict"
             cookie.maxAge = 365.days
             transform(
                 signedTransformer(signingSecret = config.sessions.sessionSecret)
@@ -220,7 +219,18 @@ fun Application.module(
         }
     }
 
-    install(DeviceId)
+    install(DeviceId) {
+        blacklist = listOf(
+            "/favicon.ico",
+            "/link-lib/cache/clear",
+            "/link-lib/cache/status",
+            "/link-lib/cache/metrics",
+            "/d/health",
+            "/metrics",
+            "/_testing",
+            "/__webpack_hmr",
+        )
+    }
 
     install(CacheSession) {
         legacyStorageAdapter = adapter
@@ -244,7 +254,7 @@ fun Application.module(
             "/static/",
             "/assets/",
             "/f_assets/",
-            "/__webpack_hmr"
+            "/__webpack_hmr",
         )
     }
 
@@ -311,6 +321,7 @@ fun Application.module(
         }
         mountStatic()
         mountHealth()
+        mountCSP()
         mountManifest()
         mountBulk()
         mountWebSocketProxy()
