@@ -8,6 +8,7 @@ import io.ktor.http.Url
 import io.ktor.server.testing.handleRequest
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.plugins.CSPValue
+import io.ontola.cache.plugins.nonce
 import io.ontola.cache.routes.HeadResponse
 import kotlinx.coroutines.runBlocking
 import withCacheTestApplication
@@ -50,6 +51,7 @@ class RenderTest {
 
                     assertContains(components["default-src"]!!, CSPValue.Self)
                     assertContains(components["connect-src"]!!, "https://sessions.bugsnag.com")
+                    assertContains(components["script-src"]!!, CSPValue.nonce(this.nonce))
                 }
             }
         }

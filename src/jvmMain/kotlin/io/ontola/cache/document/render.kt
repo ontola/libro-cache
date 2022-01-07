@@ -73,7 +73,7 @@ fun BODY.serviceWorkerBlock(nonce: String, manifest: Manifest) {
     }
 }
 
-fun BODY.preloadBlock(config: PageConfiguration, manifest: Manifest) {
+fun BODY.preloadBlock(nonce: String, config: PageConfiguration, manifest: Manifest) {
     div {
         id = "preloader"
         classes = setOf("preloader")
@@ -103,13 +103,12 @@ fun BODY.preloadBlock(config: PageConfiguration, manifest: Manifest) {
         p { +"Javascript staat momenteel uitgeschakeld, probeer een andere browser of in prive modus." }
     }
     script {
+        this.nonce = nonce
         unsafe {
             +"document.body.className = (document.body.className || '') + ' Body--show-preloader';"
         }
     }
 }
-
-const val LuminanceThreshold = .5
 
 fun luminanceBased(
     check: String,
@@ -199,7 +198,7 @@ fun HTML.indexPage(ctx: PageRenderContext) {
         attributes["style"] = "margin: 0;"
 
         themeBlock(manifest)
-        preloadBlock(config, manifest)
+        preloadBlock(nonce, config, manifest)
         serviceWorkerBlock(nonce, manifest)
         seedBlock(nonce, data)
         assetsBlock(nonce, config)

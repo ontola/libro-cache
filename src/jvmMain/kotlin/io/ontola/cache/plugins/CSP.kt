@@ -29,7 +29,7 @@ object CSPValue {
     const val UnsafeEval = "'unsafe-eval'"
     const val UnsafeInline = "'unsafe-inline'"
 
-    fun nonce(nonce: String) = "nonce-$nonce"
+    fun nonce(nonce: String) = "'nonce-$nonce'"
 }
 
 object CSPSettings {
