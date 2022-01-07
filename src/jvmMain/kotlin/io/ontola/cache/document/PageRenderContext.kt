@@ -36,7 +36,7 @@ fun ApplicationCall.pageRenderContextFromCall(
     configuration = PageConfiguration(
         appElement = "root",
         assets = application.assets,
-        tileServerUrl = application.cacheConfig.maps?.tokenEndpoint,
+        tileServerUrl = application.cacheConfig.maps?.mapboxTileURL,
         bugsnagOpts = application.cacheConfig.clientReportingKey?.let {
             BugsnagOpts(
                 apiKey = it,

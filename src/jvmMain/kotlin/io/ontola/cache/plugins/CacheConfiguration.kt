@@ -107,8 +107,11 @@ data class MapsConfig(
         "datasets:read",
     ),
 ) {
-    val tokenEndpoint: String
-        get() = "https://api.mapbox.com/tokens/v2/$username?access_token=$key"
+    private val mapboxTileAPIBase = "https://api.mapbox.com/styles/v1"
+    private val mapboxTileStyle = "mapbox/streets-v11"
+
+    val mapboxTileURL = "$mapboxTileAPIBase/$mapboxTileStyle"
+    val tokenEndpoint = "https://api.mapbox.com/tokens/v2/$username?access_token=$key"
 }
 
 data class AssetsConfig(
