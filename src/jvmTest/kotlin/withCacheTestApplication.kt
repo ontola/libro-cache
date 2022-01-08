@@ -76,7 +76,6 @@ fun <R> withCacheTestApplication(
             )
 
             cookiesSession {
-
                 mockConfig.initialAccessTokens?.let {
                     handleRequest(HttpMethod.Post, "/_testing/setSession") {
                         addHeader("Accept", "application/json")

@@ -20,6 +20,7 @@ import kotlinx.serialization.json.Json
 fun HEAD.renderHead(
     url: String,
     nonce: String,
+    csrfToken: String,
     config: PageConfiguration,
     manifest: Manifest,
     lang: String,
@@ -30,7 +31,7 @@ fun HEAD.renderHead(
     contentMetaTags(url, manifest, data, lang)
     meta {
         name = "csrf-token"
-        content = "TODO"
+        content = csrfToken
     }
 
     headTracking(nonce, manifest.ontola.tracking)

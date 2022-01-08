@@ -108,6 +108,14 @@ class SessionManager(
         }
     }
 
+    suspend fun ensureCsrf() {
+        val existing = session
+
+        if (existing == null) {
+            session = SessionData()
+        }
+    }
+
     fun delete() {
         session = null
     }

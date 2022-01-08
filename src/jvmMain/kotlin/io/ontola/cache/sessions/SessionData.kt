@@ -2,6 +2,7 @@ package io.ontola.cache.sessions
 
 import com.auth0.jwt.exceptions.TokenExpiredException
 import com.auth0.jwt.interfaces.JWTVerifier
+import io.ontola.cache.plugins.generateCSRFToken
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -60,6 +61,17 @@ data class SessionData(
     val credentials: TokenPair? = null,
     val deviceId: String? = null,
 ) {
+    @SerialName("csrfToken")
+    internal var _csrfToken: String? = generateCSRFToken()
+
+    val csrfToken: String
+        get() {
+            if (_csrfToken == null) {
+                _csrfToken = generateCSRFToken()
+            }
+
+            return _csrfToken!!
+        }
 
     fun accessTokenBearer(): String? = if (credentials != null) "Bearer ${credentials.accessToken}" else null
 

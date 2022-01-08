@@ -17,34 +17,40 @@ data class PageRenderContext(
     val nonce: String,
     val lang: String,
     val isUser: Boolean,
+    val csrfToken: String,
     val manifest: Manifest,
     val configuration: PageConfiguration,
     val serializer: Json,
     var data: List<Hextuple>?,
 )
 
-fun ApplicationCall.pageRenderContextFromCall(
+suspend fun ApplicationCall.pageRenderContextFromCall(
     data: List<Hextuple>? = null,
     manifest: Manifest? = null,
     uri: Url = requestUriFromTenant(),
-) = PageRenderContext(
-    uri = uri,
-    nonce = nonce,
-    lang = sessionManager.language,
-    isUser = sessionManager.isUser,
-    manifest = manifest ?: tenant.manifest,
-    configuration = PageConfiguration(
-        appElement = "root",
-        assets = application.assets,
-        tileServerUrl = application.cacheConfig.maps?.mapboxTileURL,
-        bugsnagOpts = application.cacheConfig.clientReportingKey?.let {
-            BugsnagOpts(
-                apiKey = it,
-                releaseStage = application.cacheConfig.env,
-                appVersion = application.cacheConfig.clientVersion,
-            )
-        },
-    ),
-    serializer = application.cacheConfig.serializer,
-    data = data,
-)
+): PageRenderContext {
+    sessionManager.ensureCsrf()
+
+    return PageRenderContext(
+        uri = uri,
+        nonce = nonce,
+        lang = sessionManager.language,
+        isUser = sessionManager.isUser,
+        csrfToken = sessionManager.session!!.csrfToken,
+        manifest = manifest ?: tenant.manifest,
+        configuration = PageConfiguration(
+            appElement = "root",
+            assets = application.assets,
+            tileServerUrl = application.cacheConfig.maps?.mapboxTileURL,
+            bugsnagOpts = application.cacheConfig.clientReportingKey?.let {
+                BugsnagOpts(
+                    apiKey = it,
+                    releaseStage = application.cacheConfig.env,
+                    appVersion = application.cacheConfig.clientVersion,
+                )
+            },
+        ),
+        serializer = application.cacheConfig.serializer,
+        data = data,
+    )
+}

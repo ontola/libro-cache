@@ -42,9 +42,11 @@ import io.ontola.cache.csp.cspReportEndpointPath
 import io.ontola.cache.csp.mountCSP
 import io.ontola.cache.dataproxy.DataProxy
 import io.ontola.cache.health.mountHealth
+import io.ontola.cache.plugins.CSRFVerificationException
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.CacheConfiguration
 import io.ontola.cache.plugins.CacheSession
+import io.ontola.cache.plugins.CsrfProtection
 import io.ontola.cache.plugins.DeviceId
 import io.ontola.cache.plugins.Logging
 import io.ontola.cache.plugins.Redirect
@@ -141,6 +143,11 @@ fun Application.module(
             }
         }
         exception<AuthorizationException> { call, _ ->
+            call.respondHtml(HttpStatusCode.Forbidden) {
+                errorPage(HttpStatusCode.Forbidden)
+            }
+        }
+        exception<CSRFVerificationException> { call, _ ->
             call.respondHtml(HttpStatusCode.Forbidden) {
                 errorPage(HttpStatusCode.Forbidden)
             }
@@ -262,6 +269,13 @@ fun Application.module(
     }
 
     install(CSP)
+
+    install(CsrfProtection) {
+        blackList = listOf(
+            "/_testing",
+            "/csp-reports",
+        )
+    }
 
     install(WebSockets)
 

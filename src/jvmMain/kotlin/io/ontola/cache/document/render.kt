@@ -192,7 +192,7 @@ fun HTML.indexPage(ctx: PageRenderContext) {
     lang = ctx.lang
 
     head {
-        renderHead(url, nonce, config, manifest, ctx.lang, data)
+        renderHead(url, nonce, ctx.csrfToken, config, manifest, ctx.lang, data)
     }
     body {
         attributes["style"] = "margin: 0;"

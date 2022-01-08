@@ -9,6 +9,7 @@ object CacheHttpHeaders {
     const val NewRefreshToken = "New-Refresh-Token"
     const val WebsiteIri = "Website-IRI"
     const val XDeviceId = "X-Device-Id"
+    const val XCsrfToken = "X-CSRF-Token"
 
     /**
      * Used in forms to refer to the resource which sprung the request.

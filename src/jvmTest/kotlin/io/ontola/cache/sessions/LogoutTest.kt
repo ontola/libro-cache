@@ -1,6 +1,7 @@
 package io.ontola.cache.sessions
 
 import generateTestAccessTokenPair
+import getCsrfToken
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
@@ -20,10 +21,13 @@ class LogoutTest {
             initialAccessTokens = generateTestAccessTokenPair(false)
             addManifest(websiteIRI, Manifest.forWebsite(websiteIRI))
         }) {
+            val csrfToken = getCsrfToken()
+
             handleRequest(HttpMethod.Post, "/logout") {
                 addHeader(HttpHeaders.Origin, websiteIRI.toString())
                 addHeader(HttpHeaders.XForwardedProto, "https")
                 addHeader(CacheHttpHeaders.WebsiteIri, websiteIRI.toString())
+                addHeader(CacheHttpHeaders.XCsrfToken, csrfToken)
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
             }

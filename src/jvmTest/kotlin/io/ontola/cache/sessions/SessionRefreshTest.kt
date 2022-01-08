@@ -1,5 +1,7 @@
 package io.ontola.cache.sessions
 
+import getCsrfToken
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
@@ -7,6 +9,7 @@ import io.ktor.http.formUrlEncode
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.setBody
 import io.ontola.apex.webmanifest.Manifest
+import io.ontola.cache.util.CacheHttpHeaders
 import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,11 +25,14 @@ class SessionRefreshTest {
             clientBuilder.setNewAuthorization("a", "b")
             addManifest(Url("https://mysite.local"), Manifest.forWebsite(Url("https://mysite.local")))
         }) {
+            val csrfToken = getCsrfToken()
+
             handleRequest(HttpMethod.Post, "/link-lib/bulk") {
                 addHeader("authority", "mysite.local")
-                addHeader("X-Forwarded-Proto", "https")
-                addHeader("Accept", "application/hex+x-ndjson")
-                addHeader("Content-Type", "application/x-www-form-urlencoded")
+                addHeader(HttpHeaders.XForwardedProto, "https")
+                addHeader(HttpHeaders.Accept, "application/hex+x-ndjson")
+                addHeader(HttpHeaders.ContentType, "application/x-www-form-urlencoded")
+                addHeader(CacheHttpHeaders.XCsrfToken, csrfToken)
 
                 setBody(
                     listOf(

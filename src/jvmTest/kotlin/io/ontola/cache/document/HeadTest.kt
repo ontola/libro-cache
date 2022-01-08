@@ -3,6 +3,7 @@ package io.ontola.cache.document
 import io.ktor.http.Url
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.assets.loadAssetsManifests
+import io.ontola.cache.plugins.generateCSRFToken
 import io.ontola.rdf.hextuples.DataType
 import io.ontola.rdf.hextuples.Hextuple
 import kotlinx.html.head
@@ -19,6 +20,7 @@ class HeadTest {
                 appElement = "root",
                 assets = loadAssetsManifests(ctx.config),
             )
+            val csrf = generateCSRFToken()
             val href = Url("https://mysite.local")
             val manifest = Manifest.forWebsite(href)
             val lang = "nl"
@@ -33,6 +35,7 @@ class HeadTest {
                     renderHead(
                         href.toString(),
                         "nonce val",
+                        csrf,
                         config,
                         manifest,
                         lang,
@@ -46,6 +49,7 @@ class HeadTest {
             assertContains(html, "<meta name=\"website\" content=\"https://mysite.local/\">")
             assertContains(html, "<meta content=\"Olifanten | Libro\" property=\"og:title\">")
             assertContains(html, "<meta content=\"https://mysite.local/\" property=\"og:url\">")
+            assertContains(html, "<meta name=\"csrf-token\" content=\"$csrf\">")
         }
     }
 }
