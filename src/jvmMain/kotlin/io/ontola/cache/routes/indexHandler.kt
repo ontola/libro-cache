@@ -36,6 +36,7 @@ import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.sessions.SessionData
+import io.ontola.cache.sessions.TokenPair
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
@@ -94,8 +95,10 @@ fun PipelineContext<Unit, ApplicationCall>.updateSessionAccessToken(head: HeadRe
 
     if (head.newAuthorization != null && head.newRefreshToken != null) {
         val newSession = SessionData(
-            accessToken = head.newAuthorization,
-            refreshToken = head.newRefreshToken,
+            credentials = TokenPair(
+                accessToken = head.newAuthorization,
+                refreshToken = head.newRefreshToken,
+            ),
             deviceId = call.deviceId,
         )
 

@@ -18,6 +18,7 @@ import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.sessions.SessionData
+import io.ontola.cache.sessions.TokenPair
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.measured
@@ -64,8 +65,10 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
 
     if (newAuthorization != null && newRefreshToken != null) {
         val newSession = SessionData(
-            accessToken = newAuthorization,
-            refreshToken = newRefreshToken,
+            credentials = TokenPair(
+                accessToken = newAuthorization,
+                refreshToken = newRefreshToken,
+            ),
             deviceId = call.deviceId,
         )
 

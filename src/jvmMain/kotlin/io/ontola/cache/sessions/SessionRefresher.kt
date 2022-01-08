@@ -73,14 +73,16 @@ class SessionRefresher(private val configuration: CacheSession.Configuration) {
      * Retrieve a new access token for the given session.
      */
     suspend fun refresh(session: SessionData): SessionData? {
-        val userToken = session.accessToken
-        val refreshToken = session.refreshToken
+        val userToken = session.credentials!!.accessToken
+        val refreshToken = session.credentials.refreshToken
         return try {
             val refreshResponse = refreshToken(userToken, refreshToken)
 
             session.copy(
-                refreshToken = refreshResponse.refreshToken,
-                accessToken = refreshResponse.accessToken,
+                credentials = TokenPair(
+                    accessToken = refreshResponse.accessToken,
+                    refreshToken = refreshResponse.refreshToken,
+                ),
             )
         } catch (e: InvalidGrantException) {
             null

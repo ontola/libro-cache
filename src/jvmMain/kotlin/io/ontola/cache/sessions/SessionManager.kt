@@ -57,7 +57,7 @@ class SessionManager(
         get() = claims()?.user?.type == UserType.User
 
     val logoutRequest: LogoutRequest?
-        get() = session?.accessToken?.let {
+        get() = session?.credentials?.accessToken?.let {
             LogoutRequest(
                 configuration.oidcClientId,
                 configuration.oidcClientSecret,
@@ -94,11 +94,13 @@ class SessionManager(
     suspend fun ensure() {
         val existing = session
 
-        if (existing == null) {
+        if (existing?.credentials == null) {
             val guestToken = guestToken()
             session = SessionData(
-                guestToken.accessToken,
-                guestToken.refreshToken,
+                credentials = TokenPair(
+                    guestToken.accessToken,
+                    guestToken.refreshToken,
+                ),
                 call.deviceId,
             )
         } else if (existing.isExpired(configuration.jwtValidator)) {
@@ -112,8 +114,10 @@ class SessionManager(
 
     fun setAuthorization(accessToken: String, refreshToken: String) {
         session = SessionData(
-            accessToken = accessToken,
-            refreshToken = refreshToken,
+            TokenPair(
+                accessToken = accessToken,
+                refreshToken = refreshToken,
+            ),
             deviceId = call.deviceId,
         )
     }
@@ -124,8 +128,10 @@ class SessionManager(
             if (it.userToken == null || it.refreshToken == null) return null
 
             SessionData(
-                accessToken = it.userToken,
-                refreshToken = it.refreshToken,
+                credentials = TokenPair(
+                    accessToken = it.userToken,
+                    refreshToken = it.refreshToken,
+                ),
                 deviceId = call.deviceId,
             )
         }

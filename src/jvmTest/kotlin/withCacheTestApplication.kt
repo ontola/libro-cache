@@ -16,6 +16,7 @@ import io.ontola.cache.module
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.sessions.SessionData
+import io.ontola.cache.sessions.TokenPair
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.test.assertEquals
@@ -82,7 +83,7 @@ fun <R> withCacheTestApplication(
                         addHeader("Content-Type", "application/json")
                         addHeader(HttpHeaders.XForwardedProto, "https")
 
-                        setBody(Json.encodeToString(SessionData(it.first, it.second)))
+                        setBody(Json.encodeToString(SessionData(credentials = TokenPair(it.first, it.second))))
                     }.apply {
                         assertEquals(HttpStatusCode.OK, response.status())
                     }

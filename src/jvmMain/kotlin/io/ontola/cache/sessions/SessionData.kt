@@ -50,23 +50,29 @@ data class Claims(
 )
 
 @Serializable
-data class SessionData(
+data class TokenPair(
     val accessToken: String,
     val refreshToken: String,
+)
+
+@Serializable
+data class SessionData(
+    val credentials: TokenPair? = null,
     val deviceId: String? = null,
 ) {
-    fun accessTokenBearer(): String = "Bearer $accessToken"
 
-    fun refreshTokenBearer(): String = "Bearer $refreshToken"
+    fun accessTokenBearer(): String? = if (credentials != null) "Bearer ${credentials.accessToken}" else null
 
     fun claims(jwtValidator: JWTVerifier): Claims? {
-        val jwt = jwtValidator.verify(accessToken)
+        credentials ?: return null
+
+        val jwt = jwtValidator.verify(credentials.accessToken)
         return json.decodeFromString(Base64().decode(jwt.payload).decodeToString())
     }
 
     fun isExpired(jwtValidator: JWTVerifier): Boolean {
         try {
-            jwtValidator.verify(accessToken)
+            jwtValidator.verify(credentials!!.accessToken)
         } catch (e: TokenExpiredException) {
             return true
         }
