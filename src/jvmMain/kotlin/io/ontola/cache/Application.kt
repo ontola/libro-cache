@@ -121,7 +121,6 @@ fun Application.module(
     }
 
     install(HSTS) {
-        maxAgeInSeconds = 365.days.inWholeSeconds
         includeSubDomains = true
     }
 

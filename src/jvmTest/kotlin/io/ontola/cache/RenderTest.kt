@@ -55,6 +55,16 @@ class RenderTest {
                     assertContains(components["script-src"]!!, CSPValue.nonce(this.nonce))
                     assertContains(components["base-uri"]!!, CSPValue.Self)
                     assertContains(components["report-uri"]!!, cspReportEndpointPath)
+
+                    val hstsMaxAge = response
+                        .headers[HttpHeaders.StrictTransportSecurity]
+                        ?.split("max-age=")
+                        ?.last()
+                        ?.split(";")
+                        ?.first()
+                        ?.toLong()
+                        ?: 0L
+                    assertEquals(31536000L, hstsMaxAge)
                 }
             }
         }
