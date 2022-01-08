@@ -7,6 +7,7 @@ import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
+import io.ktor.util.AttributeKey
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.tenantization.tenant
 import kotlinx.serialization.encodeToString
@@ -14,6 +15,10 @@ import kotlinx.serialization.json.Json
 
 fun Routing.mountManifest() {
     get("*/manifest.json") {
+        if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
+            return@get
+        }
+
         call.logger.debug { "Requested manifest from external (via handler)" }
 
         if (call.tenant.websiteIRI.fullPath + "/manifest.json" != call.request.uri) {

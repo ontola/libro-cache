@@ -9,10 +9,12 @@ import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLProtocol
+import io.ktor.server.application.call
 import io.ktor.server.request.httpMethod
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.websocket.webSocket
+import io.ktor.util.AttributeKey
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.tenantization.tenant
@@ -22,6 +24,10 @@ import kotlinx.coroutines.launch
 
 fun Route.mountWebSocketProxy() {
     webSocket(path = "/{prefix?}/cable", protocol = "actioncable-v1-json") {
+        if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
+            return@webSocket
+        }
+
         val serverSession = this
 
         val client = HttpClient(CIO).config {

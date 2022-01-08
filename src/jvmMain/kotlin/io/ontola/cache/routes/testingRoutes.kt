@@ -11,6 +11,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
+import io.ktor.util.AttributeKey
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.sessions.SessionData
@@ -18,6 +19,10 @@ import kotlinx.serialization.decodeFromString
 
 fun Routing.mountTestingRoutes() {
     post("/_testing/setSession") {
+        if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
+            return@post
+        }
+
         val newSession = call.application.cacheConfig.serializer.decodeFromString<SessionData>(call.receive<String>())
         call.sessions.set(newSession)
         call.respond(HttpStatusCode.OK)

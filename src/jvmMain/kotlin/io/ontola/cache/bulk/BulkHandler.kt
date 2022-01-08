@@ -8,6 +8,7 @@ import io.ktor.server.response.header
 import io.ktor.server.response.respondOutputStream
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
+import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.sessionManager
@@ -54,6 +55,10 @@ suspend fun PipelineContext<Unit, ApplicationCall>.coldHandler(updatedEntries: L
 
 fun Routing.mountBulkHandler() {
     post("/link-lib/bulk") {
+        if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
+            return@post
+        }
+
         val updatedEntries: List<CacheEntry>? = measured("handler hot") {
             val requested = requestedResources()
             call.logger.debug { "Fetching ${requested.size} resources from cache" }

@@ -8,6 +8,7 @@ import io.ktor.server.application.call
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
+import io.ktor.util.AttributeKey
 import io.ontola.cache.plugins.MapsConfig
 import io.ontola.cache.plugins.cacheConfig
 import kotlinx.datetime.Clock
@@ -25,6 +26,10 @@ data class AccessTokenResponse(
 
 fun Routing.mountMaps() {
     get("/api/maps/accessToken") {
+        if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
+            return@get
+        }
+
         val mapsConfig = call.application.cacheConfig.maps ?: error("Maps service credentials not configured")
 
         val token = call.createMapsToken(mapsConfig)
