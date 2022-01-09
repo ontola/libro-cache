@@ -1,12 +1,16 @@
 package io.ontola.cache.statuspages
 
 import io.ktor.http.HttpStatusCode
+import io.ontola.cache.health.styleCss
+import kotlinx.css.Visibility
+import kotlinx.css.visibility
 import kotlinx.html.HTML
 import kotlinx.html.body
 import kotlinx.html.h1
 import kotlinx.html.head
 import kotlinx.html.meta
 import kotlinx.html.p
+import kotlinx.html.span
 import kotlinx.html.title
 
 fun titleForStatus(status: HttpStatusCode): String {
@@ -29,7 +33,7 @@ fun bodyForStatus(status: HttpStatusCode): String {
     }
 }
 
-fun HTML.errorPage(status: HttpStatusCode) {
+fun HTML.errorPage(status: HttpStatusCode, cause: Exception) {
     head {
         meta(charset = "utf-8")
         title(titleForStatus(status))
@@ -37,5 +41,11 @@ fun HTML.errorPage(status: HttpStatusCode) {
     body {
         h1 { +titleForStatus(status) }
         p { +bodyForStatus(status) }
+        span {
+            styleCss {
+                visibility = Visibility.hidden
+            }
+            +cause.javaClass.name
+        }
     }
 }

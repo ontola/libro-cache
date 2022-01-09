@@ -127,29 +127,29 @@ fun Application.module(
     }
 
     install(StatusPages) {
-        exception<TenantNotFoundException> { call, _ ->
+        exception<TenantNotFoundException> { call, cause ->
             call.respondHtml(HttpStatusCode.NotFound) {
-                errorPage(HttpStatusCode.NotFound)
+                errorPage(HttpStatusCode.NotFound, cause)
             }
         }
-        exception<BadGatewayException> { call, _ ->
+        exception<BadGatewayException> { call, cause ->
             call.respondHtml(HttpStatusCode.BadGateway) {
-                errorPage(HttpStatusCode.BadGateway)
+                errorPage(HttpStatusCode.BadGateway, cause)
             }
         }
-        exception<AuthenticationException> { call, _ ->
+        exception<AuthenticationException> { call, cause ->
             call.respondHtml(HttpStatusCode.Unauthorized) {
-                errorPage(HttpStatusCode.Unauthorized)
+                errorPage(HttpStatusCode.Unauthorized, cause)
             }
         }
-        exception<AuthorizationException> { call, _ ->
+        exception<AuthorizationException> { call, cause ->
             call.respondHtml(HttpStatusCode.Forbidden) {
-                errorPage(HttpStatusCode.Forbidden)
+                errorPage(HttpStatusCode.Forbidden, cause)
             }
         }
-        exception<CSRFVerificationException> { call, _ ->
+        exception<CSRFVerificationException> { call, cause ->
             call.respondHtml(HttpStatusCode.Forbidden) {
-                errorPage(HttpStatusCode.Forbidden)
+                errorPage(HttpStatusCode.Forbidden, cause)
             }
         }
     }
