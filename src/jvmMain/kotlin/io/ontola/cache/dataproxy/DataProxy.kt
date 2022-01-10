@@ -119,7 +119,7 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
 
             pipeline.intercept(ApplicationCallPipeline.Features) {
                 call.attributes.put(DataProxyKey, DataProxy(configuration, call))
-                val shouldProxyHttp = configuration.shouldProxy(call)
+                val shouldProxyHttp = configuration.shouldProxy(call.request)
 
                 call.logger.debug {
                     val path = call.request.path()
