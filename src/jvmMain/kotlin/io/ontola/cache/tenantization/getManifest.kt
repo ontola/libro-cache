@@ -7,6 +7,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.server.application.ApplicationCall
@@ -19,7 +20,14 @@ import io.ontola.cache.util.copy
 import io.ontola.cache.util.proxySafeHeaders
 
 internal suspend inline fun <reified K> PipelineContext<*, ApplicationCall>.getManifest(websiteBase: Url): K {
-    val manifestRequest = application.cacheConfig.client.get(call.services.route("${websiteBase.fullPath}/manifest.json")) {
+    val manifestUrl = URLBuilder(websiteBase).apply {
+        pathSegments = pathSegments
+            // TODO: Remove after https://youtrack.jetbrains.com/issue/KTOR-3618 is fixed
+            .filter { it.isNotBlank() }
+            .toMutableList()
+            .apply { add("manifest.json") }
+    }.build()
+    val manifestRequest = application.cacheConfig.client.get(call.services.route(manifestUrl.fullPath)) {
         expectSuccess = false
         headers {
             append("Website-IRI", websiteBase.toString())
