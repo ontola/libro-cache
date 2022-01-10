@@ -275,8 +275,10 @@ fun Application.module(
         blackList = listOf(
             "/_testing",
             "/csp-reports",
-            "/link-lib/bulk",
             "/follows/",
+            "/link-lib/bulk",
+            "/*/login/",
+            "/login/",
         )
     }
 
