@@ -6,7 +6,6 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.server.testing.handleRequest
-import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.csp.CSPValue
 import io.ontola.cache.csp.cspReportEndpointPath
 import io.ontola.cache.csp.nonce
@@ -26,7 +25,7 @@ class RenderTest {
 
             withCacheTestApplication({
                 clientBuilder.setHeadResponse(Url("$websiteIRI/"), HeadResponse(HttpStatusCode.OK))
-                addManifest(websiteIRI, Manifest.forWebsite(websiteIRI))
+                initTenant(websiteIRI)
             }) {
                 handleRequest(HttpMethod.Get, "/") {
                     addHeader(HttpHeaders.Accept, ContentType.Text.Html.toString())

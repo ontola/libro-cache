@@ -31,7 +31,7 @@ data class MockConfiguration(
     val storage: TestStorageAdapterBuilder,
     var initialAccessTokens: Pair<String, String>? = null,
 ) {
-    fun addManifest(website: Url, manifest: Manifest) {
+    fun initTenant(website: Url, manifest: Manifest = Manifest.forWebsite(website)) {
         storage.addManifest(website, manifest)
         clientBuilder.addManifest(website, manifest)
     }

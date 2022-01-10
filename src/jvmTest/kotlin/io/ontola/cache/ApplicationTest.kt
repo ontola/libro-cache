@@ -6,7 +6,6 @@ import io.ktor.http.Url
 import io.ktor.http.formUrlEncode
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.setBody
-import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.isA
 import io.ontola.cache.bulk.statusCode
@@ -41,7 +40,7 @@ class ApplicationTest {
             clientBuilder.addResources(resources)
             storage.resources.addAll(resources)
 
-            addManifest(Url("https://mysite.local"), Manifest.forWebsite(Url("https://mysite.local")))
+            initTenant(Url("https://mysite.local"))
         }) {
             handleRequest(HttpMethod.Post, "/link-lib/bulk") {
                 addHeader("authority", "mysite.local")

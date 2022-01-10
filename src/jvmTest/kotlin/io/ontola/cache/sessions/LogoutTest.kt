@@ -7,7 +7,6 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.server.testing.handleRequest
-import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.util.CacheHttpHeaders
 import withCacheTestApplication
 import kotlin.test.Test
@@ -19,7 +18,7 @@ class LogoutTest {
         val websiteIRI = Url("https://mysite.local")
         withCacheTestApplication({
             initialAccessTokens = generateTestAccessTokenPair(false)
-            addManifest(websiteIRI, Manifest.forWebsite(websiteIRI))
+            initTenant(websiteIRI)
         }) {
             val csrfToken = getCsrfToken()
 

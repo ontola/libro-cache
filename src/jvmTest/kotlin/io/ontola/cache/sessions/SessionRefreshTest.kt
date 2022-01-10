@@ -8,7 +8,6 @@ import io.ktor.http.Url
 import io.ktor.http.formUrlEncode
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.setBody
-import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.util.CacheHttpHeaders
 import withCacheTestApplication
 import kotlin.test.Test
@@ -23,7 +22,7 @@ class SessionRefreshTest {
 
         withCacheTestApplication({
             clientBuilder.setNewAuthorization("a", "b")
-            addManifest(Url("https://mysite.local"), Manifest.forWebsite(Url("https://mysite.local")))
+            initTenant(Url("https://mysite.local"))
         }) {
             val csrfToken = getCsrfToken()
 
