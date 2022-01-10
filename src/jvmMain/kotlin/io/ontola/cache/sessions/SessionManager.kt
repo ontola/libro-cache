@@ -92,23 +92,23 @@ class SessionManager(
     }
 
     suspend fun ensure() {
-        val existing = session
+        val existing = session ?: SessionData()
 
-        if (existing?.credentials == null) {
+        if (existing.credentials == null) {
             val guestToken = guestToken()
-            session = SessionData(
+            session = existing.copy(
                 credentials = TokenPair(
                     guestToken.accessToken,
                     guestToken.refreshToken,
                 ),
-                call.deviceId,
+                deviceId = call.deviceId,
             )
         } else if (existing.isExpired(configuration.jwtValidator)) {
             session = refresher.refresh(existing)
         }
     }
 
-    suspend fun ensureCsrf() {
+    fun ensureCsrf() {
         val existing = session
 
         if (existing == null) {
@@ -121,8 +121,8 @@ class SessionManager(
     }
 
     fun setAuthorization(accessToken: String, refreshToken: String) {
-        session = SessionData(
-            TokenPair(
+        session = (session ?: SessionData()).copy(
+            credentials = TokenPair(
                 accessToken = accessToken,
                 refreshToken = refreshToken,
             ),

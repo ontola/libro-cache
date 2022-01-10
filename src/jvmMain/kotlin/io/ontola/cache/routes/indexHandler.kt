@@ -16,6 +16,7 @@ import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
+import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.AttributeKey
@@ -94,7 +95,8 @@ fun PipelineContext<Unit, ApplicationCall>.updateSessionAccessToken(head: HeadRe
     }
 
     if (head.newAuthorization != null && head.newRefreshToken != null) {
-        val newSession = SessionData(
+        val existing = call.sessions.get<SessionData>() ?: SessionData()
+        val newSession = existing.copy(
             credentials = TokenPair(
                 accessToken = head.newAuthorization,
                 refreshToken = head.newRefreshToken,

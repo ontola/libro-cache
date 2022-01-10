@@ -60,10 +60,9 @@ data class TokenPair(
 data class SessionData(
     val credentials: TokenPair? = null,
     val deviceId: String? = null,
-) {
     @SerialName("csrfToken")
     internal var _csrfToken: String? = generateCSRFToken()
-
+) {
     val csrfToken: String
         get() {
             if (_csrfToken == null) {

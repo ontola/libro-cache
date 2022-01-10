@@ -10,6 +10,7 @@ import io.ktor.http.URLBuilder
 import io.ktor.http.contentType
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
+import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.pipeline.PipelineContext
@@ -64,7 +65,8 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
     val newRefreshToken = res.headers[CacheHttpHeaders.NewRefreshToken]
 
     if (newAuthorization != null && newRefreshToken != null) {
-        val newSession = SessionData(
+        val existing = call.sessions.get<SessionData>() ?: SessionData()
+        val newSession = existing.copy(
             credentials = TokenPair(
                 accessToken = newAuthorization,
                 refreshToken = newRefreshToken,
