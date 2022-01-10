@@ -11,7 +11,11 @@ private fun Boolean.toInt(): Int = if (this) 1 else 0
 
 internal fun ApplicationRequest.closeToWebsiteIRI(logger: KLogger): String {
     val authoritativeOrigin = origin()
-    val requestPath = path().removeSuffix("link-lib/bulk")
+    val requestPath = path()
+        .removeSuffix("link-lib/bulk")
+        .split("/")
+        .take(2)
+        .joinToString("/")
 
     return headers[CacheHttpHeaders.WebsiteIri]
         ?.let { websiteIRI ->
