@@ -9,7 +9,6 @@ import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLProtocol
-import io.ktor.server.application.call
 import io.ktor.server.request.httpMethod
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -18,6 +17,7 @@ import io.ktor.util.AttributeKey
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.tenantization.tenant
+import io.ontola.util.origin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch

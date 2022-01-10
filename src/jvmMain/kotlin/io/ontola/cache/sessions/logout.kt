@@ -6,7 +6,6 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.URLBuilder
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.util.pipeline.PipelineContext
@@ -20,11 +19,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.logout(): HttpResponse? {
     val logoutRequest = call.sessionManager.logoutRequest ?: return null
 
     val websiteIRI = call.tenant.websiteIRI
-    val revokeUrl = URLBuilder(websiteIRI)
-        .apply {
-            appendPath("oauth", "revoke")
-        }
-        .build()
+    val revokeUrl = websiteIRI.appendPath("oauth", "revoke")
 
     return call.tenant.client.post(call.services.route(revokeUrl.encodedPath)) {
         headers {

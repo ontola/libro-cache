@@ -43,6 +43,7 @@ import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.measured
 import io.ontola.rdf.hextuples.Hextuple
+import io.ontola.util.appendPath
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.SerializationException
@@ -193,7 +194,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
 
     val includes = listOf(
         URLBuilder(call.tenant.websiteIRI).apply { encodedPath = call.request.uri }.buildString(),
-        call.tenant.websiteIRI.toString() + "/ns/core",
+        call.tenant.websiteIRI.appendPath("ns", "core").toString(),
     ) + (head.includeResources ?: emptyList())
 
     val ctx = call.pageRenderContextFromCall()

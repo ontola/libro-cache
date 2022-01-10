@@ -24,8 +24,8 @@ import io.ontola.cache.document.indexPage
 import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
-import io.ontola.cache.util.filename
 import io.ontola.cache.util.measured
+import io.ontola.util.filename
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.encodeToStream
 

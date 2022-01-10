@@ -17,7 +17,7 @@ fun generateTestAccessTokenPair(
     val accessToken = JWT
         .create()
         .withClaim("application_id", config.clientId)
-        .withIssuer(config.oidcUrl)
+        .withIssuer(config.oidcUrl.toString())
         .withIssuedAt(Date.from(Clock.System.now().toJavaInstant()))
         .withExpiresAt(Date.from(Clock.System.now().plus(1.hours).toJavaInstant()))
         .withClaim("scopes", listOf(userType.name.lowercase()))

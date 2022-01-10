@@ -10,6 +10,7 @@ import io.ktor.server.routing.get
 import io.ktor.util.AttributeKey
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.tenantization.tenant
+import io.ontola.util.appendPath
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -21,7 +22,7 @@ fun Routing.mountManifest() {
 
         call.logger.debug { "Requested manifest from external (via handler)" }
 
-        if (call.tenant.websiteIRI.fullPath + "/manifest.json" != call.request.uri) {
+        if (call.tenant.websiteIRI.appendPath("manifest.json").fullPath != call.request.uri) {
             return@get call.respond(HttpStatusCode.NotFound)
         }
 

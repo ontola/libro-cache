@@ -2,6 +2,7 @@ package io.ontola.cache.plugins
 
 import com.bugsnag.Bugsnag
 import io.ktor.client.HttpClient
+import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCallPipeline
 import io.ktor.server.application.ApplicationPlugin
 import io.ktor.server.application.call
@@ -48,7 +49,7 @@ data class SessionsConfig(
     /**
      * The url of the OIDC identity provider
      */
-    val oidcUrl: String,
+    val oidcUrl: Url,
 ) {
     companion object {
         fun forTesting(): SessionsConfig = SessionsConfig(
@@ -56,7 +57,7 @@ data class SessionsConfig(
             jwtEncryptionToken = "jwtEncryptionToken",
             clientId = "0",
             clientSecret = "",
-            oidcUrl = "https://oidcserver.test",
+            oidcUrl = Url("https://oidcserver.test"),
             oAuthToken = "",
         )
     }
@@ -380,7 +381,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
                     clientId = oidcConfig.property("clientId").getString(),
                     clientSecret = oidcConfig.property("clientSecret").getString(),
                     oAuthToken = oidcConfig.property("oAuthToken").getString(),
-                    oidcUrl = oidcConfig.property("url").getString(),
+                    oidcUrl = Url(oidcConfig.property("url").getString()),
                 )
             }
         }

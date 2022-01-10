@@ -8,6 +8,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
+import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -74,6 +75,7 @@ import io.ontola.cache.tenantization.Tenantization
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.isHtmlAccept
 import io.ontola.cache.util.mountWebSocketProxy
+import io.ontola.util.appendPath
 import kotlin.collections.set
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
@@ -286,7 +288,7 @@ fun Application.module(
         val loginTransform = { req: ApplicationRequest ->
             val websiteIri = req.header("website-iri")
 
-            URLBuilder("$websiteIri/oauth/token").apply {
+            URLBuilder(Url(websiteIri!!).appendPath("oauth", "token")).apply {
                 parameters.apply {
                     append("client_id", config.sessions.clientId)
                     append("client_secret", config.sessions.clientSecret)
@@ -299,6 +301,7 @@ fun Application.module(
         binaryPaths = listOf(
             "/assets/",
             "/media_objects/",
+            "/photos/",
         )
         excludedPaths = listOf(
             "/_testing/setSession",

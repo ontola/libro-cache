@@ -2,6 +2,7 @@ package io.ontola.cache.plugins
 
 import com.auth0.jwt.interfaces.JWTVerifier
 import io.ktor.client.HttpClient
+import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.ApplicationCallPipeline
 import io.ktor.server.application.ApplicationPlugin
@@ -22,7 +23,7 @@ class CacheSession(private val configuration: Configuration) {
         lateinit var oidcClientId: String
         lateinit var oidcClientSecret: String
         lateinit var oAuthToken: String
-        lateinit var oidcUrl: String
+        lateinit var oidcUrl: Url
     }
 
     private fun intercept(context: PipelineContext<Unit, ApplicationCall>) {

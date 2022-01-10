@@ -10,7 +10,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.URLBuilder
+import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ontola.cache.plugins.CacheSession
 import io.ontola.util.appendPath
@@ -91,10 +91,8 @@ class SessionRefresher(private val configuration: CacheSession.Configuration) {
 
     private suspend fun refreshToken(userToken: String, refreshToken: String): OIDCTokenResponse {
         val issuer = JWT.decode(userToken).issuer
-        val tokenUri = URLBuilder(issuer).apply { appendPath("oauth", "token") }.build()
-        val oidcTokenUri = URLBuilder(configuration.oidcUrl)
-            .apply { appendPath(tokenUri.fullPath.split("/")) }
-            .build()
+        val tokenUri = Url(issuer).appendPath("oauth", "token")
+        val oidcTokenUri = configuration.oidcUrl.appendPath(tokenUri.fullPath)
 
         val response = configuration.client.post(oidcTokenUri) {
             expectSuccess = false

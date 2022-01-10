@@ -24,8 +24,8 @@ import io.ontola.cache.sessions.OIDCRequest
 import io.ontola.cache.sessions.OIDCTokenResponse
 import io.ontola.cache.tenantization.TenantFinderResponse
 import io.ontola.cache.util.CacheHttpHeaders
-import io.ontola.cache.util.fullUrl
-import io.ontola.cache.util.withoutProto
+import io.ontola.util.fullUrl
+import io.ontola.util.withoutProto
 import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString

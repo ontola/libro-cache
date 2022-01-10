@@ -26,6 +26,7 @@ import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.copy
 import io.ontola.cache.util.preferredLanguage
 import io.ontola.cache.util.proxySafeHeaders
+import io.ontola.util.appendPath
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -147,9 +148,8 @@ class SessionManager(
 
     private suspend fun guestToken(): OIDCTokenResponse {
         val serviceToken = configuration.oAuthToken
-        val path = "${call.tenant.websiteIRI.fullPath}/oauth/token"
-
-        val response = call.application.cacheConfig.client.post("${configuration.oidcUrl}$path") {
+        val path = call.tenant.websiteIRI.appendPath("oauth", "token").fullPath
+        val response = call.application.cacheConfig.client.post(configuration.oidcUrl.appendPath(path)) {
             expectSuccess = false
 
             headers {

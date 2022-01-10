@@ -5,6 +5,7 @@ import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.path
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.origin
+import io.ontola.util.origin
 import mu.KLogger
 
 private fun Boolean.toInt(): Int = if (this) 1 else 0

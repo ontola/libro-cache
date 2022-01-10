@@ -8,6 +8,7 @@ import io.ktor.server.application.call
 import io.ktor.server.application.plugin
 import io.ktor.server.config.ApplicationConfig
 import io.ktor.util.AttributeKey
+import io.ontola.util.appendPath
 import kotlin.properties.Delegates
 
 data class Service(
@@ -22,7 +23,7 @@ data class Services(val services: List<Service>) {
         val service = services.find { service -> service.match.containsMatchIn(path) }
             ?: throw IllegalStateException("No service matched")
 
-        return Url("${service.url}$path")
+        return Url(service.url).appendPath(path)
     }
 
     fun resolve(path: String): Service {
