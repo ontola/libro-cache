@@ -1,7 +1,6 @@
 package io.ontola.cache.dataproxy
 
 import io.ktor.http.ContentType
-import io.ktor.http.HttpMethod
 import io.ktor.http.Url
 import io.ktor.http.parseHeaderValue
 import io.ktor.server.application.ApplicationCall
@@ -25,9 +24,9 @@ internal fun Configuration.shouldProxy(call: ApplicationCall): Boolean {
     val ext = if (path.contains(".")) path.split(".").lastOrNull() else null
     val isDataReqByExtension = ext?.let { extensions.contains(it) } ?: false
     val isDataReqByAccept = contentTypes.intersect(accept).isNotEmpty()
+    val isDataReqByMethod = methods.contains(call.request.httpMethod)
     val isBinaryRequest = isBinaryRequest(uri)
-    val isBlindPost = blindPostPaths.any { uri.encodedPath.contains(it) } && call.request.httpMethod === HttpMethod.Post
-    val isProxyableComponent = isDataReqByExtension || isDataReqByAccept || isBinaryRequest || isBlindPost
+    val isProxyableComponent = isDataReqByExtension || isDataReqByAccept || isDataReqByMethod || isBinaryRequest
 
     return isNotExcluded && isProxyableComponent
 }

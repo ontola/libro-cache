@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.Url
 import io.ktor.server.request.ApplicationRequest
 import io.ontola.cache.util.CacheHttpHeaders
@@ -12,7 +13,7 @@ import io.ontola.cache.util.isDownloadRequest
 class Configuration {
     var transforms = mutableMapOf<Regex, (req: ApplicationRequest) -> String>()
     var binaryPaths: List<String> = emptyList()
-    var blindPostPaths: List<String> = emptyList()
+    var methods: List<HttpMethod> = emptyList()
     var contentTypes: List<ContentType> = emptyList()
     var extensions: List<String> = emptyList()
     var excludedPaths: List<String> = emptyList()

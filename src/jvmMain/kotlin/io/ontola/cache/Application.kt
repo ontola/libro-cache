@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.HttpClient
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.fullPath
@@ -299,15 +300,13 @@ fun Application.module(
             "/assets/",
             "/media_objects/",
         )
-        blindPostPaths = listOf(
-            "/follows/",
-        )
         excludedPaths = listOf(
-            "/link-lib/bulk",
             "/_testing/setSession",
             cspReportEndpointPath,
             "/d/health",
-            "/csp-reports",
+            "/link-lib/bulk",
+            "/*/logout",
+            "/logout",
             "static",
         )
         contentTypes = listOf(
@@ -331,6 +330,12 @@ fun Application.module(
             "rdf",
             "csv",
             "pdf",
+        )
+        methods = listOf(
+            HttpMethod.Post,
+            HttpMethod.Put,
+            HttpMethod.Patch,
+            HttpMethod.Delete,
         )
         transforms[Regex("^/login$")] = loginTransform
         transforms[Regex("^/[\\w/]*/login$")] = loginTransform
