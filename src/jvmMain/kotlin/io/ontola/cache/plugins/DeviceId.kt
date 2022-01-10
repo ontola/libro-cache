@@ -43,7 +43,7 @@ class DeviceId(private val configuration: Configuration) {
             val configuration = Configuration().apply(configure)
             val feature = DeviceId(configuration)
 
-            pipeline.intercept(ApplicationCallPipeline.Features) {
+            pipeline.intercept(ApplicationCallPipeline.Plugins) {
                 feature.intercept(this)
             }
 

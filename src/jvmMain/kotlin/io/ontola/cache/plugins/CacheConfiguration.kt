@@ -433,7 +433,7 @@ class CacheConfiguration {
             val feature = CacheConfiguration()
             pipeline.attributes.put(CacheConfigurationKey, configuration.config)
 
-            pipeline.intercept(ApplicationCallPipeline.Features) {
+            pipeline.intercept(ApplicationCallPipeline.Plugins) {
                 call.attributes.put(CacheConfigurationKey, configuration.config)
             }
             return feature

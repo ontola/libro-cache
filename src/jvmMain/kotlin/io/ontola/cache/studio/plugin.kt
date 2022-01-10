@@ -118,7 +118,7 @@ class Studio(private val configuration: Configuration) {
             }.apply(configure)
             val feature = Studio(configuration)
 
-            pipeline.intercept(ApplicationCallPipeline.Features) {
+            pipeline.intercept(ApplicationCallPipeline.Plugins) {
                 feature.intercept(this)
             }
 

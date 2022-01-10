@@ -48,7 +48,7 @@ class CacheSession(private val configuration: Configuration) {
                 .apply(configure)
             val feature = CacheSession(configuration)
 
-            pipeline.intercept(ApplicationCallPipeline.Features) {
+            pipeline.intercept(ApplicationCallPipeline.Plugins) {
                 feature.intercept(this)
             }
 

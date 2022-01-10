@@ -112,7 +112,7 @@ class ServiceRegistry(private val configuration: Configuration) {
             val feature = ServiceRegistry(configuration)
             val services = Services.default(configuration)
 
-            pipeline.intercept(ApplicationCallPipeline.Features) {
+            pipeline.intercept(ApplicationCallPipeline.Plugins) {
                 this.call.attributes.put(ServiceRegistryKey, services)
             }
             return feature

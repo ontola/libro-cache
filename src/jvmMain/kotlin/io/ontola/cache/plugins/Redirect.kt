@@ -43,7 +43,7 @@ class Redirect(
                 config.storage,
             )
 
-            pipeline.intercept(ApplicationCallPipeline.Features) {
+            pipeline.intercept(ApplicationCallPipeline.Plugins) {
                 feature.intercept(this)
             }
 
