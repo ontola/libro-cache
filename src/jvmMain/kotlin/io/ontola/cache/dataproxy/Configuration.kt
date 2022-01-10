@@ -54,6 +54,10 @@ class Configuration {
         followRedirects = false
         expectSuccess = false
     }
+    val binaryClient = HttpClient(CIO) {
+        followRedirects = true
+        expectSuccess = false
+    }
 
     fun isBinaryRequest(uri: Url): Boolean {
         return binaryPaths.any { uri.encodedPath.contains(it) } || uri.isDownloadRequest()
