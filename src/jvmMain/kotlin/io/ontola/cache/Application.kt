@@ -304,7 +304,7 @@ fun Application.module(
 
         binaryPaths = listOf(
             "/assets/",
-            "/media_objects/",
+            "/photos/",
         )
         excludedPaths = listOf(
             Regex("^/_testing/setSession"),
@@ -315,7 +315,7 @@ fun Application.module(
             Regex("/static/"),
         )
         includedPaths = listOf(
-            "/photos/",
+            "/media_objects/",
         )
         contentTypes = listOf(
             ContentType.parse("application/hex+x-ndjson"),

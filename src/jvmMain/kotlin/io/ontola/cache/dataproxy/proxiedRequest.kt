@@ -28,7 +28,7 @@ internal suspend fun Configuration.proxiedRequest(
 
     return httpClient.request(call.services.route(path)) {
         this.method = method
-        setBody(body)
         proxyHeaders(call, session, useWebsiteIRI = false)
+        setBody(body)
     }
 }
