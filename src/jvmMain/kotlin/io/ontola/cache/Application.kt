@@ -74,6 +74,7 @@ import io.ontola.cache.statuspages.errorPage
 import io.ontola.cache.studio.Studio
 import io.ontola.cache.tenantization.Tenantization
 import io.ontola.cache.util.configureCallLogging
+import io.ontola.cache.util.configureClientLogging
 import io.ontola.cache.util.isHtmlAccept
 import io.ontola.cache.util.mountWebSocketProxy
 import io.ontola.util.appendPath
@@ -268,6 +269,7 @@ fun Application.module(
             "/csp-reports",
             "/static/",
             "/assets/",
+            "/photos/",
             "/f_assets/",
             "/__webpack_hmr",
         )
@@ -348,6 +350,10 @@ fun Application.module(
         binaryClient = HttpClient(CIO) {
             followRedirects = true
             expectSuccess = false
+            developmentMode = testing || this@module.cacheConfig.isDev
+            install(io.ktor.client.plugins.logging.Logging) {
+                configureClientLogging()
+            }
             if (testing || this@module.cacheConfig.isDev) disableCertValidation()
         }
     }
