@@ -65,11 +65,15 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
 
         val requestUri = config.proxiedUri(originalReq, call)
         val response = config.proxiedRequest(call, requestUri, originalReq.httpMethod, call.receiveChannel())
+        val rule = config.matchOrDefault(requestUri)
 
         val proxiedHeaders = response.headers
         val contentType = proxiedHeaders[HttpHeaders.ContentType]
         val contentLength = proxiedHeaders[HttpHeaders.ContentLength]
-        val headerBuilder = if (config.isBinaryRequest(Url(call.request.uri))) ::fileProxyHeaders else ::backendProxyHeaders
+        val headerBuilder = when (rule.includeCredentials) {
+            true -> ::trustedProxyHeaders
+            false -> ::untrustedProxyHeaders
+        }
 
         call.respond(
             object : OutgoingContent.WriteChannelContent() {
@@ -104,11 +108,12 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
 
                 call.logger.debug {
                     val path = call.request.path()
+                    val rule = configuration.matchOrDefault(path)
 
                     if (shouldProxyHttp)
-                        "Proxying request to backend: $path"
+                        "Proxying request to backend: $path, rule: $rule"
                     else
-                        "Processing request: $path"
+                        "Processing request: $path, rule: $rule"
                 }
 
                 if (shouldProxyHttp) {

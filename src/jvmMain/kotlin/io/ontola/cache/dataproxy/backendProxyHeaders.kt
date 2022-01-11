@@ -9,7 +9,7 @@ import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import java.util.Locale
 
-fun backendProxyHeaders(
+fun trustedProxyHeaders(
     config: Configuration,
     isDownloadRequest: Boolean,
     proxiedHeaders: Headers,

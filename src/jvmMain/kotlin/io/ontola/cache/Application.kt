@@ -44,6 +44,8 @@ import io.ontola.cache.csp.CSP
 import io.ontola.cache.csp.cspReportEndpointPath
 import io.ontola.cache.csp.mountCSP
 import io.ontola.cache.dataproxy.DataProxy
+import io.ontola.cache.dataproxy.ProxyClient
+import io.ontola.cache.dataproxy.ProxyRule
 import io.ontola.cache.health.mountHealth
 import io.ontola.cache.plugins.CSRFVerificationException
 import io.ontola.cache.plugins.CacheConfig
@@ -302,21 +304,21 @@ fun Application.module(
             }.build().fullPath
         }
 
-        binaryPaths = listOf(
-            "/assets/",
-            "/photos/",
+        rules = listOf(
+            ProxyRule(Regex("/manifest.json$")),
+            ProxyRule(Regex("/media_objects/"), client = ProxyClient.RedirectingBackend),
+
+            ProxyRule(Regex("/assets/"), client = ProxyClient.Binary, includeCredentials = false),
+            ProxyRule(Regex("/photos/"), client = ProxyClient.Binary),
+
+            ProxyRule(Regex("^/_testing/setSession"), exclude = true),
+            ProxyRule(Regex("^$cspReportEndpointPath"), exclude = true),
+            ProxyRule(Regex("^/d/health"), exclude = true),
+            ProxyRule(Regex("^/link-lib/bulk"), exclude = true),
+            ProxyRule(Regex("^/([\\w/]*/)?logout"), exclude = true),
+            ProxyRule(Regex("/static/"), exclude = true),
         )
-        excludedPaths = listOf(
-            Regex("^/_testing/setSession"),
-            Regex("^$cspReportEndpointPath"),
-            Regex("^/d/health"),
-            Regex("^/link-lib/bulk"),
-            Regex("^/([\\w/]*/)?logout"),
-            Regex("/static/"),
-        )
-        includedPaths = listOf(
-            "/media_objects/",
-        )
+
         contentTypes = listOf(
             ContentType.parse("application/hex+x-ndjson"),
             ContentType.parse("application/json"),

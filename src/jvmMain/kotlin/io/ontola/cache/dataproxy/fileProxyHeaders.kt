@@ -8,7 +8,7 @@ import io.ktor.util.filter
 import io.ontola.cache.util.VaryHeader
 import java.util.Locale
 
-fun fileProxyHeaders(
+fun untrustedProxyHeaders(
     config: Configuration,
     isDownloadRequest: Boolean,
     proxiedHeaders: Headers,

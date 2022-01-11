@@ -14,13 +14,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class FileProxyHeadersTest {
+class UntrustedProxyHeadersTest {
     @Test
     fun shouldSetVaryHeader() {
         val response = mockk<HttpResponse>()
         every { response.headers } answers { Headers.build {} }
 
-        val headers = fileProxyHeaders(
+        val headers = untrustedProxyHeaders(
             config = Configuration(),
             isDownloadRequest = false,
             proxiedHeaders = Headers.build {},
@@ -44,7 +44,7 @@ class FileProxyHeadersTest {
         val setAuthorization = mockk<(String, String) -> Unit>()
         every { setAuthorization(any(), any()) } returns Unit
 
-        fileProxyHeaders(
+        untrustedProxyHeaders(
             config = Configuration(),
             isDownloadRequest = false,
             proxiedHeaders = Headers.build {},
@@ -66,7 +66,7 @@ class FileProxyHeadersTest {
         val setAuthorization = mockk<(String, String) -> Unit>()
         every { setAuthorization(any(), any()) } returns Unit
 
-        val headers = fileProxyHeaders(
+        val headers = untrustedProxyHeaders(
             config = Configuration(),
             isDownloadRequest = false,
             proxiedHeaders = Headers.build {

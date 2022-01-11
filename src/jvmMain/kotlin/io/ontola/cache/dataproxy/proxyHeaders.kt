@@ -29,7 +29,6 @@ internal fun HttpRequestBuilder.proxyHeaders(
         copy(HttpHeaders.Accept, request)
         copy(HttpHeaders.ContentType, request)
         copy(HttpHeaders.Forwarded, request)
-        copy(HttpHeaders.Host, request)
         copy(HttpHeaders.Origin, request)
         copy(HttpHeaders.Referrer, request)
         copy(HttpHeaders.UserAgent, request)

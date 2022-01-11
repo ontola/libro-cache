@@ -13,13 +13,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class BackendProxyHeadersTest {
+class TrustedProxyHeadersTest {
     @Test
     fun shouldSetVaryHeader() {
         val response = mockk<HttpResponse>()
         every { response.headers } answers { Headers.build {} }
 
-        val headers = backendProxyHeaders(
+        val headers = trustedProxyHeaders(
             config = Configuration(),
             isDownloadRequest = false,
             proxiedHeaders = Headers.build {},
@@ -43,7 +43,7 @@ class BackendProxyHeadersTest {
         val setAuthorization = mockk<(String, String) -> Unit>()
         every { setAuthorization(any(), any()) } returns Unit
 
-        backendProxyHeaders(
+        trustedProxyHeaders(
             config = Configuration(),
             isDownloadRequest = false,
             proxiedHeaders = Headers.build {},
@@ -65,7 +65,7 @@ class BackendProxyHeadersTest {
         val setAuthorization = mockk<(String, String) -> Unit>()
         every { setAuthorization(any(), any()) } returns Unit
 
-        val headers = backendProxyHeaders(
+        val headers = trustedProxyHeaders(
             config = Configuration(),
             isDownloadRequest = false,
             proxiedHeaders = Headers.build {

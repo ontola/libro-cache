@@ -5,21 +5,39 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
-import io.ktor.http.Url
 import io.ktor.server.request.ApplicationRequest
 import io.ontola.cache.util.CacheHttpHeaders
-import io.ontola.cache.util.isDownloadRequest
+
+enum class ProxyClient {
+    VerbatimBackend,
+    RedirectingBackend,
+    Binary,
+}
+
+data class ProxyRule(
+    /**
+     * Determines if the rule is active
+     */
+    val match: Regex,
+    /**
+     * Set to true to make the rule exclude matches from proxying.
+     */
+    val exclude: Boolean = false,
+    /**
+     * Whether to send credentials in the proxied request.
+     */
+    val includeCredentials: Boolean = true,
+    /**
+     * The client to use if this rule matches.
+     */
+    val client: ProxyClient = ProxyClient.VerbatimBackend,
+)
 
 class Configuration {
     /**
      * Allows request paths to be transformed before being sent to the proxy destination.
      */
     var transforms = mutableMapOf<Regex, (req: ApplicationRequest) -> String>()
-
-    /**
-     * Included paths and sub-paths will be proxied if not excluded otherwise.
-     */
-    var binaryPaths: List<String> = emptyList()
 
     /**
      * These methods will be proxied.
@@ -31,22 +49,12 @@ class Configuration {
      */
     var contentTypes: List<ContentType> = emptyList()
 
+    var rules: List<ProxyRule> = emptyList()
+
     /**
      * These extensions will be proxied.
      */
     var extensions: List<String> = emptyList()
-
-    /**
-     * These paths will not be proxied.
-     * Paths are matched exactly. Exclusion criteria take precedence over inclusion criteria.
-     */
-    var excludedPaths: List<Regex> = emptyList()
-
-    /**
-     * These paths will be proxied.
-     * Paths are matched by prefix. Exclusion criteria take precedence over inclusion criteria.
-     */
-    var includedPaths: List<String> = emptyList()
 
     val unsafeList = listOf(
         CacheHttpHeaders.NewAuthorization.lowercase(),
@@ -58,13 +66,28 @@ class Configuration {
         HttpHeaders.Upgrade.lowercase(),
         *HttpHeaders.UnsafeHeadersList.toTypedArray()
     )
-    val client = HttpClient(CIO) {
+    val verbatimClient = HttpClient(CIO) {
         followRedirects = false
+        expectSuccess = false
+    }
+    val redirectingClient = HttpClient(CIO) {
+        followRedirects = true
         expectSuccess = false
     }
     lateinit var binaryClient: HttpClient
 
-    fun isBinaryRequest(uri: Url): Boolean {
-        return binaryPaths.any { uri.encodedPath.contains(it) } || uri.isDownloadRequest()
+    var defaultRule = ProxyRule(
+        match = Regex(""),
+        exclude = false,
+        includeCredentials = true,
+        client = ProxyClient.RedirectingBackend,
+    )
+
+    fun match(path: String): ProxyRule? {
+        return rules.find { !it.exclude && it.match.containsMatchIn(path) }
+    }
+
+    fun matchOrDefault(path: String): ProxyRule {
+        return match(path) ?: defaultRule
     }
 }

@@ -28,7 +28,7 @@ class ShouldProxyTest {
 
     @Test
     fun shouldNotProxyManifestRequests() {
-        val config = Configuration().apply {
+        Configuration().apply {
             methods = listOf(HttpMethod.Get)
         }
         val rootRequest = createRequest(uri = "/manifest.json")
@@ -42,9 +42,9 @@ class ShouldProxyTest {
     fun shouldProxyExcludedPaths() {
         val config = Configuration().apply {
             methods = listOf(HttpMethod.Get)
-            excludedPaths = listOf(
-                Regex("/tenant/excluded$"),
-                Regex("/excludedSegment/"),
+            rules = listOf(
+                ProxyRule(Regex("/tenant/excluded$"), exclude = true),
+                ProxyRule(Regex("/excludedSegment/"), exclude = true),
             )
         }
         val excludedRequest = createRequest(uri = "/tenant/excluded")
