@@ -46,9 +46,9 @@ suspend fun <T : Any?> PipelineContext<*, ApplicationCall>.measuredHit(vararg na
     val postfix = if (missed) "miss" else "hit"
     call.logger.debug {
         if (missed) {
-            "[cache] $postfix for $name"
+            "[cache] $postfix for ${name.joinToString(":")}"
         } else {
-            "[cache] $postfix for $name"
+            "[cache] $postfix for ${name.joinToString(":")}"
         }
     }
     val measureName = buildList {

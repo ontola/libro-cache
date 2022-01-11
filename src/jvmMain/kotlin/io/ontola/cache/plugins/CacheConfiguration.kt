@@ -403,10 +403,20 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
 
     fun print() {
         logger.info {
+            val logLevel = when {
+                logger.isTraceEnabled -> "Trace"
+                logger.isDebugEnabled -> "Debug"
+                logger.isInfoEnabled -> "Info"
+                logger.isWarnEnabled -> "Warn"
+                logger.isErrorEnabled -> "Error"
+                else -> "Unknown"
+            }
+
             arrayOf(
                 "Config",
                 "Env: $envKind",
                 "Testing mode: $testing",
+                "Log level: $logLevel",
                 "Default lang: $defaultLanguage",
                 "Invalidator: $enableInvalidator",
                 "Cache exp: ${if (cacheExpiration == null) "never" else "$cacheExpiration seconds"}",

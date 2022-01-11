@@ -2,11 +2,13 @@ package io.ontola.cache.dataproxy
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.server.request.ApplicationRequest
 import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.configureClientLogging
 
 enum class ProxyClient {
     VerbatimBackend,
@@ -69,10 +71,16 @@ class Configuration {
     val verbatimClient = HttpClient(CIO) {
         followRedirects = false
         expectSuccess = false
+        install(Logging) {
+            configureClientLogging()
+        }
     }
     val redirectingClient = HttpClient(CIO) {
         followRedirects = true
         expectSuccess = false
+        install(Logging) {
+            configureClientLogging()
+        }
     }
     lateinit var binaryClient: HttpClient
 

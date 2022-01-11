@@ -16,7 +16,6 @@ import io.ktor.server.application.ApplicationPlugin
 import io.ktor.server.application.call
 import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.httpMethod
-import io.ktor.server.request.path
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
@@ -107,13 +106,13 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
                 val shouldProxyHttp = configuration.shouldProxy(call.request)
 
                 call.logger.debug {
-                    val path = call.request.path()
-                    val rule = configuration.matchOrDefault(path)
+                    val uri = call.request.uri
+                    val rule = configuration.matchOrDefault(uri)
 
                     if (shouldProxyHttp)
-                        "Proxying request to backend: $path, rule: $rule"
+                        "Proxying request to backend: $uri, rule: $rule"
                     else
-                        "Processing request: $path, rule: $rule"
+                        "Processing request: $uri, rule: $rule"
                 }
 
                 if (shouldProxyHttp) {
