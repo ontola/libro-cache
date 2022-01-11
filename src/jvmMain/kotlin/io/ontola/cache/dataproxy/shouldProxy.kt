@@ -26,7 +26,12 @@ internal fun Configuration.shouldProxy(request: ApplicationRequest): Boolean {
     val isDataReqByAccept = contentTypes.intersect(accept).isNotEmpty()
     val isDataReqByMethod = methods.contains(request.httpMethod)
     val isBinaryRequest = isBinaryRequest(uri)
-    val isProxyableComponent = isDataReqByExtension || isDataReqByAccept || isDataReqByMethod || isBinaryRequest
+    val isIncluded = includedPaths.any { path.contains(it) }
+    val isProxyableComponent = isDataReqByExtension ||
+            isDataReqByAccept ||
+            isDataReqByMethod ||
+            isBinaryRequest ||
+            isIncluded
 
     return isNotExcluded && isProxyableComponent
 }

@@ -11,16 +11,24 @@ import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.tenantization.tenantOrNull
 
-internal suspend fun Configuration.proxiedRequest(call: ApplicationCall, path: String, method: HttpMethod, body: Any): HttpResponse {
+internal suspend fun Configuration.proxiedRequest(
+    call: ApplicationCall,
+    path: String,
+    method: HttpMethod,
+    body: Any,
+): HttpResponse {
     if (call.tenantOrNull != null) {
         call.sessionManager.ensure()
     }
 
-    val httpClient = if (isBinaryRequest(Url(call.request.uri))) binaryClient else client
+    val isBinaryRequest = isBinaryRequest(Url(call.request.uri))
+
+    val httpClient = if (isBinaryRequest) binaryClient else client
+    val session = if (isBinaryRequest) null else call.sessionManager.session
 
     return httpClient.request(call.services.route(path)) {
         this.method = method
         setBody(body)
-        proxyHeaders(call, call.sessionManager.session, useWebsiteIRI = false)
+        proxyHeaders(call, session, useWebsiteIRI = false)
     }
 }

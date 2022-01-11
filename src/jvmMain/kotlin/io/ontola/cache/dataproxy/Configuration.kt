@@ -41,11 +41,19 @@ class Configuration {
      * Paths are matched exactly. Exclusion criteria take precedence over inclusion criteria.
      */
     var excludedPaths: List<Regex> = emptyList()
+
+    /**
+     * These paths will be proxied.
+     * Paths are matched by prefix. Exclusion criteria take precedence over inclusion criteria.
+     */
+    var includedPaths: List<String> = emptyList()
+
     val unsafeList = listOf(
         CacheHttpHeaders.NewAuthorization.lowercase(),
         CacheHttpHeaders.NewRefreshToken.lowercase(),
         HttpHeaders.ContentLength.lowercase(),
         HttpHeaders.ContentType.lowercase(),
+        HttpHeaders.SetCookie.lowercase(),
         HttpHeaders.TransferEncoding.lowercase(),
         HttpHeaders.Upgrade.lowercase(),
         *HttpHeaders.UnsafeHeadersList.toTypedArray()

@@ -2,7 +2,6 @@ package io.ontola.cache.dataproxy
 
 import io.ktor.client.request.forms.FormDataContent
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentDisposition
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
@@ -23,15 +22,11 @@ import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.util.AttributeKey
 import io.ktor.util.InternalAPI
-import io.ktor.util.filter
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.sessionManager
-import io.ontola.cache.util.CacheHttpHeaders
-import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.isDownloadRequest
-import java.util.Locale
 
 private val DataProxyKey = AttributeKey<DataProxy>("DataProxyKey")
 
@@ -66,6 +61,7 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
     private suspend fun interceptRequest(call: ApplicationCall) {
         val originalReq = call.request
         val uri = Url(originalReq.uri)
+        val isDownloadRequest = uri.isDownloadRequest()
 
         val requestUri = config.proxiedUri(originalReq, call)
         val response = config.proxiedRequest(call, requestUri, originalReq.httpMethod, call.receiveChannel())
@@ -73,35 +69,20 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
         val proxiedHeaders = response.headers
         val contentType = proxiedHeaders[HttpHeaders.ContentType]
         val contentLength = proxiedHeaders[HttpHeaders.ContentLength]
+        val headerBuilder = if (config.isBinaryRequest(Url(call.request.uri))) ::fileProxyHeaders else ::backendProxyHeaders
 
         call.respond(
             object : OutgoingContent.WriteChannelContent() {
                 override val contentLength: Long? = contentLength?.toLong()
                 override val contentType: ContentType? = contentType?.let { ContentType.parse(it) }
-                override val headers: Headers = Headers.build {
-                    set(HttpHeaders.Vary, VaryHeader)
+                override val headers: Headers = headerBuilder(
+                    config,
+                    isDownloadRequest,
+                    proxiedHeaders,
+                    call.sessionManager::setAuthorization,
+                    response,
+                )
 
-                    if (uri.isDownloadRequest()) {
-                        append(HttpHeaders.ContentDisposition, ContentDisposition.Attachment.disposition)
-                    }
-
-                    newAuthorizationBulk(response)?.let {
-                        call.sessionManager.setAuthorization(
-                            it.accessToken,
-                            it.refreshToken,
-                        )
-
-                        it.action?.let { action ->
-                            set(CacheHttpHeaders.ExecAction, action)
-                        }
-                    }
-
-                    appendAll(
-                        proxiedHeaders.filter { key, _ ->
-                            !config.unsafeList.contains(key.lowercase(Locale.getDefault()))
-                        }
-                    )
-                }
                 override val status: HttpStatusCode = response.status
                 override suspend fun writeTo(channel: ByteWriteChannel) {
                     response.content.copyAndClose(channel)
