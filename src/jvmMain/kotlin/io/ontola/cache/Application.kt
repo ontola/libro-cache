@@ -3,6 +3,7 @@ package io.ontola.cache
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -76,6 +77,7 @@ import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.isHtmlAccept
 import io.ontola.cache.util.mountWebSocketProxy
 import io.ontola.util.appendPath
+import io.ontola.util.disableCertValidation
 import kotlin.collections.set
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
@@ -342,6 +344,12 @@ fun Application.module(
         )
         transforms[Regex("^/login$")] = loginTransform
         transforms[Regex("^/[\\w/]*/login$")] = loginTransform
+
+        binaryClient = HttpClient(CIO) {
+            followRedirects = true
+            expectSuccess = false
+            if (testing || this@module.cacheConfig.isDev) disableCertValidation()
+        }
     }
 
     routing {
