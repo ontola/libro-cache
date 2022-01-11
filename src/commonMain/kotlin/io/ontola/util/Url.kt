@@ -29,3 +29,14 @@ fun Url.withoutProto(): String = "${origin().drop(toString().indexOf(authority))
 val Url.hostWithPortIfRequired: String get() = if (port == protocol.defaultPort) host else hostWithPort
 
 val Url.fullUrl: String get() = "${protocol.name}://$hostWithPortIfRequired$fullPath"
+
+/**
+ * Rebase [fullPath] on [this], keeping any previous path segments and query parameters.
+ */
+fun Url.rebase(fullPath: String): Url = URLBuilder(this).apply {
+    Url(fullPath).let {
+        pathSegments = (pathSegments + it.pathSegments).filter(String::isNotBlank)
+        encodedFragment = it.encodedFragment
+        parameters.appendAll(it.parameters)
+    }
+}.build()
