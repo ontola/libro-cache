@@ -15,6 +15,7 @@ import kotlinx.css.Position
 import kotlinx.css.QuotedString
 import kotlinx.css.TextAlign
 import kotlinx.css.VerticalAlign
+import kotlinx.css.a
 import kotlinx.css.alignItems
 import kotlinx.css.background
 import kotlinx.css.backgroundColor
@@ -24,9 +25,12 @@ import kotlinx.css.borderCollapse
 import kotlinx.css.borderSpacing
 import kotlinx.css.bottom
 import kotlinx.css.button
+import kotlinx.css.color
 import kotlinx.css.content
 import kotlinx.css.display
+import kotlinx.css.em
 import kotlinx.css.flexDirection
+import kotlinx.css.fontFamily
 import kotlinx.css.fontSize
 import kotlinx.css.fontStyle
 import kotlinx.css.height
@@ -36,16 +40,19 @@ import kotlinx.css.left
 import kotlinx.css.lineHeight
 import kotlinx.css.listStyleType
 import kotlinx.css.margin
+import kotlinx.css.marginBottom
 import kotlinx.css.maxWidth
 import kotlinx.css.minWidth
 import kotlinx.css.opacity
 import kotlinx.css.overflow
 import kotlinx.css.overflowY
+import kotlinx.css.p
 import kotlinx.css.padding
 import kotlinx.css.pct
 import kotlinx.css.position
 import kotlinx.css.properties.IterationCount
 import kotlinx.css.properties.LineHeight
+import kotlinx.css.properties.TextDecoration
 import kotlinx.css.properties.Timing
 import kotlinx.css.properties.animation
 import kotlinx.css.properties.s
@@ -57,6 +64,7 @@ import kotlinx.css.rgb
 import kotlinx.css.right
 import kotlinx.css.table
 import kotlinx.css.textAlign
+import kotlinx.css.textDecoration
 import kotlinx.css.top
 import kotlinx.css.verticalAlign
 import kotlinx.css.vh
@@ -113,8 +121,29 @@ val preloaderCss = CssBuilder().apply {
     // Preloader
 
     html {
+        width = 100.pct
         height = 100.pct
         backgroundColor = Color.white
+        put("touch-action", "manipulation")
+    }
+
+    a {
+        // Prevents browser default color
+        color = Color.inherit
+        textDecoration = TextDecoration.none
+    }
+
+    p {
+        marginBottom = 1.em
+    }
+
+    "::selection" {
+        backgroundColor = Color.pink
+        color = Color("#010101")
+    }
+
+    "h1, h2, h3, h4, h5, h6" {
+        fontFamily = "'Helvetica Neue', Helvetica, Arial, sans-serif"
     }
 
     body {
