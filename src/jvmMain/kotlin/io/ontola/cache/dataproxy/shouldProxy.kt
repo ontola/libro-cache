@@ -18,7 +18,7 @@ internal fun Configuration.shouldProxy(request: ApplicationRequest): Boolean {
     val path = request.path()
 
     val isManifestRequest = request.document() == "manifest.json"
-    val isPathExcluded = excludedPaths.contains(path)
+    val isPathExcluded = excludedPaths.any { excludedPath -> excludedPath.containsMatchIn(path) }
     val isNotExcluded = !isManifestRequest && !isPathExcluded
 
     val ext = if (path.contains(".")) path.split(".").lastOrNull() else null

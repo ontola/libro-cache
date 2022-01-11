@@ -308,13 +308,12 @@ fun Application.module(
             "/photos/",
         )
         excludedPaths = listOf(
-            "/_testing/setSession",
-            cspReportEndpointPath,
-            "/d/health",
-            "/link-lib/bulk",
-            "/*/logout",
-            "/logout",
-            "static",
+            Regex("^/_testing/setSession"),
+            Regex("^$cspReportEndpointPath"),
+            Regex("^/d/health"),
+            Regex("^/link-lib/bulk"),
+            Regex("^/([\\w/]*/)?logout"),
+            Regex("/static/"),
         )
         contentTypes = listOf(
             ContentType.parse("application/hex+x-ndjson"),
@@ -344,8 +343,7 @@ fun Application.module(
             HttpMethod.Patch,
             HttpMethod.Delete,
         )
-        transforms[Regex("^/login$")] = loginTransform
-        transforms[Regex("^/[\\w/]*/login$")] = loginTransform
+        transforms[Regex("^/([\\w/]*/)?login$")] = loginTransform
 
         binaryClient = HttpClient(CIO) {
             followRedirects = true

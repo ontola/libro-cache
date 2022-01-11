@@ -40,7 +40,7 @@ class Configuration {
      * These paths will not be proxied.
      * Paths are matched exactly. Exclusion criteria take precedence over inclusion criteria.
      */
-    var excludedPaths: List<String> = emptyList()
+    var excludedPaths: List<Regex> = emptyList()
     val unsafeList = listOf(
         CacheHttpHeaders.NewAuthorization.lowercase(),
         CacheHttpHeaders.NewRefreshToken.lowercase(),

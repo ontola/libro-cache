@@ -42,13 +42,21 @@ class ShouldProxyTest {
     fun shouldProxyExcludedPaths() {
         val config = Configuration().apply {
             methods = listOf(HttpMethod.Get)
-            excludedPaths = listOf("/tenant/excluded")
+            excludedPaths = listOf(
+                Regex("/tenant/excluded$"),
+                Regex("/excludedSegment/"),
+            )
         }
         val excludedRequest = createRequest(uri = "/tenant/excluded")
         val includedSubresourceRequest = createRequest(uri = "/tenant/excluded/resource")
 
+        val segmentRequest = createRequest(uri = "/excludedSegment/")
+        val segmentSubresourceRequest = createRequest(uri = "/excludedSegment/resource")
+
         assertEquals(false, config.shouldProxy(excludedRequest))
         assertEquals(true, config.shouldProxy(includedSubresourceRequest))
+        assertEquals(false, config.shouldProxy(segmentRequest))
+        assertEquals(false, config.shouldProxy(segmentSubresourceRequest))
     }
 
     @Test
