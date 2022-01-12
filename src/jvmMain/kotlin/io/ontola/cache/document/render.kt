@@ -23,6 +23,9 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.apache.commons.text.translate.AggregateTranslator
+import org.apache.commons.text.translate.EntityArrays
+import org.apache.commons.text.translate.LookupTranslator
 import kotlin.collections.set
 
 @Serializable
@@ -138,12 +141,18 @@ fun BODY.themeBlock(manifest: Manifest) {
     }
 }
 
+private val JsonInHtmlEscaper = AggregateTranslator(
+    LookupTranslator(EntityArrays.BASIC_ESCAPE.filter { it.key != "\"" }),
+    LookupTranslator(EntityArrays.ISO8859_1_ESCAPE),
+    LookupTranslator(EntityArrays.HTML40_EXTENDED_ESCAPE)
+)
+
 fun BODY.seedBlock(nonce: String, data: List<Hextuple>) {
     script(type = "application/hex+x-ndjson") {
         this.nonce = nonce
         attributes["id"] = "seed"
         unsafe {
-            +data.joinToString("\n") { Json.encodeToString(it.toArray()) }
+            +data.joinToString("\n") { JsonInHtmlEscaper.translate(Json.encodeToString(it.toArray())) }
         }
     }
     script(type = "application/javascript") {

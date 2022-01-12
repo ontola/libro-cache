@@ -102,6 +102,7 @@ kotlin {
                 implementation("org.graalvm.truffle:truffle-dsl-processor:$graal_version")
 
                 implementation("commons-codec:commons-codec:1.15")
+                implementation("org.apache.commons:commons-text:1.9")
 
                 implementation("io.lettuce:lettuce-core:$lettuce_version")
 
@@ -114,6 +115,7 @@ kotlin {
 
                 implementation("io.mockk:mockk:1.12.1")
                 implementation("org.jetbrains.kotlin:kotlin-test")
+                implementation("it.skrape:skrapeit:1.1.7")
             }
         }
     }

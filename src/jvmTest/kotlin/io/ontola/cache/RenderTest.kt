@@ -9,8 +9,14 @@ import io.ktor.server.testing.handleRequest
 import io.ontola.cache.csp.CSPValue
 import io.ontola.cache.csp.cspReportEndpointPath
 import io.ontola.cache.csp.nonce
+import io.ontola.cache.document.seedBlock
 import io.ontola.cache.routes.HeadResponse
+import io.ontola.rdf.hextuples.DataType
+import io.ontola.rdf.hextuples.Hextuple
+import it.skrape.core.htmlDocument
 import kotlinx.coroutines.runBlocking
+import kotlinx.html.body
+import kotlinx.html.stream.createHTML
 import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -64,6 +70,39 @@ class RenderTest {
                         ?.toLong()
                         ?: 0L
                     assertEquals(31536000L, hstsMaxAge)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testSeedEscaping() {
+        runBlocking {
+            val data = listOf(
+                Hextuple(
+                    subject = "subject",
+                    predicate = "predicate",
+                    value = "<script src='http://test.com/script.js.jpg'</script> - <script>alert(1)</script> <base href=\"x55.is\">",
+                    datatype = DataType.Literal("string"),
+                    language = "",
+                    graph = "graph",
+                )
+            )
+
+            val html = createHTML().apply {
+                body {
+                    seedBlock("nonceval", data)
+                }
+            }.finalize()
+
+            htmlDocument(html) {
+                findFirst("script#seed") {
+                    assertEquals(
+                        """
+                        ["subject","predicate","&lt;script src='http://test.com/script.js.jpg'&lt;/script&gt; - &lt;script&gt;alert(1)&lt;/script&gt; &lt;base href=\"x55.is\"&gt;","string","","graph"]
+                        """.trimIndent(),
+                        this.html,
+                    )
                 }
             }
         }
