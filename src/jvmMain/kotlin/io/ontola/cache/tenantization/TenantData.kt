@@ -9,6 +9,5 @@ data class TenantData(
     val isBlackListed: Boolean,
     val websiteIRI: Url,
     val websiteOrigin: Url,
-    val currentIRI: Url,
     val manifest: Manifest,
 )

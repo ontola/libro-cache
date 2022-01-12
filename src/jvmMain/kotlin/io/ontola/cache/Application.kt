@@ -14,6 +14,7 @@ import io.ktor.http.fullPath
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.html.respondHtml
+import io.ktor.server.locations.KtorExperimentalLocationsAPI
 import io.ktor.server.locations.Locations
 import io.ktor.server.logging.toLogString
 import io.ktor.server.metrics.micrometer.MicrometerMetrics
@@ -39,6 +40,7 @@ import io.ktor.server.websocket.WebSockets
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
+import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.assets.Assets
 import io.ontola.cache.csp.CSP
 import io.ontola.cache.csp.cspReportEndpointPath
@@ -73,12 +75,13 @@ import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.signedTransformer
 import io.ontola.cache.statuspages.errorPage
-import io.ontola.studio.Studio
+import io.ontola.cache.tenantization.TenantData
 import io.ontola.cache.tenantization.Tenantization
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.configureClientLogging
 import io.ontola.cache.util.isHtmlAccept
 import io.ontola.cache.util.mountWebSocketProxy
+import io.ontola.studio.Studio
 import io.ontola.studio.mountStudio
 import io.ontola.util.appendPath
 import io.ontola.util.disableCertValidation
@@ -95,7 +98,7 @@ fun ApplicationRequest.isHTML(): Boolean {
     return accept.isHtmlAccept() || contentType.contains("text/html")
 }
 
-@OptIn(ExperimentalLettuceCoroutinesApi::class, ExperimentalTime::class)
+@OptIn(ExperimentalLettuceCoroutinesApi::class, ExperimentalTime::class, KtorExperimentalLocationsAPI::class)
 @Suppress("unused") // Referenced in application.conf
 @JvmOverloads
 fun Application.module(
@@ -262,8 +265,6 @@ fun Application.module(
             .build()
     }
 
-    install(Studio)
-
     install(Tenantization) {
         blacklist = listOf(
             cspReportEndpointPath,
@@ -283,6 +284,17 @@ fun Application.module(
             "/__webpack_hmr",
             "/.well-known/openid-configuration",
         )
+
+        val localStudioDomain = Url("https://local.rdf.studio")
+        staticTenants = mapOf(
+            "local.rdf.studio" to TenantData(
+                client = cacheConfig.client,
+                isBlackListed = false,
+                websiteIRI = localStudioDomain,
+                websiteOrigin = localStudioDomain,
+                manifest = Manifest.forWebsite(localStudioDomain),
+            )
+        )
     }
 
     install(CSP)
@@ -295,6 +307,8 @@ fun Application.module(
             Regex("^/([\\w/]*/)?follows/"),
         )
     }
+
+    install(Studio)
 
     install(WebSockets)
 
@@ -323,6 +337,7 @@ fun Application.module(
             ProxyRule(Regex("^/_testing/setSession"), exclude = true),
             ProxyRule(Regex("^$cspReportEndpointPath"), exclude = true),
             ProxyRule(Regex("^/d/health"), exclude = true),
+            ProxyRule(Regex("^/d/studio/editorContext"), exclude = true),
             ProxyRule(Regex("^/link-lib/bulk"), exclude = true),
             ProxyRule(Regex("^/([\\w/]*/)?logout"), exclude = true),
             ProxyRule(Regex("/static/"), exclude = true),

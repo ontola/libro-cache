@@ -14,10 +14,16 @@ import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.util.UrlSerializer
 import kotlinx.serialization.UseSerializers
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 fun Routing.mountStudio() {
     val projectRepo = ProjectRepo(application.persistentStorage)
     val distributionRepo = DistributionRepo(application.persistentStorage)
+
+    get("/d/studio/editorContext.bundle.json") {
+        call.respond(Json.encodeToString(EditorContext()))
+    }
 
     get("/d/studio/docs/:projectId") {
         if (!call.sessionManager.isStaff)
