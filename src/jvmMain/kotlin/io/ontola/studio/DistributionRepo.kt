@@ -1,11 +1,14 @@
 package io.ontola.studio
 
 import io.ktor.http.Url
-import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.plugins.Storage
 import io.ontola.rdf.hextuples.Hextuple
 import io.ontola.util.stem
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -17,13 +20,17 @@ private const val data = "data"
 private const val wildcard = "*"
 private const val manifestKey = "manifest"
 private const val sitemapKey = "sitemap"
+private const val distributionsKey = "distributions"
 
 class DistributionRepo(val storage: Storage) {
-    suspend fun store(id: String, distribution: Distribution) {
-        storage.setAllListValues(docsPrefix, id, data, values = distribution.data.map { Json.encodeToString(it) })
+    private fun distributionKey(projectId: String, distributionId: String): Array<String> =
+        arrayOf(docsPrefix, projectId, distributionsKey, distributionId)
+
+    suspend fun store(projectId: String, distribution: Distribution) {
+        val distId = ProjectRepo(storage).nextDistributionId(projectId)
+        storage.setAllListValues(*distributionKey(projectId, distId), data, values = distribution.data.map { Json.encodeToString(it) })
         storage.setHashValues(
-            docsPrefix,
-            id,
+            *distributionKey(projectId, distId),
             entries = mapOf(
                 manifestKey to Json.encodeToString(distribution.manifest),
                 sitemapKey to distribution.sitemap,
@@ -31,10 +38,10 @@ class DistributionRepo(val storage: Storage) {
         )
     }
 
-    suspend fun get(id: String): Distribution? {
-        val data = storage.getAllListValues(docsPrefix, id, dataPostfix).map { Json.decodeFromString<Array<String>>(it) }
-        val manifest = storage.getHashValue(docsPrefix, id, hashKey = manifestKey) ?: return null
-        val sitemap = storage.getHashValue(docsPrefix, id, hashKey = sitemapKey) ?: return null
+    suspend fun get(projectId: String, distId: String): Distribution? {
+        val data = storage.getAllListValues(*distributionKey(projectId, distId), data).map { Json.decodeFromString<Array<String>>(it) }
+        val manifest = storage.getHashValue(*distributionKey(projectId, distId), hashKey = manifestKey) ?: return null
+        val sitemap = storage.getHashValue(*distributionKey(projectId, distId), hashKey = sitemapKey) ?: return null
 
         return Distribution(
             data = data,
@@ -43,22 +50,18 @@ class DistributionRepo(val storage: Storage) {
         )
     }
 
-    suspend fun getData(id: String): List<Hextuple> {
-        return storage.getAllListValues(docsPrefix, id, data)
-            .map { Json.decodeFromString(it) }
+    /**
+     * Find all [Distribution] for the document with [projectId]
+     */
+    @OptIn(FlowPreview::class)
+    suspend fun find(projectId: String): List<String> {
+        return storage
+            .keys(docsPrefix, projectId, distributionsKey, wildcard)
+            .flatMapConcat { it.asFlow() }
+            .toList()
     }
 
-    suspend fun getManifest(id: String): Manifest? {
-        val value = storage.getHashValue(docsPrefix, id, hashKey = "manifestOverride") ?: return null
-
-        return Json.decodeFromString(value)
-    }
-
-    suspend fun getSitemap(id: String): String? {
-        return storage.getHashValue(docsPrefix, id, hashKey = "sitemap")
-    }
-
-    suspend fun documentKeyForRoute(url: Url): String? {
+    suspend fun distributionPairForRoute(url: Url): Pair<String, String>? {
         val allRoutes = storage.keys(routePrefix, startsWith, wildcard)
         val stemmed = url.stem()
 
@@ -67,6 +70,16 @@ class DistributionRepo(val storage: Storage) {
             ?.toTypedArray()
             ?: return null
 
-        return storage.getString(*match)
+        return storage.getString(*match)?.let { Json.decodeFromString(it) }
+    }
+
+    suspend fun publishDistributionToRoute(projectId: String, distId: String, startRoute: String) {
+        storage.setString(
+            routePrefix,
+            startsWith,
+            startRoute,
+            value = Json.encodeToString(Pair(projectId, distId)),
+            expiration = null,
+        )
     }
 }

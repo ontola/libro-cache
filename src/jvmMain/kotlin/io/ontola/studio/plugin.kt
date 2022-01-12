@@ -48,7 +48,7 @@ class Studio(private val configuration: Configuration) {
     @OptIn(ExperimentalSerializationApi::class)
     private suspend fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
         lateinit var uri: Url
-        val docKey = context.measured("studio lookup") {
+        val match = context.measured("studio lookup") {
             val origin = context.call.request.origin
             uri = URLBuilder(
                 protocol = URLProtocol.createOrDefault(origin.scheme),
@@ -59,11 +59,13 @@ class Studio(private val configuration: Configuration) {
                 parameters.appendAll(context.call.request.queryParameters)
             }.build()
 
-            configuration.distributionRepo.documentKeyForRoute(uri)
+            configuration.distributionRepo.distributionPairForRoute(uri)
         }
 
-        docKey ?: return context.proceed()
-        val distribution = configuration.distributionRepo.get(docKey) ?: return context.call.respond(HttpStatusCode.NotFound)
+        match ?: return context.proceed()
+        val (projectId, distId) = match
+
+        val distribution = configuration.distributionRepo.get(projectId, distId) ?: return context.call.respond(HttpStatusCode.NotFound)
 
         if (uri.filename() == "manifest.json") {
             context.call.respondOutputStream(ContentType.Application.Json) {
