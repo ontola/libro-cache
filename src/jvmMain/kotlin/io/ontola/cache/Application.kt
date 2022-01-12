@@ -73,7 +73,7 @@ import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.signedTransformer
 import io.ontola.cache.statuspages.errorPage
-import io.ontola.cache.studio.Studio
+import io.ontola.studio.Studio
 import io.ontola.cache.tenantization.Tenantization
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.configureClientLogging

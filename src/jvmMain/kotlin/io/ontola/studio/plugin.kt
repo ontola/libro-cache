@@ -1,4 +1,4 @@
-package io.ontola.cache.studio
+package io.ontola.studio
 
 import io.ktor.http.ContentType
 import io.ktor.http.DEFAULT_PORT
