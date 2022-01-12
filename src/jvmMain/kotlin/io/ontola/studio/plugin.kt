@@ -24,6 +24,7 @@ import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.util.measured
+import io.ontola.rdf.hextuples.Hextuple
 import io.ontola.util.filename
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.encodeToStream
@@ -62,42 +63,27 @@ class Studio(private val configuration: Configuration) {
         }
 
         docKey ?: return context.proceed()
+        val distribution = configuration.distributionRepo.get(docKey) ?: return context.call.respond(HttpStatusCode.NotFound)
 
         if (uri.filename() == "manifest.json") {
-            val manifest = configuration.distributionRepo.getManifest(docKey)
-
-            if (manifest != null) {
-                context.call.respondOutputStream(ContentType.Application.Json) {
-                    context.application.cacheConfig.serializer.encodeToStream(manifest, this)
-                }
-            } else {
-                context.call.respond(HttpStatusCode.NotFound)
+            context.call.respondOutputStream(ContentType.Application.Json) {
+                context.application.cacheConfig.serializer.encodeToStream(distribution.manifest, this)
             }
 
             return context.finish()
         } else if (uri.filename() == "sitemap.txt") {
-            val sitemap = configuration.distributionRepo.getSitemap(docKey)
-
-            if (sitemap != null) {
-                context.call.respondText(sitemap)
-            } else {
-                context.call.respond(HttpStatusCode.NotFound)
-            }
-
+            context.call.respondText(distribution.sitemap)
             return context.finish()
         }
 
-        val data = configuration.distributionRepo.getData(docKey)
-        val manifest = configuration.distributionRepo.getManifest(docKey) ?: error("Document without manifest")
-
-        if (data.isEmpty()) {
+        if (distribution.data.isEmpty()) {
             context.call.respond(HttpStatusCode.NotFound)
             return context.finish()
         }
 
         val ctx = context.call.pageRenderContextFromCall(
-            data = data,
-            manifest = manifest,
+            data = distribution.data.map { Hextuple.fromArray(it) },
+            manifest = distribution.manifest,
             uri = uri,
         )
 
