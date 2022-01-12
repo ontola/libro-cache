@@ -39,6 +39,8 @@ interface StorageAdapter<K : Any, V : Any> {
 
     suspend fun lsetall(key: String, values: List<String>): Long?
 
+    suspend fun incr(key: String): Long?
+
     suspend fun lrange(key: String, start: Long, stop: Long): List<String>
 
     suspend fun set(key: K, value: V): String?
@@ -89,6 +91,10 @@ class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : Storag
 
     override suspend fun lrange(key: String, start: Long, stop: Long): List<String> {
         return client.lrange(key, start, stop)
+    }
+
+    override suspend fun incr(key: String): Long? {
+        return client.incr(key)
     }
 
     override suspend fun set(key: String, value: String): String? {
@@ -220,6 +226,12 @@ class Storage(
         val prefixed = keyManager.toKey(*key)
 
         return adapter.lsetall(prefixed, values)
+    }
+
+    suspend fun increment(vararg key: String): Long? {
+        val prefixed = keyManager.toKey(*key)
+
+        return adapter.incr(prefixed)
     }
 
     companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, Storage> {
