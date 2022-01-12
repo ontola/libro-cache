@@ -31,6 +31,18 @@ class DistributionRepo(val storage: Storage) {
         )
     }
 
+    suspend fun get(id: String): Distribution? {
+        val data = storage.getAllListValues(docsPrefix, id, dataPostfix).map { Json.decodeFromString<Array<String>>(it) }
+        val manifest = storage.getHashValue(docsPrefix, id, hashKey = manifestKey) ?: return null
+        val sitemap = storage.getHashValue(docsPrefix, id, hashKey = sitemapKey) ?: return null
+
+        return Distribution(
+            data = data,
+            manifest = Json.decodeFromString(manifest),
+            sitemap = sitemap,
+        )
+    }
+
     suspend fun getData(id: String): List<Hextuple> {
         return storage.getAllListValues(docsPrefix, id, data)
             .map { Json.decodeFromString(it) }
