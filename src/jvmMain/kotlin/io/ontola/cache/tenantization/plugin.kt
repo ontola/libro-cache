@@ -11,7 +11,10 @@ import io.ktor.server.application.ApplicationPlugin
 import io.ktor.server.application.application
 import io.ktor.server.application.call
 import io.ktor.server.application.plugin
+import io.ktor.server.locations.KtorExperimentalLocationsAPI
+import io.ktor.server.locations.url
 import io.ktor.server.request.path
+import io.ktor.server.request.uri
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.apex.webmanifest.Manifest
@@ -20,9 +23,9 @@ import io.ontola.cache.TenantNotFoundException
 import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.storage
-import io.ontola.cache.studio.StudioDeploymentKey
 import io.ontola.cache.util.UrlSerializer
 import io.ontola.cache.util.measuredHit
+import io.ontola.studio.StudioDeploymentKey
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -70,6 +73,9 @@ class Tenantization(private val configuration: Configuration) {
         var blacklist: List<String> = emptyList()
         var dataExtensions: List<String> = emptyList()
         var tenantExpiration by Delegates.notNull<Long>()
+        var staticTenants: Map<String, TenantData> = emptyMap()
+
+        fun staticTenant(url: Url): TenantData? = staticTenants[url.host]
 
         fun isBlacklisted(path: String): Boolean {
             return blacklist.any { fragment -> path.startsWith(fragment) } ||
@@ -115,7 +121,6 @@ class Tenantization(private val configuration: Configuration) {
                     isBlackListed = false,
                     websiteIRI = manifest.ontola.websiteIRI,
                     websiteOrigin = baseOrigin,
-                    currentIRI = currentIRI,
                     manifest = manifest,
                 )
             )
@@ -136,7 +141,6 @@ class Tenantization(private val configuration: Configuration) {
             val websiteBase = context.getWebsiteBase()
 
             val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
-            val currentIRI = Url("$baseOrigin${context.call.request.path()}")
             val manifest = getManifest(context, websiteBase)
 
             context.call.attributes.put(
@@ -146,7 +150,6 @@ class Tenantization(private val configuration: Configuration) {
                     isBlackListed = false,
                     websiteIRI = manifest.ontola.websiteIRI,
                     websiteOrigin = baseOrigin,
-                    currentIRI = currentIRI,
                     manifest = manifest,
                 )
             )
@@ -165,6 +168,7 @@ class Tenantization(private val configuration: Configuration) {
     companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, Tenantization> {
         override val key = AttributeKey<Tenantization>("Tenantization")
 
+        @OptIn(KtorExperimentalLocationsAPI::class)
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Tenantization {
             val configuration = Configuration().apply {
                 tenantExpiration = pipeline.cacheConfig.tenantExpiration
@@ -172,7 +176,9 @@ class Tenantization(private val configuration: Configuration) {
             val feature = Tenantization(configuration)
 
             pipeline.intercept(ApplicationCallPipeline.Plugins) {
+                val url = Url(call.url(call.request.uri))
                 val path = call.request.path()
+
                 if (call.attributes.getOrNull(StudioDeploymentKey) != null) {
                     val deployment = call.attributes[StudioDeploymentKey]
                     call.attributes.put(BlacklistedKey, false)
@@ -181,7 +187,12 @@ class Tenantization(private val configuration: Configuration) {
                     call.attributes.put(BlacklistedKey, true)
                 } else {
                     call.attributes.put(BlacklistedKey, false)
-                    feature.intercept(this)
+
+                    val staticTenant = configuration.staticTenant(url)
+                    if (staticTenant != null)
+                        call.attributes.put(TenantizationKey, staticTenant)
+                    else
+                        feature.intercept(this)
                 }
             }
 
