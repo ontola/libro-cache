@@ -39,12 +39,12 @@ import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.TokenPair
-import io.ontola.cache.studio.StudioDeploymentKey
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.measured
 import io.ontola.rdf.hextuples.Hextuple
+import io.ontola.studio.StudioDeploymentKey
 import io.ontola.util.appendPath
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList

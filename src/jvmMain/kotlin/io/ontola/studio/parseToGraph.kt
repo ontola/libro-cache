@@ -1,4 +1,4 @@
-package io.ontola.cache.studio
+package io.ontola.studio
 
 import com.oracle.truffle.js.lang.JavaScriptLanguage
 import com.oracle.truffle.js.runtime.JSContextOptions
