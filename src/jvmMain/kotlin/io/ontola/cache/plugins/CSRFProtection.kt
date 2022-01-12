@@ -25,7 +25,7 @@ fun generateCSRFToken(): String {
 }
 
 class CSRFConfiguration {
-    var blackList: List<String> = emptyList()
+    var blackList: List<Regex> = emptyList()
     var unsafeMethods = arrayOf(
         HttpMethod.Post,
         HttpMethod.Put,
@@ -34,7 +34,7 @@ class CSRFConfiguration {
     )
 
     fun isBlacklisted(method: HttpMethod, path: String): Boolean {
-        return unsafeMethods.contains(method) && blackList.none { fragment -> path.startsWith(fragment) }
+        return unsafeMethods.contains(method) && blackList.none { pattern -> pattern.containsMatchIn(path) }
     }
 }
 

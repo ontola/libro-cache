@@ -281,10 +281,10 @@ fun Application.module(
 
     install(CsrfProtection) {
         blackList = listOf(
-            "/_testing",
-            "/csp-reports",
-            "/link-lib/bulk",
-            "/follows/",
+            Regex("^/_testing"),
+            Regex("^/csp-reports"),
+            Regex("^/link-lib/bulk"),
+            Regex("^/([\\w/]*/)?follows/"),
         )
     }
 
