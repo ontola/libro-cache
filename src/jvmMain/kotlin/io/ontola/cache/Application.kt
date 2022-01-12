@@ -79,6 +79,7 @@ import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.configureClientLogging
 import io.ontola.cache.util.isHtmlAccept
 import io.ontola.cache.util.mountWebSocketProxy
+import io.ontola.studio.mountStudio
 import io.ontola.util.appendPath
 import io.ontola.util.disableCertValidation
 import kotlin.collections.set
@@ -375,6 +376,7 @@ fun Application.module(
         mountStatic()
         mountHealth()
         mountCSP()
+        mountStudio()
         mountManifest()
         mountBulk()
         mountWebSocketProxy()
