@@ -6,18 +6,23 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
+import io.ktor.http.path
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.ApplicationCallPipeline
 import io.ktor.server.application.ApplicationPlugin
 import io.ktor.server.application.application
 import io.ktor.server.application.call
 import io.ktor.server.plugins.origin
+import io.ktor.server.request.host
 import io.ktor.server.request.path
+import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondOutputStream
 import io.ktor.server.response.respondText
+import io.ktor.server.util.url
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
+import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.document.PageConfiguration
 import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.document.pageRenderContextFromCall
@@ -26,6 +31,7 @@ import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.util.measured
 import io.ontola.rdf.hextuples.Hextuple
 import io.ontola.util.filename
+import io.ontola.util.origin
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.encodeToStream
 
@@ -43,6 +49,24 @@ class Studio(private val configuration: Configuration) {
     class Configuration {
         lateinit var distributionRepo: DistributionRepo
         lateinit var pageConfig: PageConfiguration
+    }
+
+    private suspend fun hostLocalStudio(context: PipelineContext<Unit, ApplicationCall>) {
+        val uri = Url(context.call.url { path(context.call.request.uri) })
+
+        when {
+            uri.toString().endsWith("/editorContext.bundle.json") -> context.proceed()
+            else -> {
+                val ctx = context.call.pageRenderContextFromCall(
+                    data = null,
+                    manifest = Manifest.forWebsite(Url(uri.origin())),
+                    uri = uri,
+                )
+
+                context.call.respondHtml { indexPage(ctx) }
+                context.finish()
+            }
+        }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -102,7 +126,11 @@ class Studio(private val configuration: Configuration) {
             val feature = Studio(configuration)
 
             pipeline.intercept(ApplicationCallPipeline.Plugins) {
-                feature.intercept(this)
+                if (call.request.host() == "local.rdf.studio") {
+                    feature.hostLocalStudio(this)
+                } else {
+                    feature.intercept(this)
+                }
             }
 
             return feature
