@@ -31,12 +31,14 @@ internal fun Configuration.shouldProxy(request: ApplicationRequest): Boolean {
     val isDataReqByAccept = contentTypes.intersect(accept).isNotEmpty()
     val isDataReqByMethod = methods.contains(request.httpMethod)
     val isDownloadRequest = uri.isDownloadRequest()
+    val isPerfTest = uri.parameters.contains("pp", "flamegraph")
     val isIncluded = rules.any { !it.exclude && it.match.containsMatchIn(path) }
     val isProxyableComponent = isDataReqByExtension ||
         isDataReqByAccept ||
         isDataReqByMethod ||
         isDownloadRequest ||
-        isIncluded
+        isIncluded ||
+        isPerfTest
 
     return isNotExcluded && isProxyableComponent
 }

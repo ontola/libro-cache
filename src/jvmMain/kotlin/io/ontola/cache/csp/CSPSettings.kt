@@ -54,6 +54,7 @@ object CSPSettings {
     )
 
     private val frameSrc = listOf(
+        CSPEntry { ctx -> if (ctx.development) CSPValue.Self else null },
         CSPEntry("https://youtube.com"),
         CSPEntry("https://www.youtube.com"),
         CSPEntry("https://*.typeform.com/"),
@@ -91,7 +92,7 @@ object CSPSettings {
     private val scriptSrc = listOf(
         CSPEntry(CSPValue.Self),
         CSPEntry(CSPValue.UnsafeEval),
-        CSPEntry { ctx -> CSPValue.nonce(ctx.nonce) },
+        CSPEntry { ctx -> if (ctx.development) CSPValue.UnsafeInline else CSPValue.nonce(ctx.nonce) },
         CSPEntry("https://cdn.polyfill.io"),
         // Bugsnag CDN
         CSPEntry("https://d2wy8f7a9ursnm.cloudfront.net"),
@@ -111,7 +112,6 @@ object CSPSettings {
                 ?.filter { it.host != null && (it.type == TrackerType.Matomo || it.type == TrackerType.PiwikPro) }
                 ?.joinToString(" ") { "https://${it.host}" }
         },
-        CSPEntry { ctx -> if (ctx.development) CSPValue.UnsafeInline else null },
         CSPEntry { ctx -> if (ctx.development) CSPValue.UnsafeEval else null },
         CSPEntry { ctx -> if (ctx.development) CSPValue.Blob else null },
         CSPEntry(CSPValue.ReportSample),
