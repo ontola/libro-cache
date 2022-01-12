@@ -150,7 +150,6 @@ repositories {
     mavenLocal()
     maven("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
     mavenCentral()
-    jcenter()
     maven("https://jitpack.io")
 }
 
