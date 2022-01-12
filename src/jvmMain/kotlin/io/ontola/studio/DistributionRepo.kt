@@ -7,6 +7,7 @@ import io.ontola.empathy.web.DataSlice
 import io.ontola.util.stem
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 private const val docsPrefix = "docs"
@@ -14,8 +15,22 @@ private const val routePrefix = "routes"
 private const val startsWith = "start"
 private const val data = "data"
 private const val wildcard = "*"
+private const val manifestKey = "manifest"
+private const val sitemapKey = "sitemap"
 
-class DocumentRepo(val storage: Storage) {
+class DistributionRepo(val storage: Storage) {
+    suspend fun store(id: String, distribution: Distribution) {
+        storage.setAllListValues(docsPrefix, id, data, values = distribution.data.map { Json.encodeToString(it) })
+        storage.setHashValues(
+            docsPrefix,
+            id,
+            entries = mapOf(
+                manifestKey to Json.encodeToString(distribution.manifest),
+                sitemapKey to distribution.sitemap,
+            ),
+        )
+    }
+
     suspend fun getData(id: String): DataSlice {
         return storage.getString(docsPrefix, id, data)
             ?.let { Json.decodeFromString(it) } ?: emptyMap()

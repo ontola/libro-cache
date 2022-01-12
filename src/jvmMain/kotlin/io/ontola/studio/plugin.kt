@@ -40,7 +40,7 @@ val StudioDeploymentKey = AttributeKey<PageRenderContext>("StudioDeploymentKey")
 
 class Studio(private val configuration: Configuration) {
     class Configuration {
-        lateinit var documentRepo: DocumentRepo
+        lateinit var distributionRepo: DistributionRepo
         lateinit var pageConfig: PageConfiguration
     }
 
@@ -58,13 +58,13 @@ class Studio(private val configuration: Configuration) {
                 parameters.appendAll(context.call.request.queryParameters)
             }.build()
 
-            configuration.documentRepo.documentKeyForRoute(uri)
+            configuration.distributionRepo.documentKeyForRoute(uri)
         }
 
         docKey ?: return context.proceed()
 
         if (uri.filename() == "manifest.json") {
-            val manifest = configuration.documentRepo.getManifest(docKey)
+            val manifest = configuration.distributionRepo.getManifest(docKey)
 
             if (manifest != null) {
                 context.call.respondOutputStream(ContentType.Application.Json) {
@@ -76,7 +76,7 @@ class Studio(private val configuration: Configuration) {
 
             return context.finish()
         } else if (uri.filename() == "sitemap.txt") {
-            val sitemap = configuration.documentRepo.getSitemap(docKey)
+            val sitemap = configuration.distributionRepo.getSitemap(docKey)
 
             if (sitemap != null) {
                 context.call.respondText(sitemap)
@@ -87,8 +87,8 @@ class Studio(private val configuration: Configuration) {
             return context.finish()
         }
 
-        val data = configuration.documentRepo.getData(docKey)
-        val manifest = configuration.documentRepo.getManifest(docKey) ?: error("Document without manifest")
+        val data = configuration.distributionRepo.getData(docKey)
+        val manifest = configuration.distributionRepo.getManifest(docKey) ?: error("Document without manifest")
 
         if (data.isEmpty()) {
             context.call.respond(HttpStatusCode.NotFound)
@@ -109,7 +109,7 @@ class Studio(private val configuration: Configuration) {
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Studio {
             val configuration = Configuration().apply {
-                documentRepo = DocumentRepo(pipeline.persistentStorage)
+                distributionRepo = DistributionRepo(pipeline.persistentStorage)
             }.apply(configure)
             val feature = Studio(configuration)
 
