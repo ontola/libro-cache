@@ -24,7 +24,7 @@ data class Manifest(
     @SerialName("start_url")
     val startUrl: String = ensureTrailingSlash(serviceworker.scope),
     @SerialName("scope")
-    val scope: String,
+    val scope: String = "/",
     @SerialName("theme_color")
     val themeColor: String = "#475668",
     @SerialName("created_at")
