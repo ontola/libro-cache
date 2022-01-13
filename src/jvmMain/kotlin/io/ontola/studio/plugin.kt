@@ -6,7 +6,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
-import io.ktor.http.path
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.ApplicationCallPipeline
 import io.ktor.server.application.ApplicationPlugin
@@ -15,11 +14,9 @@ import io.ktor.server.application.call
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.host
 import io.ktor.server.request.path
-import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondOutputStream
 import io.ktor.server.response.respondText
-import io.ktor.server.util.url
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.apex.webmanifest.Manifest
@@ -31,6 +28,7 @@ import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.util.measured
 import io.ontola.rdf.hextuples.Hextuple
 import io.ontola.util.filename
+import io.ontola.util.fullUrl
 import io.ontola.util.origin
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.encodeToStream
@@ -51,22 +49,15 @@ class Studio(private val configuration: Configuration) {
         lateinit var pageConfig: PageConfiguration
     }
 
-    private suspend fun hostLocalStudio(context: PipelineContext<Unit, ApplicationCall>) {
-        val uri = Url(context.call.url { path(context.call.request.uri) })
+    private fun hostLocalStudio(context: PipelineContext<Unit, ApplicationCall>) {
+        val uri = context.call.fullUrl()
 
-        when {
-            uri.toString().endsWith("/editorContext.bundle.json") -> context.proceed()
-            else -> {
-                val ctx = context.call.pageRenderContextFromCall(
-                    data = null,
-                    manifest = Manifest.forWebsite(Url(uri.origin())),
-                    uri = uri,
-                )
-
-                context.call.respondHtml { indexPage(ctx) }
-                context.finish()
-            }
-        }
+        val ctx = context.call.pageRenderContextFromCall(
+            data = null,
+            manifest = Manifest.forWebsite(Url(uri.origin())),
+            uri = uri,
+        )
+        context.call.attributes.put(StudioDeploymentKey, ctx)
     }
 
     @OptIn(ExperimentalSerializationApi::class)

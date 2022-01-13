@@ -304,6 +304,7 @@ fun Application.module(
             Regex("^/_testing"),
             Regex("^/csp-reports"),
             Regex("^/link-lib/bulk"),
+            Regex("^/_studio/"),
             Regex("^/([\\w/]*/)?follows/"),
         )
     }
@@ -337,7 +338,7 @@ fun Application.module(
             ProxyRule(Regex("^/_testing/setSession"), exclude = true),
             ProxyRule(Regex("^$cspReportEndpointPath"), exclude = true),
             ProxyRule(Regex("^/d/health"), exclude = true),
-            ProxyRule(Regex("^/d/studio/editorContext"), exclude = true),
+            ProxyRule(Regex("^/_studio/"), exclude = true),
             ProxyRule(Regex("^/link-lib/bulk"), exclude = true),
             ProxyRule(Regex("^/([\\w/]*/)?logout"), exclude = true),
             ProxyRule(Regex("/static/"), exclude = true),
