@@ -24,7 +24,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.apache.commons.text.translate.AggregateTranslator
-import org.apache.commons.text.translate.EntityArrays
 import org.apache.commons.text.translate.LookupTranslator
 import kotlin.collections.set
 
@@ -142,9 +141,12 @@ fun BODY.themeBlock(manifest: Manifest) {
 }
 
 private val JsonInHtmlEscaper = AggregateTranslator(
-    LookupTranslator(EntityArrays.BASIC_ESCAPE.filter { it.key != "\"" }),
-    LookupTranslator(EntityArrays.ISO8859_1_ESCAPE),
-    LookupTranslator(EntityArrays.HTML40_EXTENDED_ESCAPE)
+    LookupTranslator(
+        mapOf(
+            "<" to "&lt;",
+            ">" to "&gt;",
+        )
+    ),
 )
 
 fun BODY.seedBlock(nonce: String, data: List<Hextuple>) {
