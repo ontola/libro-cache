@@ -222,6 +222,9 @@ fun Application.module(
             cookie.httpOnly = true
             cookie.secure = true
             cookie.extensions["SameSite"] = "Strict"
+            transform(
+                signedTransformer(signingSecret = config.sessions.sessionSecret)
+            )
         }
         cookie<String>("deviceId") {
             cookie.httpOnly = true
