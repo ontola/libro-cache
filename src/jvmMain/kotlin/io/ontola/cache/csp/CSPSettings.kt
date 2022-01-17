@@ -2,6 +2,8 @@ package io.ontola.cache.csp
 
 import io.ontola.apex.webmanifest.TrackerType
 
+private fun TrackerType.canCallUA(): Boolean = this == TrackerType.GUA || this == TrackerType.GTM
+
 object CSPSettings {
     private val oneOffs = listOf(
         CSPDirectives.UpgradeInsecureRequests,
@@ -45,6 +47,7 @@ object CSPSettings {
         CSPEntry { ctx -> "ws://${ctx.host}" },
         CSPEntry { ctx -> if (!ctx.development) "https://notify.bugsnag.com" else null },
         CSPEntry { ctx -> if (!ctx.development) "https://sessions.bugsnag.com" else null },
+        CSPEntry { ctx -> if (ctx.manifest?.ontola?.tracking?.any { it.type.canCallUA() } == true) "https://www.google-analytics.com" else null },
     )
 
     private val fontSrc = listOf(
@@ -70,6 +73,8 @@ object CSPSettings {
         CSPEntry(CSPValue.Blob),
         CSPEntry(CSPValue.Data),
         CSPEntry("*"),
+        CSPEntry("https://dptr8y9slmfgv.cloudfront.net"),
+        CSPEntry { ctx -> if (ctx.manifest?.ontola?.tracking?.any { it.type.canCallUA() } == true) "https://www.google-analytics.com" else null },
         CSPEntry(CSPValue.ReportSample),
     )
 
@@ -111,6 +116,8 @@ object CSPSettings {
                 ?.filter { it.host != null && (it.type == TrackerType.Matomo || it.type == TrackerType.PiwikPro) }
                 ?.joinToString(" ") { "https://${it.host}" }
         },
+        CSPEntry { ctx -> if (ctx.manifest?.ontola?.tracking?.any { it.type.canCallUA() } == true) "https://www.google-analytics.com" else null },
+        CSPEntry { ctx -> if (ctx.manifest?.ontola?.tracking?.any { it.type.canCallUA() } == true) "https://ssl.google-analytics.com" else null },
         CSPEntry { ctx -> if (ctx.development) CSPValue.UnsafeInline else null },
         CSPEntry { ctx -> if (ctx.development) CSPValue.UnsafeEval else null },
         CSPEntry { ctx -> if (ctx.development) CSPValue.Blob else null },
@@ -135,6 +142,7 @@ object CSPSettings {
 
     private val mediaSrc = listOf(
         CSPEntry(CSPValue.Self),
+        CSPEntry("https://dptr8y9slmfgv.cloudfront.net"),
         CSPEntry(CSPValue.ReportSample),
     )
 
