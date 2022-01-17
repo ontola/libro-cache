@@ -40,3 +40,6 @@ fun Url.rebase(fullPath: String): Url = URLBuilder(this).apply {
         parameters.appendAll(it.parameters)
     }
 }.build()
+
+val Url.withoutTrailingSlash
+    get() = this.toString().trimEnd('/')

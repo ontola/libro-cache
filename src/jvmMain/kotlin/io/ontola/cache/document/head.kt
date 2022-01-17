@@ -6,6 +6,7 @@ import io.ontola.apex.webmanifest.Tracking
 import io.ontola.libro.metadata.getMetaTags
 import io.ontola.libro.metadata.metaDataFromData
 import io.ontola.rdf.hextuples.Hextuple
+import io.ontola.util.withoutTrailingSlash
 import kotlinx.html.HEAD
 import kotlinx.html.itemProp
 import kotlinx.html.link
@@ -104,7 +105,7 @@ private fun HEAD.appIcons(manifest: Manifest) {
 private fun HEAD.opening(manifest: Manifest) {
     meta(charset = "utf-8")
     link(rel = "manifest", href = "${manifest.scope}/manifest.json")
-    meta(name = "website", content = manifest.ontola.websiteIRI.toString())
+    meta(name = "website", content = manifest.ontola.websiteIRI.withoutTrailingSlash)
     manifest.ontola.preconnect?.forEach { link(rel = "preconnect", href = it) }
     meta(content = manifest.name) {
         attributes["property"] = "og:title"
