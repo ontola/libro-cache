@@ -4,7 +4,6 @@ import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.assets.assets
-import io.ontola.cache.csp.nonce
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.tenantization.tenant
@@ -14,7 +13,6 @@ import kotlinx.serialization.json.Json
 
 data class PageRenderContext(
     val uri: Url,
-    val nonce: String,
     val lang: String,
     val isUser: Boolean,
     val csrfToken: String,
@@ -22,9 +20,11 @@ data class PageRenderContext(
     val configuration: PageConfiguration,
     val serializer: Json,
     var data: List<Hextuple>?,
-)
+) {
+    lateinit var nonce: String
+}
 
-suspend fun ApplicationCall.pageRenderContextFromCall(
+fun ApplicationCall.pageRenderContextFromCall(
     data: List<Hextuple>? = null,
     manifest: Manifest? = null,
     uri: Url = requestUriFromTenant(),
@@ -33,7 +33,6 @@ suspend fun ApplicationCall.pageRenderContextFromCall(
 
     return PageRenderContext(
         uri = uri,
-        nonce = nonce,
         lang = sessionManager.language,
         isUser = sessionManager.isUser,
         csrfToken = sessionManager.session!!.csrfToken,

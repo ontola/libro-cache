@@ -27,6 +27,7 @@ import io.ontola.cache.bulk.coldHandler
 import io.ontola.cache.bulk.collectResources
 import io.ontola.cache.bulk.entriesToOutputStream
 import io.ontola.cache.bulk.initHeaders
+import io.ontola.cache.csp.nonce
 import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.document.indexPage
 import io.ontola.cache.document.pageRenderContextFromCall
@@ -38,6 +39,7 @@ import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.TokenPair
+import io.ontola.cache.studio.StudioDeploymentKey
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
@@ -148,21 +150,23 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
 
         measured("render") {
             call.respondHtml(status) {
-                ctx.data = stream
-                    .toString(Charset.forName("UTF-8"))
-                    .split("\n")
-                    .mapNotNull {
-                        try {
-                            if (it.isNotBlank()) {
-                                Hextuple.fromArray(Json.decodeFromString(it))
-                            } else {
+                if (ctx.data == null) {
+                    ctx.data = stream
+                        .toString(Charset.forName("UTF-8"))
+                        .split("\n")
+                        .mapNotNull {
+                            try {
+                                if (it.isNotBlank()) {
+                                    Hextuple.fromArray(Json.decodeFromString(it))
+                                } else {
+                                    null
+                                }
+                            } catch (e: SerializationException) {
+                                call.application.cacheConfig.notify(e)
                                 null
                             }
-                        } catch (e: SerializationException) {
-                            call.application.cacheConfig.notify(e)
-                            null
                         }
-                    }
+                }
 
                 indexPage(ctx)
             }
@@ -183,6 +187,14 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
         return call.respond(HttpStatusCode.NotFound)
     }
 
+    if (call.attributes.getOrNull(StudioDeploymentKey) != null) {
+        val deployment = call.attributes[StudioDeploymentKey].apply {
+            nonce = call.nonce
+        }
+
+        return respondRenderWithData(deployment, emptyList(), HttpStatusCode.OK)
+    }
+
     call.response.header(HttpHeaders.Vary, VaryHeader)
 
     val head = headRequest(client)
@@ -197,7 +209,9 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
         call.tenant.websiteIRI.appendPath("ns", "core").toString(),
     ) + (head.includeResources ?: emptyList())
 
-    val ctx = call.pageRenderContextFromCall()
+    val ctx = call.pageRenderContextFromCall().apply {
+        nonce = call.nonce
+    }
 
     respondRenderWithData(ctx, includes, head.statusCode)
 }

@@ -11,7 +11,6 @@ import io.ktor.server.application.ApplicationCallPipeline
 import io.ktor.server.application.ApplicationPlugin
 import io.ktor.server.application.application
 import io.ktor.server.application.call
-import io.ktor.server.html.respondHtml
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.path
 import io.ktor.server.response.respond
@@ -20,7 +19,7 @@ import io.ktor.server.response.respondText
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.document.PageConfiguration
-import io.ontola.cache.document.indexPage
+import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
@@ -36,6 +35,8 @@ private fun Int.onlyNonDefaultPort(): Int {
 
     return this
 }
+
+val StudioDeploymentKey = AttributeKey<PageRenderContext>("StudioDeploymentKey")
 
 class Studio(private val configuration: Configuration) {
     class Configuration {
@@ -100,13 +101,7 @@ class Studio(private val configuration: Configuration) {
             uri = uri,
         )
 
-        context.measured("respondHtml") {
-            context.call.respondHtml(HttpStatusCode.OK) {
-                indexPage(ctx)
-            }
-        }
-
-        context.finish()
+        context.call.attributes.put(StudioDeploymentKey, ctx)
     }
 
     companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, Studio> {
