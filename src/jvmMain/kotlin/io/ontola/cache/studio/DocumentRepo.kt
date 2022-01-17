@@ -12,11 +12,12 @@ import kotlinx.serialization.json.Json
 private const val docsPrefix = "docs"
 private const val routePrefix = "routes"
 private const val startsWith = "start"
+private const val data = "data"
 private const val wildcard = "*"
 
 class DocumentRepo(val storage: Storage) {
     suspend fun getData(id: String): List<Hextuple> {
-        return storage.getAllListValues(docsPrefix, id)
+        return storage.getAllListValues(docsPrefix, id, data)
             .map { Json.decodeFromString(it) }
     }
 
