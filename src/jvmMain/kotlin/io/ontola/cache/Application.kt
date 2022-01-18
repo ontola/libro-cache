@@ -222,9 +222,11 @@ fun Application.module(
             cookie.httpOnly = true
             cookie.secure = true
             cookie.extensions["SameSite"] = "Strict"
-            transform(
-                signedTransformer(signingSecret = config.sessions.sessionSecret)
-            )
+            if (!testing) {
+                transform(
+                    signedTransformer(signingSecret = config.sessions.sessionSecret)
+                )
+            }
         }
         cookie<String>("deviceId") {
             cookie.httpOnly = true
@@ -278,6 +280,7 @@ fun Application.module(
             "/photos/",
             "/f_assets/",
             "/__webpack_hmr",
+            "/.well-known/openid-configuration",
         )
     }
 
@@ -309,7 +312,8 @@ fun Application.module(
         }
 
         rules = listOf(
-            ProxyRule(Regex("/manifest.json$")),
+            ProxyRule(Regex("^/([\\w/]*/)?manifest.json$")),
+            ProxyRule(Regex("^/.well-known/openid-configuration$")),
             ProxyRule(Regex("/media_objects/"), client = ProxyClient.RedirectingBackend),
 
             ProxyRule(Regex("/assets/"), client = ProxyClient.Binary, includeCredentials = false),

@@ -1,11 +1,13 @@
 package io.ontola.cache.document
 
+import io.ktor.http.fullPath
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.apex.webmanifest.TrackerType
 import io.ontola.apex.webmanifest.Tracking
 import io.ontola.libro.metadata.getMetaTags
 import io.ontola.libro.metadata.metaDataFromData
 import io.ontola.rdf.hextuples.Hextuple
+import io.ontola.util.rebase
 import io.ontola.util.withoutTrailingSlash
 import kotlinx.html.HEAD
 import kotlinx.html.itemProp
@@ -104,7 +106,7 @@ private fun HEAD.appIcons(manifest: Manifest) {
 
 private fun HEAD.opening(manifest: Manifest) {
     meta(charset = "utf-8")
-    link(rel = "manifest", href = "${manifest.scope}/manifest.json")
+    link(rel = "manifest", href = manifest.ontola.websiteIRI.rebase("manifest.json").fullPath)
     meta(name = "website", content = manifest.ontola.websiteIRI.withoutTrailingSlash)
     manifest.ontola.preconnect?.forEach { link(rel = "preconnect", href = it) }
     meta(content = manifest.name) {
