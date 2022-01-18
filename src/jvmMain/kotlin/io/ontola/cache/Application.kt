@@ -268,6 +268,7 @@ fun Application.module(
             "/link-lib/cache/clear",
             "/link-lib/cache/status",
             "/link-lib/cache/metrics",
+            "/api/maps/",
             "/d/health",
             "/metrics",
             "/_testing",
