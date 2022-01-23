@@ -4,7 +4,7 @@ import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.assets.AssetsManifests
 import io.ontola.color.Color
 import io.ontola.color.isLight
-import io.ontola.rdf.hextuples.Hextuple
+import io.ontola.empathy.web.DataSlice
 import kotlinx.html.BODY
 import kotlinx.html.HTML
 import kotlinx.html.body
@@ -149,12 +149,12 @@ private val JsonInHtmlEscaper = AggregateTranslator(
     ),
 )
 
-fun BODY.seedBlock(nonce: String, data: List<Hextuple>) {
-    script(type = "application/hex+x-ndjson") {
+fun BODY.seedBlock(nonce: String, data: DataSlice) {
+    script(type = "application/link-rehydrate+json") {
         this.nonce = nonce
         attributes["id"] = "seed"
         unsafe {
-            +data.joinToString("\n") { JsonInHtmlEscaper.translate(Json.encodeToString(it.toArray())) }
+            +JsonInHtmlEscaper.translate(Json.encodeToString(data))
         }
     }
     script(type = "application/javascript") {
@@ -198,7 +198,7 @@ fun HTML.indexPage(ctx: PageRenderContext) {
     val nonce = ctx.nonce
     val config = ctx.configuration
     val manifest = ctx.manifest
-    val data = ctx.data ?: emptyList()
+    val data = ctx.data ?: emptyMap()
 
     lang = ctx.lang
 

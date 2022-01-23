@@ -4,6 +4,7 @@ import io.ktor.http.Url
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.assets.loadAssetsManifests
 import io.ontola.cache.plugins.generateCSRFToken
+import io.ontola.empathy.web.toSlice
 import io.ontola.rdf.hextuples.DataType
 import io.ontola.rdf.hextuples.Hextuple
 import kotlinx.html.head
@@ -25,10 +26,10 @@ class HeadTest {
             val manifest = Manifest.forWebsite(href)
             val lang = "nl"
             val data = listOf(
-                Hextuple(href.toString(), "http://schema.org/name", "Elefanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "de", ""),
-                Hextuple(href.toString(), "http://schema.org/name", "Olifanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "nl", ""),
-                Hextuple(href.toString(), "http://schema.org/name", "Elephants", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "en", ""),
-            ).shuffled()
+                Hextuple(href.toString(), "http://schema.org/name", "Elefanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "de", "http://purl.org/link-lib/supplant"),
+                Hextuple(href.toString(), "http://schema.org/name", "Olifanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "nl", "http://purl.org/link-lib/supplant"),
+                Hextuple(href.toString(), "http://schema.org/name", "Elephants", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "en", "http://purl.org/link-lib/supplant"),
+            ).shuffled().toSlice()
 
             val doc = createHTML().apply {
                 head {
@@ -66,10 +67,10 @@ class HeadTest {
             val manifest = Manifest.forWebsite(href)
             val lang = "nl"
             val data = listOf(
-                Hextuple(href.toString(), "http://schema.org/name", "Elefanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "de", ""),
-                Hextuple(href.toString(), "http://schema.org/name", "Olifanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "nl", ""),
-                Hextuple(href.toString(), "http://schema.org/name", "Elephants", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "en", ""),
-            ).shuffled()
+                Hextuple(href.toString(), "http://schema.org/name", "Elefanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "de", "http://purl.org/link-lib/supplant"),
+                Hextuple(href.toString(), "http://schema.org/name", "Olifanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "nl", "http://purl.org/link-lib/supplant"),
+                Hextuple(href.toString(), "http://schema.org/name", "Elephants", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "en", "http://purl.org/link-lib/supplant"),
+            ).shuffled().toSlice()
 
             val doc = createHTML().apply {
                 head {

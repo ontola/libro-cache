@@ -3,6 +3,7 @@ package io.ontola.cache
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.json.JsonPlugin
 import io.ktor.client.plugins.json.serializer.KotlinxSerializer
@@ -21,6 +22,7 @@ val configureClient: HttpClientConfig<*>.() -> Unit = {
             }
         )
     }
+    install(HttpTimeout)
     install(Logging) {
         configureClientLogging()
     }

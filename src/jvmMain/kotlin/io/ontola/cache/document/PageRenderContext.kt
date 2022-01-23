@@ -8,7 +8,7 @@ import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.requestUriFromTenant
-import io.ontola.rdf.hextuples.Hextuple
+import io.ontola.empathy.web.DataSlice
 import kotlinx.serialization.json.Json
 
 data class PageRenderContext(
@@ -19,13 +19,13 @@ data class PageRenderContext(
     val manifest: Manifest,
     val configuration: PageConfiguration,
     val serializer: Json,
-    var data: List<Hextuple>?,
+    var data: DataSlice?,
 ) {
     lateinit var nonce: String
 }
 
 fun ApplicationCall.pageRenderContextFromCall(
-    data: List<Hextuple>? = null,
+    data: DataSlice? = null,
     manifest: Manifest? = null,
     uri: Url = requestUriFromTenant(),
 ): PageRenderContext {

@@ -27,6 +27,7 @@ import io.ontola.cache.bulk.coldHandler
 import io.ontola.cache.bulk.collectResources
 import io.ontola.cache.bulk.entriesToOutputStream
 import io.ontola.cache.bulk.initHeaders
+import io.ontola.cache.bulk.logger
 import io.ontola.cache.csp.nonce
 import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.document.indexPage
@@ -44,6 +45,9 @@ import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.measured
+import io.ontola.empathy.web.Record
+import io.ontola.empathy.web.Value
+import io.ontola.empathy.web.toValue
 import io.ontola.rdf.hextuples.Hextuple
 import io.ontola.util.appendPath
 import kotlinx.coroutines.flow.filter
@@ -151,21 +155,32 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
         measured("render") {
             call.respondHtml(status) {
                 if (ctx.data == null) {
-                    ctx.data = stream
-                        .toString(Charset.forName("UTF-8"))
-                        .split("\n")
-                        .mapNotNull {
-                            try {
-                                if (it.isNotBlank()) {
-                                    Hextuple.fromArray(Json.decodeFromString(it))
-                                } else {
-                                    null
+                    ctx.data = buildMap<String, Record> {
+                        stream
+                            .toString(Charset.forName("UTF-8"))
+                            .split("\n")
+                            .forEach { hex ->
+                                try {
+                                    if (hex.isNotBlank()) {
+                                        val data = Hextuple.fromArray(Json.decodeFromString(hex))
+
+                                        if (data.graph != "http://purl.org/link-lib/supplant") {
+                                            logger.error { "Non-supplant statement: $hex" }
+                                            return@forEach
+                                        }
+
+                                        val record = this.getOrPut(data.subject) { Record(Value.GlobalId(data.subject)) }
+                                        val field = record.entries.getOrPut(data.predicate) { arrayOf() }
+                                        val value = data.toValue()
+                                        record[data.predicate] = arrayOf(*field, value)
+
+                                        put(data.subject, record)
+                                    }
+                                } catch (e: SerializationException) {
+                                    call.application.cacheConfig.notify(e)
                                 }
-                            } catch (e: SerializationException) {
-                                call.application.cacheConfig.notify(e)
-                                null
                             }
-                        }
+                    }
                 }
 
                 indexPage(ctx)

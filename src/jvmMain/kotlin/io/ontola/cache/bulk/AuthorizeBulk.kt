@@ -1,6 +1,7 @@
 package io.ontola.cache.bulk
 
 import io.ktor.client.call.body
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -27,6 +28,7 @@ import io.ontola.util.appendPath
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import mu.KotlinLogging
+import kotlin.time.Duration.Companion.seconds
 
 val logger = KotlinLogging.logger {}
 
@@ -40,6 +42,9 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
         .encodedPath
 
     val res: HttpResponse = call.application.cacheConfig.client.post(call.services.route(bulkUri)) {
+        timeout {
+            requestTimeoutMillis = 120.seconds.inWholeMilliseconds
+        }
         contentType(ContentType.Application.Json)
         initHeaders(call, lang)
         setBody(

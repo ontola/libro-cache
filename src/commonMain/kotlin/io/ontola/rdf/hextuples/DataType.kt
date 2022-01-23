@@ -13,8 +13,8 @@ sealed class DataType(private val datatype: String) : Valuable {
 
     companion object {
         fun fromValue(dataType: String): DataType = when (dataType) {
-            "globalId" -> GlobalId()
-            "localId" -> LocalId()
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#namedNode" -> GlobalId()
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#blankNode" -> LocalId()
             else -> Literal(dataType)
         }
     }

@@ -11,6 +11,7 @@ import io.ontola.cache.csp.cspReportEndpointPath
 import io.ontola.cache.csp.nonce
 import io.ontola.cache.document.seedBlock
 import io.ontola.cache.routes.HeadResponse
+import io.ontola.empathy.web.toSlice
 import io.ontola.rdf.hextuples.DataType
 import io.ontola.rdf.hextuples.Hextuple
 import it.skrape.core.htmlDocument
@@ -85,9 +86,9 @@ class RenderTest {
                     value = "<script src='http://test.com/script.js.jpg'</script> - <script>alert(1)</script> <base href=\"x55.is\">",
                     datatype = DataType.Literal("string"),
                     language = "",
-                    graph = "graph",
+                    graph = "http://purl.org/link-lib/supplant",
                 )
-            )
+            ).toSlice()
 
             val html = createHTML().apply {
                 body {
@@ -99,7 +100,7 @@ class RenderTest {
                 findFirst("script#seed") {
                     assertEquals(
                         """
-                        ["subject","predicate","&lt;script src='http://test.com/script.js.jpg'&lt;/script&gt; - &lt;script&gt;alert(1)&lt;/script&gt; &lt;base href=\"x55.is\"&gt;","string","","graph"]
+                        {"subject":{"_id":{"type":"id","v":"subject"},"predicate":[{"type":"p","v":"&lt;script src='http://test.com/script.js.jpg'&lt;/script&gt; - &lt;script&gt;alert(1)&lt;/script&gt; &lt;base href=\"x55.is\"&gt;","dt":"string"}]}}
                         """.trimIndent(),
                         this.html,
                     )

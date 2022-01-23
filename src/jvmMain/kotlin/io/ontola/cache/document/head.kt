@@ -4,9 +4,9 @@ import io.ktor.http.fullPath
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.apex.webmanifest.TrackerType
 import io.ontola.apex.webmanifest.Tracking
+import io.ontola.empathy.web.DataSlice
 import io.ontola.libro.metadata.getMetaTags
 import io.ontola.libro.metadata.metaDataFromData
-import io.ontola.rdf.hextuples.Hextuple
 import io.ontola.util.rebase
 import io.ontola.util.withoutTrailingSlash
 import kotlinx.html.HEAD
@@ -27,7 +27,7 @@ fun HEAD.renderHead(
     config: PageConfiguration,
     manifest: Manifest,
     lang: String,
-    data: List<Hextuple>,
+    data: DataSlice,
 ) {
     opening(manifest)
 
@@ -54,7 +54,7 @@ fun HEAD.renderHead(
 private fun HEAD.contentMetaTags(
     url: String,
     manifest: Manifest,
-    data: List<Hextuple>,
+    data: DataSlice,
     lang: String,
 ) {
     val metaData = metaDataFromData(url, manifest, data, lang)
