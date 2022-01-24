@@ -13,6 +13,7 @@ import kotlinx.html.HEAD
 import kotlinx.html.itemProp
 import kotlinx.html.link
 import kotlinx.html.meta
+import kotlinx.html.noScript
 import kotlinx.html.script
 import kotlinx.html.style
 import kotlinx.html.title
@@ -41,7 +42,7 @@ fun HEAD.renderHead(
 
     // Statics
     services(config, manifest)
-    stylesheets(config)
+    stylesheets(config, nonce)
 
     // Web app / styles
     theming(manifest)
@@ -128,13 +129,50 @@ private fun HEAD.services(config: PageConfiguration, manifest: Manifest) {
     }
 }
 
-private fun HEAD.stylesheets(config: PageConfiguration) {
+private fun HEAD.stylesheets(config: PageConfiguration, nonce: String) {
+    val openSans = "https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap"
+    val fontAwesome = "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+
     link(rel = "stylesheet", type = "text/css", href = config.assets.es6.mainCss) {
         attributes["crossorigin"] = "anonymous"
     }
-    link(href = "https://fonts.googleapis.com/css?family=Open+Sans:400,700", rel = "stylesheet")
-    link(rel = "stylesheet", href = "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css") {
+
+    link(rel = "preload", href = openSans) {
+        attributes["as"] = "style"
         attributes["crossorigin"] = "anonymous"
+    }
+
+    link(rel = "preload", href = fontAwesome) {
+        attributes["as"] = "style"
+        attributes["crossorigin"] = "anonymous"
+    }
+
+    script {
+        this.nonce = nonce
+        unsafe {
+            raw(
+                """
+                    var elements = Array.from(document.querySelectorAll("[as='style']"));
+                    elements.forEach((e) => e.addEventListener("load", (e) => e.target.rel = "stylesheet"));
+                    window.setTimeout(() => {
+                      elements.map((e) => e.rel = "stylesheet");
+                    }, 2000);
+                """.trimIndent()
+            )
+        }
+    }
+
+    noScript {
+        unsafe {
+            raw(
+                """
+                    <link href="$openSans" rel="stylesheet">
+                    <link href="$fontAwesome" rel="stylesheet">
+                """.trimIndent()
+            )
+        }
+        link(rel = "stylesheet", href = "https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap")
+        link(rel = "stylesheet", href = "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css")
     }
 }
 
@@ -160,7 +198,10 @@ private fun HEAD.webAppConfig(manifest: Manifest) {
     meta(name = "msapplication-navbutton-color", content = manifest.themeColor)
     meta(name = "apple-mobile-web-app-status-bar-style", content = "black-translucent")
     meta(name = "msapplication-starturl", content = manifest.startUrl)
-    meta(name = "viewport", content = "width=device-width, shrink-to-fit=no, initial-scale=1, maximum-scale=1.0, user-scalable=yes")
+    meta(
+        name = "viewport",
+        content = "width=device-width, shrink-to-fit=no, initial-scale=1, maximum-scale=1.0, user-scalable=yes"
+    )
     meta(name = "theme", content = manifest.ontola.theme ?: "common")
     meta(name = "themeOpts", content = manifest.ontola.themeOptions)
     meta(name = "msapplication-TileColor", content = manifest.themeColor)

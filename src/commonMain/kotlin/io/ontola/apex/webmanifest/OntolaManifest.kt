@@ -20,7 +20,9 @@ data class OntolaManifest(
     val headerText: String = "auto",
     @SerialName("matomo_hostname")
     val matomoHostname: String? = null,
-    val preconnect: Set<String>? = null,
+    val preconnect: Set<String>? = setOf(
+        "https://fonts.googleapis.com",
+    ),
     val preload: Set<String> = emptySet(),
     @SerialName("matomo_site_id")
     val matomoSiteId: String? = null,

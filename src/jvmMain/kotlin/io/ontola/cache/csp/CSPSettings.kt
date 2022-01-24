@@ -44,6 +44,8 @@ object CSPSettings {
         CSPEntry("https://www.facebook.com"),
         CSPEntry("https://analytics.argu.co"),
         CSPEntry("https://argu-logos.s3.eu-central-1.amazonaws.com"),
+        CSPEntry("https://maxcdn.bootstrapcdn.com"),
+        CSPEntry("https://fonts.gstatic.com"),
         CSPEntry { ctx -> "ws://${ctx.host}" },
         CSPEntry { ctx -> if (!ctx.development) "https://notify.bugsnag.com" else null },
         CSPEntry { ctx -> if (!ctx.development) "https://sessions.bugsnag.com" else null },
