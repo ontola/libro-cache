@@ -202,7 +202,7 @@ fun Application.module(
         header("Referrer-Policy", "strict-origin-when-cross-origin")
         header("X-Content-Type-Options", "nosniff")
         header("X-Frame-Options", "DENY")
-        header("X-Powered-By", "Ontola")
+        header("Service-Worker-allowed", "/")
         Versions.ServerVersion?.let {
             header("X-Server-Version", it)
         }

@@ -64,10 +64,10 @@ fun BODY.serviceWorkerBlock(nonce: String, manifest: Manifest) {
             +"""
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {
-                navigator.serviceWorker.register('${manifest.serviceworker.src}', { scope: '${manifest.serviceworker.scope}/' });
+                navigator.serviceWorker.register('/f_assets/sw.js', { scope: '${manifest.serviceworker.scope}/' });
               });
               window.addEventListener('load', function() {
-                 navigator.serviceWorker.register('${manifest.serviceworker.src}', { scope: '${manifest.serviceworker.scope}' });
+                 navigator.serviceWorker.register('/f_assets/sw.js', { scope: '${manifest.serviceworker.scope}' });
               });
             }
             """.trimIndent()
