@@ -74,6 +74,7 @@ kotlin {
 
                 implementation("io.ktor:ktor-server-core:$ktor_version")
                 implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
+                implementation("io.ktor:ktor-server-caching-headers:$ktor_version")
                 implementation("io.ktor:ktor-server-cio:$ktor_version")
                 implementation("io.ktor:ktor-server-host-common:$ktor_version")
                 implementation("io.ktor:ktor-server-hsts:$ktor_version")

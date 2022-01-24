@@ -4,12 +4,14 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.http.CacheControl
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
+import io.ktor.http.content.CachingOptions
 import io.ktor.http.fullPath
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -17,6 +19,7 @@ import io.ktor.server.html.respondHtml
 import io.ktor.server.locations.Locations
 import io.ktor.server.logging.toLogString
 import io.ktor.server.metrics.micrometer.MicrometerMetrics
+import io.ktor.server.plugins.CachingHeaders
 import io.ktor.server.plugins.CallLogging
 import io.ktor.server.plugins.Compression
 import io.ktor.server.plugins.DefaultHeaders
@@ -195,6 +198,19 @@ fun Application.module(
         deflate {
             priority = 10.0
             minimumSize(1024)
+        }
+    }
+
+    install(CachingHeaders) {
+        options { outgoingContent ->
+            when (outgoingContent.contentType?.withoutParameters()) {
+                ContentType.Text.CSS,
+                ContentType.Application.JavaScript,
+                ContentType.Application.FontWoff -> CachingOptions(
+                    CacheControl.MaxAge(maxAgeSeconds = 365.days.inWholeSeconds.toInt()),
+                )
+                else -> null
+            }
         }
     }
 
