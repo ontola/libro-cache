@@ -16,6 +16,10 @@ import io.ontola.util.appendPath
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+val manifestSerializer = Json {
+    encodeDefaults = true
+}
+
 private suspend fun PipelineContext<Unit, ApplicationCall>.handleManifest() {
     if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
         return
@@ -27,7 +31,7 @@ private suspend fun PipelineContext<Unit, ApplicationCall>.handleManifest() {
         return call.respond(HttpStatusCode.NotFound)
     }
 
-    call.respond(Json.encodeToString(call.tenant.manifest))
+    call.respond(manifestSerializer.encodeToString(call.tenant.manifest))
 }
 
 fun Routing.mountManifest() {

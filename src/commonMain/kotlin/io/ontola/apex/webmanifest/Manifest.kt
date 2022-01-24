@@ -39,7 +39,6 @@ data class Manifest(
             serviceworker = ServiceWorker(
                 scope = websiteIRI.encodedPath,
             ),
-//            startUrl = Url("$websiteIRI/")
         )
     }
 }
