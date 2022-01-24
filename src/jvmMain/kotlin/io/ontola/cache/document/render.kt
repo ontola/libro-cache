@@ -61,7 +61,7 @@ fun BODY.serviceWorkerBlock(nonce: String, manifest: Manifest) {
     script {
         this.nonce = nonce
         unsafe {
-            """
+            +"""
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {
                 navigator.serviceWorker.register('${manifest.serviceworker.src}', { scope: '${manifest.serviceworker.scope}/' });
