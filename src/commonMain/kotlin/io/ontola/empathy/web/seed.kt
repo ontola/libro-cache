@@ -101,11 +101,11 @@ data class Record(
 
 typealias DataSlice = Map<String, Record>
 
-fun List<Hextuple>.toSlice(): DataSlice = buildMap {
+fun List<Hextuple?>.toSlice(): DataSlice = buildMap {
     for (hex in this@toSlice) {
-        if (hex.graph != "http://purl.org/link-lib/supplant") {
-            throw Error("Non-supplant statement: $hex")
-        }
+        if (hex == null || hex.graph == "http://purl.org/link-lib/meta") continue
+
+        if (hex.graph != "http://purl.org/link-lib/supplant") throw Error("Non-supplant statement: $hex")
 
         val record = this.getOrPut(hex.subject) { Record(Value.GlobalId(hex.subject)) }
         val field = record.entries.getOrPut(hex.predicate) { arrayOf() }
