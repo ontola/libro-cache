@@ -181,7 +181,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
     /**
      * Client to use for requests to external systems.
      */
-    val client: HttpClient,
+    val clientOverride: HttpClient? = null,
     val serializer: Json = Json {
         encodeDefaults = true
         isLenient = false
@@ -191,6 +191,8 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
     val clientVersion: String?,
 ) {
     private val logger = KotlinLogging.logger {}
+
+    val client: HttpClient = clientOverride ?: createClient(env == "production")
 
     private val reportingService: Bugsnag? = if (serverReportingKey.isNullOrBlank()) {
         logger.warn("No reporting key")
@@ -227,7 +229,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
         fun fromEnvironment(
             config: ApplicationConfig,
             testing: Boolean,
-            client: HttpClient = createClient(),
+            client: HttpClient? = null,
         ): CacheConfig {
             val cacheConfig = config.config("cache")
 
@@ -248,7 +250,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
                 serverReportingKey = cacheConfig.config("reporting").propertyOrNull("serverReportingKey")?.getString(),
                 clientReportingKey = cacheConfig.config("reporting").propertyOrNull("clientReportingKey")?.getString(),
                 cacheExpiration = cacheConfig.propertyOrNull("cacheExpiration")?.toString()?.toLongOrNull(),
-                client = client,
+                clientOverride = client,
                 serverVersion = Versions.ServerVersion,
                 clientVersion = Versions.ClientVersion,
             )

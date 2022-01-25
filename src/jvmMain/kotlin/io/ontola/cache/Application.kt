@@ -108,7 +108,7 @@ fun Application.module(
     testing: Boolean = false,
     storage: StorageAdapter<String, String>? = null,
     persistentStorage: StorageAdapter<String, String>? = null,
-    client: HttpClient = createClient(),
+    client: HttpClient? = null,
 ) {
     Versions.print()
     val config = CacheConfig.fromEnvironment(environment.config, testing, client)
@@ -421,6 +421,6 @@ fun Application.module(
         mountWebSocketProxy()
         mountLogout()
         mountMaps()
-        mountIndex(client)
+        mountIndex()
     }
 }

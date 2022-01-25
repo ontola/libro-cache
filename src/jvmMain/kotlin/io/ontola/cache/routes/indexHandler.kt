@@ -32,6 +32,7 @@ import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.document.indexPage
 import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.isHTML
+import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.services
@@ -212,8 +213,8 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
     respondRenderWithData(ctx, includes, head.statusCode)
 }
 
-fun Routing.mountIndex(client: HttpClient) {
+fun Routing.mountIndex() {
     get("{...}") {
-        indexHandler(client)
+        indexHandler(call.application.cacheConfig.client)
     }
 }
