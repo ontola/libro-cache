@@ -9,6 +9,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.server.request.ApplicationRequest
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.configureClientLogging
+import io.ontola.util.disableCertValidation
 
 enum class ProxyClient {
     VerbatimBackend,
@@ -58,6 +59,8 @@ class Configuration {
      */
     var extensions: List<String> = emptyList()
 
+    var skipCertificateValidation: Boolean = false
+
     val unsafeList = listOf(
         CacheHttpHeaders.NewAuthorization.lowercase(),
         CacheHttpHeaders.NewRefreshToken.lowercase(),
@@ -74,6 +77,7 @@ class Configuration {
         install(Logging) {
             configureClientLogging()
         }
+        if (skipCertificateValidation) disableCertValidation()
     }
     val redirectingClient = HttpClient(CIO) {
         followRedirects = true
@@ -81,6 +85,7 @@ class Configuration {
         install(Logging) {
             configureClientLogging()
         }
+        if (skipCertificateValidation) disableCertValidation()
     }
     lateinit var binaryClient: HttpClient
 
