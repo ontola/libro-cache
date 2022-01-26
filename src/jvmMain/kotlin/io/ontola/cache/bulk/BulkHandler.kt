@@ -69,7 +69,7 @@ fun Routing.mountBulkHandler() {
                         entriesToOutputStream(it, this)
                     }
                 }
-                .filter { it.cacheControl != CacheControl.Private }
+                .filter { it.cacheControl != CacheControl.Private && it.status == HttpStatusCode.OK }
                 .toList()
         }
 
