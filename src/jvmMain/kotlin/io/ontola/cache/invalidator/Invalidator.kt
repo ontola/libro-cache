@@ -101,6 +101,7 @@ fun Application.module(testing: Boolean = false) {
                                 Deleted::class.qualifiedName -> {
                                     cacheRedisConn.del(keyManager.toEntryKey(resource, "en"))
                                     cacheRedisConn.del(keyManager.toEntryKey(resource, "nl"))
+                                    cacheRedisConn.del(keyManager.toEntryKey(resource, "de"))
                                     Metrics.invalidations.increment()
                                 }
                                 else -> logger.warn("Ignored message with type '$type'")
