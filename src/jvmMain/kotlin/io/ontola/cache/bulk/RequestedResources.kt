@@ -1,5 +1,6 @@
 package io.ontola.cache.bulk
 
+import io.ktor.http.URLBuilder
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.request.receiveParameters
@@ -12,6 +13,11 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.requestedResources()
     val resources = params.getAll("resource[]")
 
     return resources
-        ?.map { r -> CacheRequest(URLDecoder.decode(r, Charset.defaultCharset().name())) }
+        ?.map { r ->
+            val docIRI = URLBuilder(URLDecoder.decode(r, Charset.defaultCharset().name())).apply {
+                fragment = ""
+            }.buildString()
+            CacheRequest(docIRI)
+        }
         ?: emptyList()
 }
