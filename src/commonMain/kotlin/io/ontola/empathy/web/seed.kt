@@ -107,7 +107,13 @@ fun List<Hextuple?>.toSlice(): DataSlice = buildMap {
 
         if (hex.graph != "http://purl.org/link-lib/supplant") throw Error("Non-supplant statement: $hex")
 
-        val record = this.getOrPut(hex.subject) { Record(Value.GlobalId(hex.subject)) }
+        val record = this.getOrPut(hex.subject) {
+            val id = if (hex.subject.startsWith("_"))
+                Value.LocalId(hex.subject)
+            else
+                Value.GlobalId(hex.subject)
+            Record(id)
+        }
         val field = record.entries.getOrPut(hex.predicate) { arrayOf() }
         val value = hex.toValue()
         record[hex.predicate] = arrayOf(*field, value)
