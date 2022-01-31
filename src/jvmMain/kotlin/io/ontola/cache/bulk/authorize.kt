@@ -7,13 +7,13 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.services
-import io.ontola.cache.util.scopeBlankNodes
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flattenConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import java.util.UUID
 
 @OptIn(FlowPreview::class)
 suspend fun PipelineContext<Unit, ApplicationCall>.authorize(toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
@@ -40,4 +40,13 @@ suspend fun PipelineContext<Unit, ApplicationCall>.authorize(toAuthorize: Flow<C
                 contents = scopeBlankNodes(it.body),
             )
         }
+}
+
+fun scopeBlankNodes(hex: String?): String? {
+    if (hex == null) {
+        return null
+    }
+    val unique = UUID.randomUUID().toString()
+
+    return hex.replace("\"_:", "\"_:$unique")
 }

@@ -51,7 +51,6 @@ kotlin {
                 implementation("io.ktor:ktor-client-cio:$ktor_version")
                 implementation("io.ktor:ktor-client-auth:$ktor_version")
                 implementation("io.ktor:ktor-client-json:$ktor_version")
-                implementation("io.ktor:ktor-client-mock:$ktor_version")
                 implementation("io.ktor:ktor-client-serialization:$ktor_version")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
                 implementation("io.ktor:ktor-client-logging:$ktor_version")
@@ -60,6 +59,7 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("io.ktor:ktor-client-mock:$ktor_version")
             }
         }
         val jvmMain by getting {
@@ -113,6 +113,7 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation("io.ktor:ktor-server-tests:$ktor_version")
+                implementation("io.ktor:ktor-client-mock:$ktor_version")
 
                 implementation("io.mockk:mockk:1.12.1")
                 implementation("org.jetbrains.kotlin:kotlin-test")
