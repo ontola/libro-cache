@@ -14,6 +14,7 @@ import io.ktor.http.Url
 import io.ktor.http.content.CachingOptions
 import io.ktor.http.fullPath
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
 import io.ktor.server.html.respondHtml
 import io.ktor.server.locations.Locations
@@ -56,6 +57,7 @@ import io.ontola.cache.plugins.CacheConfiguration
 import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.plugins.CsrfProtection
 import io.ontola.cache.plugins.DeviceId
+import io.ontola.cache.plugins.LanguageNegotiation
 import io.ontola.cache.plugins.Logging
 import io.ontola.cache.plugins.Redirect
 import io.ontola.cache.plugins.RedisAdapter
@@ -64,6 +66,7 @@ import io.ontola.cache.plugins.Storage
 import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.plugins.Versions
 import io.ontola.cache.plugins.cacheConfig
+import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.requestTimings
 import io.ontola.cache.routes.mountBulk
 import io.ontola.cache.routes.mountIndex
@@ -75,6 +78,7 @@ import io.ontola.cache.routes.mountTestingRoutes
 import io.ontola.cache.sessions.RedisSessionStorage
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.signedTransformer
+import io.ontola.cache.statuspages.RenderLanguage
 import io.ontola.cache.statuspages.errorPage
 import io.ontola.cache.studio.Studio
 import io.ontola.cache.tenantization.Tenantization
@@ -133,34 +137,45 @@ fun Application.module(
         }
     }
 
+    install(LanguageNegotiation) {
+        defaultLanguage = config.defaultLanguage
+    }
+
     install(HSTS) {
         includeSubDomains = true
     }
 
     install(StatusPages) {
+        fun ApplicationCall.renderLanguage(): RenderLanguage = when {
+            language.contains("nl") -> RenderLanguage.NL
+            language.contains("en") -> RenderLanguage.EN
+            language.contains("de") -> RenderLanguage.DE
+            else -> RenderLanguage.NL
+        }
+
         exception<TenantNotFoundException> { call, cause ->
             call.respondHtml(HttpStatusCode.NotFound) {
-                errorPage(HttpStatusCode.NotFound, cause)
+                errorPage(HttpStatusCode.NotFound, cause, call.renderLanguage())
             }
         }
         exception<BadGatewayException> { call, cause ->
             call.respondHtml(HttpStatusCode.BadGateway) {
-                errorPage(HttpStatusCode.BadGateway, cause)
+                errorPage(HttpStatusCode.BadGateway, cause, call.renderLanguage())
             }
         }
         exception<AuthenticationException> { call, cause ->
             call.respondHtml(HttpStatusCode.Unauthorized) {
-                errorPage(HttpStatusCode.Unauthorized, cause)
+                errorPage(HttpStatusCode.Unauthorized, cause, call.renderLanguage())
             }
         }
         exception<AuthorizationException> { call, cause ->
             call.respondHtml(HttpStatusCode.Forbidden) {
-                errorPage(HttpStatusCode.Forbidden, cause)
+                errorPage(HttpStatusCode.Forbidden, cause, call.renderLanguage())
             }
         }
         exception<CSRFVerificationException> { call, cause ->
             call.respondHtml(HttpStatusCode.Forbidden) {
-                errorPage(HttpStatusCode.Forbidden, cause)
+                errorPage(HttpStatusCode.Forbidden, cause, call.renderLanguage())
             }
         }
     }

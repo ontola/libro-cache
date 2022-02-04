@@ -23,6 +23,7 @@ import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.logger
+import io.ontola.cache.plugins.setPreferredLanguage
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.copy
@@ -52,6 +53,9 @@ class SessionManager(
                 call.sessions.clear<SessionData>()
             } else {
                 call.sessions.set(value)
+            }
+            claims()?.user?.language.let {
+                call.setPreferredLanguage(language)
             }
         }
 
