@@ -14,6 +14,7 @@ import kotlinx.css.tr
 import kotlinx.html.FlowOrMetaDataContent
 import kotlinx.html.body
 import kotlinx.html.head
+import kotlinx.html.id
 import kotlinx.html.style
 import kotlinx.html.table
 import kotlinx.html.tbody
@@ -68,6 +69,8 @@ fun Routing.mountHealth() {
                     tbody {
                         for (check in checks) {
                             tr {
+                                id = check.name.lowercase().replace(' ', '-')
+
                                 td { +check.name }
                                 td { +humanStatus(check.result) }
                                 td {
