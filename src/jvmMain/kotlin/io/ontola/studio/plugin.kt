@@ -26,7 +26,6 @@ import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.util.measured
-import io.ontola.rdf.hextuples.Hextuple
 import io.ontola.util.filename
 import io.ontola.util.fullUrl
 import io.ontola.util.origin
@@ -99,7 +98,7 @@ class Studio(private val configuration: Configuration) {
         }
 
         val ctx = context.call.pageRenderContextFromCall(
-            data = distribution.data.map { Hextuple.fromArray(it) },
+            data = distribution.data,
             manifest = distribution.manifest,
             uri = uri,
         )

@@ -29,7 +29,7 @@ fun Routing.mountStudio() {
     val serializer = Json {
         encodeDefaults = true
         isLenient = false
-        ignoreUnknownKeys = false
+        ignoreUnknownKeys = true
         prettyPrint = true
     }
 
@@ -64,6 +64,9 @@ fun Routing.mountStudio() {
 
         val id = call.parameters["projectId"] ?: return@put call.respond(HttpStatusCode.BadRequest)
         val project = projectRepo.store(id, serializer.decodeFromString(call.receiveText()))
+        val distId = projectRepo.nextDistributionId(id)
+        println(distId)
+        val distribution = distributionRepo.store(distId, project.toDistribution())
 
         call.respond(serializer.encodeToString(mapOf("iri" to "https://local.rdf.studio/_studio/projects/${project.name}")))
     }

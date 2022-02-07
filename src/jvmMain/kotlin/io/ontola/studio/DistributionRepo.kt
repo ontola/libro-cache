@@ -39,7 +39,7 @@ class DistributionRepo(val storage: Storage) {
     }
 
     suspend fun get(projectId: String, distId: String): Distribution? {
-        val data = storage.getAllListValues(*distributionKey(projectId, distId), data).map { Json.decodeFromString<Array<String>>(it) }
+        val data = storage.getAllListValues(*distributionKey(projectId, distId), data).map { Json.decodeFromString<Hextuple>(it) }
         val manifest = storage.getHashValue(*distributionKey(projectId, distId), hashKey = manifestKey) ?: return null
         val sitemap = storage.getHashValue(*distributionKey(projectId, distId), hashKey = sitemapKey) ?: return null
 
