@@ -50,7 +50,7 @@ class DistributionRepo(val storage: Storage) {
         )
     }
 
-    suspend fun getData(projectId: String, distId: String): DataSlice {
+    private suspend fun getData(projectId: String, distId: String): DataSlice {
         return storage.getString(*distributionKey(projectId, distId), dataPostfix)
             ?.let { Json.decodeFromString(it) }
             ?: emptyMap()

@@ -56,6 +56,7 @@ object CSPSettings {
         CSPEntry(CSPValue.Self),
         CSPEntry("https://maxcdn.bootstrapcdn.com"),
         CSPEntry("https://fonts.gstatic.com"),
+        CSPEntry("https://cdn.jsdelivr.net/npm/monaco-editor@0.25.2/"),
     )
 
     private val frameSrc = listOf(
@@ -109,6 +110,7 @@ object CSPSettings {
         CSPEntry("https://browser-update.org"),
         CSPEntry("https://argu-logos.s3.eu-central-1.amazonaws.com"),
         CSPEntry("https://cdnjs.cloudflare.com"),
+        CSPEntry("https://cdn.jsdelivr.net/npm/monaco-editor@0.25.2/"),
         CSPEntry { ctx ->
             ctx
                 .manifest
@@ -134,11 +136,12 @@ object CSPSettings {
         CSPEntry("fonts.googleapis.com"),
         CSPEntry { ctx -> if (ctx.development) CSPValue.Blob else null },
         CSPEntry(CSPValue.ReportSample),
+        CSPEntry("https://cdn.jsdelivr.net/npm/monaco-editor@0.25.2/"),
     )
 
     private val workerSrc = listOf(
         CSPEntry(CSPValue.Self),
-        CSPEntry { ctx -> if (ctx.development) CSPValue.Blob else null },
+        CSPEntry(CSPValue.Blob),
         CSPEntry(CSPValue.ReportSample),
     )
 
