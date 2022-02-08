@@ -44,7 +44,7 @@ class StorageTest {
     }
 
     @Test
-    fun storageStringCacheShouldA() {
+    fun storageStringShouldA() {
         withCacheTestApplication {
             runBlocking {
                 val ctx = StringStorageTest(env)
@@ -63,7 +63,7 @@ class StorageTest {
     }
 
     @Test
-    fun storageStringCacheShouldFetchExpiredKeys() {
+    fun storageShouldFetchKeys() {
         withTestApplication {
             runBlocking {
                 val ctx = StringStorageTest(env)
@@ -77,26 +77,6 @@ class StorageTest {
                 val ret = ctx.storage.getString("a")
 
                 assertEquals("cache:a", ctx.getKey.captured)
-                assertEquals("value", ret)
-            }
-        }
-    }
-
-    @Test
-    fun storageStringCacheShouldReturnCachedValue() {
-        withTestApplication {
-            runBlocking {
-                val ctx = StringStorageTest(env)
-
-                ctx.storage.setString("a", value = "value", expiration = 1L)
-
-                assertEquals("cache:a", ctx.setKey.captured)
-                assertEquals("cache:a", ctx.expireKey.captured)
-                assertEquals("value", ctx.value.captured)
-
-                val ret = ctx.storage.getString("a")
-
-                assertFalse(ctx.getKey.isCaptured, "Adapter called while value should be cached")
                 assertEquals("value", ret)
             }
         }

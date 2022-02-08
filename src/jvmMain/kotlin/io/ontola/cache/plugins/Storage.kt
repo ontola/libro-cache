@@ -98,7 +98,6 @@ class Storage(
     private val keyManager: KeyManager,
     private val expiration: Long?,
 ) {
-    private val strings: MutableMap<String, TempString> = mutableMapOf()
 
     class Configuration {
         lateinit var adapter: StorageAdapter<String, String>
@@ -165,7 +164,6 @@ class Storage(
         adapter.set(prefixed, value)
         expiration?.let {
             val expiresAt = Instant.now().plusMillis(Duration.seconds(expiration).inWholeMilliseconds).toEpochMilli()
-            strings[prefixed] = Pair(expiresAt, value)
             adapter.expire(prefixed, it)
         }
     }
@@ -180,13 +178,6 @@ class Storage(
 
     suspend fun getString(vararg key: String): String? {
         val prefixed = keyManager.toKey(*key)
-        strings[prefixed]?.let { (exp, value) ->
-            if (Instant.now().toEpochMilli() < exp) {
-                return value
-            } else {
-                strings.remove(prefixed)
-            }
-        }
 
         return adapter.get(prefixed)
     }
