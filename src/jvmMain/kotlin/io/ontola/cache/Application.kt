@@ -292,6 +292,7 @@ fun Application.module(
             Regex("^/csp-reports"),
             Regex("^/link-lib/bulk"),
             Regex("^/([\\w/]*/)?follows/"),
+            Regex("^/oauth/token"),
         )
     }
 
@@ -313,7 +314,11 @@ fun Application.module(
 
         rules = listOf(
             ProxyRule(Regex("^/([\\w/]*/)?manifest.json$")),
+
             ProxyRule(Regex("^/.well-known/openid-configuration$")),
+            ProxyRule(Regex("^/.well-known/webfinger(\\?.*)?")),
+            ProxyRule(Regex("^/oauth/discovery/keys")),
+
             ProxyRule(Regex("/media_objects/"), client = ProxyClient.RedirectingBackend),
 
             ProxyRule(Regex("/assets/"), client = ProxyClient.Binary, includeCredentials = false),
