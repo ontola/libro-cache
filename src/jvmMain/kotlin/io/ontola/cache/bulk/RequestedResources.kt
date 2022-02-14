@@ -5,6 +5,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.request.receiveParameters
 import io.ktor.util.pipeline.PipelineContext
+import io.ontola.util.withoutTrailingSlash
 import java.net.URLDecoder
 import java.nio.charset.Charset
 
@@ -16,7 +17,7 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.requestedResources()
         ?.map { r ->
             val docIRI = URLBuilder(URLDecoder.decode(r, Charset.defaultCharset().name())).apply {
                 fragment = ""
-            }.buildString()
+            }.build().withoutTrailingSlash
             CacheRequest(docIRI)
         }
         ?: emptyList()
