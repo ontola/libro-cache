@@ -5,6 +5,7 @@ import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
 import io.ktor.server.application.ApplicationCall
+import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
@@ -32,7 +33,7 @@ internal fun HttpRequestBuilder.proxyHeaders(
         copy(HttpHeaders.Origin, request)
         copy(HttpHeaders.Referrer, request)
         copy(HttpHeaders.UserAgent, request)
-        copy(CacheHttpHeaders.XDeviceId, request)
+        header(CacheHttpHeaders.XDeviceId, call.deviceId)
         copy(CacheHttpHeaders.RequestReferrer, request)
 
         copy("Client-Ip", request)
