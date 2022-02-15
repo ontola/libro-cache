@@ -319,7 +319,7 @@ fun Application.module(
             ProxyRule(Regex("^/.well-known/webfinger(\\?.*)?")),
             ProxyRule(Regex("^/oauth/discovery/keys")),
 
-            ProxyRule(Regex("/media_objects/"), client = ProxyClient.RedirectingBackend),
+            ProxyRule(Regex("/media_objects/\\w+/content"), client = ProxyClient.RedirectingBackend),
 
             ProxyRule(Regex("/assets/"), client = ProxyClient.Binary, includeCredentials = false),
             ProxyRule(Regex("/photos/"), client = ProxyClient.Binary),
