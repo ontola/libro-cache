@@ -12,6 +12,7 @@ import io.ktor.http.URLProtocol
 import io.ktor.server.request.httpMethod
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.server.websocket.webSocket
 import io.ktor.util.AttributeKey
 import io.ontola.cache.plugins.services
@@ -22,56 +23,63 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
+private suspend fun DefaultWebSocketServerSession.handleWebsocket() {
+    if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
+        return
+    }
+
+    val serverSession = this
+
+    val client = HttpClient(CIO).config {
+        install(WebSockets)
+    }
+
+    val webSocketPath = call.tenant.manifest.ontola.websocketPath ?: return call.respond(HttpStatusCode.ExpectationFailed)
+    val websitePath = call.tenant.websiteIRI.encodedPath
+    val fullPath = "${websitePath.trimEnd('/')}/$webSocketPath"
+    val service = call.services.route(fullPath)
+
+    client.webSocket(
+        call.request.httpMethod,
+        host = service.host,
+        port = service.port,
+        path = fullPath,
+        request = {
+            url.protocol = URLProtocol.WS
+            println("Connecting to: ${url.buildString()}")
+
+            headers {
+                proxySafeHeaders(call.request)
+                header(HttpHeaders.Origin, call.tenant.websiteIRI.origin())
+                serverSession.call.sessionManager.session?.let {
+                    header(HttpHeaders.Authorization, it.accessTokenBearer())
+                }
+            }
+        },
+    ) {
+        val clientSession = this
+
+        val serverJob = launch(Dispatchers.IO) {
+            for (received in serverSession.incoming) {
+                clientSession.send(received)
+            }
+        }
+
+        val clientJob = launch(Dispatchers.IO) {
+            for (received in clientSession.incoming) {
+                serverSession.send(received)
+            }
+        }
+
+        joinAll(serverJob, clientJob)
+    }
+}
+
 fun Route.mountWebSocketProxy() {
     webSocket(path = "/{prefix?}/cable", protocol = "actioncable-v1-json") {
-        if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
-            return@webSocket
-        }
-
-        val serverSession = this
-
-        val client = HttpClient(CIO).config {
-            install(WebSockets)
-        }
-
-        val webSocketPath = call.tenant.manifest.ontola.websocketPath ?: return@webSocket call.respond(HttpStatusCode.ExpectationFailed)
-        val websitePath = call.tenant.websiteIRI.encodedPath
-        val fullPath = "${websitePath.trimEnd('/')}/$webSocketPath"
-        val service = call.services.route(fullPath)
-
-        client.webSocket(
-            call.request.httpMethod,
-            host = service.host,
-            port = service.port,
-            path = fullPath,
-            request = {
-                url.protocol = URLProtocol.WS
-                println("Connecting to: ${url.buildString()}")
-
-                headers {
-                    proxySafeHeaders(call.request)
-                    header(HttpHeaders.Origin, call.tenant.websiteIRI.origin())
-                    serverSession.call.sessionManager.session?.let {
-                        header(HttpHeaders.Authorization, it.accessTokenBearer())
-                    }
-                }
-            },
-        ) {
-            val clientSession = this
-
-            val serverJob = launch(Dispatchers.IO) {
-                for (received in serverSession.incoming) {
-                    clientSession.send(received)
-                }
-            }
-
-            val clientJob = launch(Dispatchers.IO) {
-                for (received in clientSession.incoming) {
-                    serverSession.send(received)
-                }
-            }
-
-            joinAll(serverJob, clientJob)
-        }
+        handleWebsocket()
+    }
+    webSocket(path = "/cable", protocol = "actioncable-v1-json") {
+        handleWebsocket()
     }
 }
