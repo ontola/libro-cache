@@ -9,10 +9,12 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.fullPath
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.header
+import io.ktor.server.request.httpMethod
 import io.ktor.server.sessions.clear
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
@@ -30,6 +32,13 @@ import io.ontola.util.appendPath
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+
+val unsafeMethods = listOf(
+    HttpMethod.Post,
+    HttpMethod.Put,
+    HttpMethod.Patch,
+    HttpMethod.Delete,
+)
 
 class SessionManager(
     private val call: ApplicationCall,
@@ -79,6 +88,10 @@ class SessionManager(
         }
     }
 
+    private fun requireAccessToken(): Boolean {
+        return unsafeMethods.contains(call.request.httpMethod)
+    }
+
     private fun claims(): Claims? {
         return session?.let {
             try {
@@ -96,14 +109,16 @@ class SessionManager(
         val existing = session ?: SessionData()
 
         if (existing.credentials == null) {
-            val guestToken = guestToken()
-            session = existing.copy(
-                credentials = TokenPair(
-                    guestToken.accessToken,
-                    guestToken.refreshToken,
-                ),
-                deviceId = call.deviceId,
-            )
+            if (requireAccessToken()) {
+                val guestToken = guestToken()
+                session = existing.copy(
+                    credentials = TokenPair(
+                        guestToken.accessToken,
+                        guestToken.refreshToken,
+                    ),
+                    deviceId = call.deviceId,
+                )
+            }
         } else if (existing.isExpired(configuration.jwtValidator)) {
             session = refresher.refresh(existing)
         }
