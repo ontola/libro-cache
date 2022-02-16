@@ -293,6 +293,7 @@ fun Application.module(
             Regex("^/link-lib/bulk"),
             Regex("^/([\\w/]*/)?follows/"),
             Regex("^/oauth/token"),
+            Regex("^/oauth/register"),
         )
     }
 
@@ -318,6 +319,7 @@ fun Application.module(
             ProxyRule(Regex("^/.well-known/openid-configuration$")),
             ProxyRule(Regex("^/.well-known/webfinger(\\?.*)?")),
             ProxyRule(Regex("^/oauth/discovery/keys")),
+            ProxyRule(Regex("^/oauth/userinfo")),
 
             ProxyRule(Regex("/media_objects/\\w+/content"), client = ProxyClient.RedirectingBackend),
 
