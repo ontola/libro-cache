@@ -20,8 +20,12 @@ internal fun HttpRequestBuilder.proxyHeaders(
     val request = call.request
 
     headers {
-        session?.accessTokenBearer()?.let {
-            header(HttpHeaders.Authorization, it)
+        if (request.headers.contains(HttpHeaders.Authorization)) {
+            copy(HttpHeaders.Authorization, request)
+        } else {
+            session?.accessTokenBearer()?.let {
+                header(HttpHeaders.Authorization, it)
+            }
         }
         if (useWebsiteIRI) {
             header(CacheHttpHeaders.WebsiteIri, call.tenant.websiteIRI)
