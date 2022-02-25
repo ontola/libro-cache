@@ -353,6 +353,7 @@ fun Application.module(
             ProxyRule(Regex("^/oauth/userinfo")),
 
             ProxyRule(Regex("/media_objects/\\w+/content"), client = ProxyClient.RedirectingBackend),
+            ProxyRule(Regex("/active_storage/"), client = ProxyClient.RedirectingBackend),
 
             ProxyRule(Regex("/assets/"), client = ProxyClient.Binary, includeCredentials = false),
             ProxyRule(Regex("/photos/"), client = ProxyClient.Binary),
