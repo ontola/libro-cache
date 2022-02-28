@@ -11,16 +11,17 @@ import kotlinx.serialization.UseSerializers
 import kotlin.js.JsExport
 
 // Keep in sync with /libro/app/modules/Studio/async/context/ProjectContext.ts
-enum class ResourceType(val type: Int) {
-    RDF(0),
-    Manifest(1),
-    Elements(2),
-    MediaObject(3),
-    SiteMap(4),
-    Distributions(5);
+@Serializable
+enum class ResourceType(val type: String) {
+    RDF("RDF"),
+    Manifest("MANIFEST"),
+    Elements("ELEMENTS"),
+    MediaObject("MEDIAOBJECT"),
+    SiteMap("SITEMAP"),
+    Distributions("DISTRIBUTION");
 
     companion object {
-        fun fromInt(value: Int) = ResourceType.values().first { it.type == value }
+        fun fromString(value: String) = ResourceType.values().first { it.type == value }
     }
 }
 

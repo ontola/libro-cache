@@ -5,12 +5,22 @@ import io.ontola.rdf.hextuples.Hextuple
 import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
+@Serializable
+@JsExport
+data class DistributionMeta(
+    val version: String,
+    val message: String,
+    val createdAt: Long,
+    val live: Boolean,
+)
+
 /**
  * A distribution is a serveable version of a project.
  */
 @Serializable
 @JsExport
 data class Distribution(
+    val meta: DistributionMeta,
     val data: List<Hextuple>,
     val manifest: Manifest,
     /**
@@ -30,7 +40,7 @@ fun allowedString(hextuple: String): Boolean {
     return true
 }
 
-fun Project.toDistribution(): Distribution {
+fun Project.toDistribution(meta: DistributionMeta): Distribution {
     if (hextuples.isEmpty()) {
         throw MalformedProjectException("Project didn't contain any hextuples.")
     }
@@ -49,5 +59,6 @@ fun Project.toDistribution(): Distribution {
         data = this.hextuples,
         manifest = this.manifest,
         sitemap = sitemap.joinToString(separator = "\n"),
+        meta = meta,
     )
 }

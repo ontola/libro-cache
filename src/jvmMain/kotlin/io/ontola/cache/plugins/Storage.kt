@@ -183,6 +183,12 @@ class Storage(
         }
     }
 
+    suspend fun deleteKey(vararg key: String): Long? {
+        val prefixed = keyManager.toKey(*key)
+
+        return adapter.del(prefixed)
+    }
+
     suspend fun keys(vararg pattern: String): Flow<List<String>> {
         val prefixed = keyManager.toKey(*pattern)
 
