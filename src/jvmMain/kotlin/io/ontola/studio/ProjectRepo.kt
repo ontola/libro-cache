@@ -9,18 +9,11 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-private const val projectPrefix = "projects"
-private const val projectCount = "projectCount"
-private const val distributionCount = "distributionCount"
-private const val dataPostfix = "data"
-private const val manifestKey = "manifest"
-private const val sitemapKey = "sitemap"
-
 class ProjectRepo(val storage: Storage) {
-    private fun projectKey(projectId: String): Array<String> = arrayOf(projectPrefix, projectId)
+    private fun projectKey(projectId: String): Array<String> = arrayOf(projectsPart, projectId)
 
     suspend fun nextDistributionId(id: String): String {
-        return storage.increment(*projectKey(id), distributionCount)?.toString() ?: throw IllegalStateException("Increment failed")
+        return storage.increment(*projectKey(id), distributionCountPart)?.toString() ?: throw IllegalStateException("Increment failed")
     }
 
     suspend fun create(request: ProjectRequest): Project {
@@ -59,11 +52,11 @@ class ProjectRepo(val storage: Storage) {
 
     @OptIn(FlowPreview::class)
     suspend fun findAll(): List<List<String>> {
-        return storage.keys(projectPrefix, "[^:]")
+        return storage.keys(projectsPart, "[^:]")
             .toList()
     }
 
     private suspend fun nextProjectId(): String {
-        return storage.increment(projectCount)?.toString() ?: throw IllegalStateException("Increment failed")
+        return storage.increment(projectCountPart)?.toString() ?: throw IllegalStateException("Increment failed")
     }
 }

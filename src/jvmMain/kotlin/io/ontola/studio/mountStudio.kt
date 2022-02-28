@@ -25,6 +25,7 @@ import kotlinx.serialization.json.Json
 fun Routing.mountStudio() {
     val projectRepo = ProjectRepo(application.persistentStorage)
     val distributionRepo = DistributionRepo(application.persistentStorage)
+    val publicationRepo = PublicationRepo(application.persistentStorage)
 
     val serializer = Json {
         encodeDefaults = true
@@ -64,9 +65,6 @@ fun Routing.mountStudio() {
 
         val id = call.parameters["projectId"] ?: return@put call.respond(HttpStatusCode.BadRequest)
         val project = projectRepo.store(id, serializer.decodeFromString(call.receiveText()))
-        val distId = projectRepo.nextDistributionId(id)
-        println(distId)
-        val distribution = distributionRepo.store(distId, project.toDistribution())
 
         call.respond(serializer.encodeToString(mapOf("iri" to "https://local.rdf.studio/_studio/projects/${project.name}")))
     }
@@ -81,6 +79,29 @@ fun Routing.mountStudio() {
         call.respond(serializer.encodeToString(project))
     }
 
+    get("/_studio/projects/{projectId}/distributions/{distributionId}") {
+        if (!call.sessionManager.isStaff)
+            return@get call.respond(HttpStatusCode.Forbidden)
+
+        val projectId = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+        val distributionId = call.parameters["distributionId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+
+        val distribution = distributionRepo.get(projectId, distributionId) ?: return@get call.respond(HttpStatusCode.BadRequest)
+
+        call.respond(Json.encodeToString(distribution))
+    }
+
+    get("/_studio/projects/{projectId}/distributions/{distributionId}/meta") {
+        if (!call.sessionManager.isStaff)
+            return@get call.respond(HttpStatusCode.Forbidden)
+
+        val projectId = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+        val distributionId = call.parameters["distributionId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+        val distribution = distributionRepo.get(projectId, distributionId) ?: return@get call.respond(HttpStatusCode.BadRequest)
+
+        call.respond(Json.encodeToString(distribution.meta))
+    }
+
     get("/_studio/projects/{projectId}/distributions") {
         if (!call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
@@ -88,27 +109,67 @@ fun Routing.mountStudio() {
         val id = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
         val distributions = distributionRepo.find(id)
 
-        call.respond(distributions)
+        call.respond(serializer.encodeToString(distributions))
     }
 
-    put<Distribution>("/_studio/projects/{projectId}/distributions") {
+    post("/_studio/projects/{projectId}/distributions") {
         if (!call.sessionManager.isStaff)
-            return@put call.respond(HttpStatusCode.Forbidden)
+            return@post call.respond(HttpStatusCode.Forbidden)
 
-        val distribution = Json.decodeFromString<Distribution>(call.receive())
-        val id = call.parameters["projectId"] ?: return@put call.respond(HttpStatusCode.BadRequest)
-        distributionRepo.store(id, distribution)
+        val id = call.parameters["projectId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+        val project = projectRepo.get(id) ?: return@post call.respond(HttpStatusCode.BadRequest)
+        val meta = Json.decodeFromString<DistributionMeta>(call.receive())
+
+        distributionRepo.store(id, project.toDistribution(meta))
 
         call.respond(HttpStatusCode.OK)
     }
 
-    post<Url>("/_studio/projects/{projectId}/distributions/{distId}/publish") { startRoute ->
+    post<String>("/_studio/projects/{projectId}/distributions/{distId}/publication") { startRoute ->
         if (!call.sessionManager.isStaff)
             return@post call.respond(HttpStatusCode.Forbidden)
 
         val projectId = call.parameters["projectId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
-        val distId = call.parameters["distId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+        val distributionId = call.parameters["distId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
 
-        distributionRepo.publishDistributionToRoute(projectId, distId, startRoute.toString())
+        publicationRepo.store(
+            Publication(
+                startRoute = Url(startRoute),
+                projectId = projectId,
+                distributionId = distributionId,
+            )
+        )
+
+        call.respond(HttpStatusCode.OK)
+    }
+
+    post<String>("/_studio/projects/{projectId}/distributions/{distId}/publication/unmount") { startRoute ->
+        if (!call.sessionManager.isStaff)
+            return@post call.respond(HttpStatusCode.Forbidden)
+
+        val projectId = call.parameters["projectId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+        val distributionId = call.parameters["distId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+
+        val publicationWasDeleted = publicationRepo.delete(
+            Publication(
+                startRoute = Url(startRoute),
+                projectId = projectId,
+                distributionId = distributionId,
+            )
+        )
+
+        if (!publicationWasDeleted) return@post call.respond(HttpStatusCode.BadRequest)
+
+        call.respond(HttpStatusCode.OK)
+    }
+
+    get("/_studio/projects/{projectId}/publications") {
+        if (!call.sessionManager.isStaff)
+            return@get call.respond(HttpStatusCode.Forbidden)
+
+        val projectId = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+        val publications = publicationRepo.getPublicationsOfProject(projectId)
+
+        call.respond(Json.encodeToString(publications))
     }
 }
