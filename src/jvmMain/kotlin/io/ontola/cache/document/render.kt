@@ -207,7 +207,7 @@ fun HTML.indexPage(ctx: PageRenderContext) {
 
         themeBlock(manifest)
         preloadBlock(nonce, config, manifest)
-        serviceWorkerBlock(nonce, manifest)
+//        serviceWorkerBlock(nonce, manifest)
         seedBlock(nonce, data)
         assetsBlock(nonce, config)
 //            deferredBodyStyles(nonceStr)
