@@ -17,8 +17,10 @@ private const val wildcard = "*"
 
 class DocumentRepo(val storage: Storage) {
     suspend fun getData(id: String): List<Hextuple> {
-        return storage.getAllListValues(docsPrefix, id, data)
-            .map { Json.decodeFromString(it) }
+        return storage.getString(docsPrefix, id, data)
+            ?.split("\n")
+            ?.map { Json.decodeFromString(it) }
+            ?: emptyList()
     }
 
     suspend fun getManifest(id: String): Manifest? {
