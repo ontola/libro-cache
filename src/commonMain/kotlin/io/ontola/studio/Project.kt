@@ -12,17 +12,13 @@ import kotlin.js.JsExport
 
 // Keep in sync with /libro/app/modules/Studio/async/context/ProjectContext.ts
 @Serializable
-enum class ResourceType(val type: String) {
-    RDF("RDF"),
-    Manifest("MANIFEST"),
-    Elements("ELEMENTS"),
-    MediaObject("MEDIAOBJECT"),
-    SiteMap("SITEMAP"),
-    Distributions("DISTRIBUTION");
-
-    companion object {
-        fun fromString(value: String) = ResourceType.values().first { it.type == value }
-    }
+enum class ResourceType {
+    RDF,
+    Manifest,
+    Elements,
+    MediaObject,
+    SiteMap,
+    Distributions,
 }
 
 @Serializable

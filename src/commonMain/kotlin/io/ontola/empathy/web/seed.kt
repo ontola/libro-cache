@@ -2,21 +2,13 @@ package io.ontola.empathy.web
 
 import io.ontola.rdf.hextuples.DataType
 import io.ontola.rdf.hextuples.Hextuple
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.builtins.ArraySerializer
-import kotlinx.serialization.builtins.MapSerializer
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
 
 @Serializable
 sealed class Value(
@@ -77,25 +69,15 @@ fun Value.toJsonElementMap(): JsonObject = when (this) {
     }
 }
 
-@Serializable(with = RecordSerializer::class)
-data class Record(
-    @SerialName("_id")
-    val id: Value,
-    val fields: MutableMap<String, Array<Value>> = mutableMapOf(),
-) {
-    val entries
-        get() = fields
+fun JsonObject.toValue(): Value {
+    val value = (this["v"] as JsonPrimitive).contentOrNull ?: throw Exception("No value for `v` key in Value")
 
-    operator fun get(key: String): Array<Value>? {
-        if (key == "_id") {
-            throw Exception("Use id directly.")
-        }
-
-        return fields[key]
-    }
-
-    operator fun set(predicate: String, value: Array<Value>) {
-        this.fields[predicate] = value
+    return when (val type = (this["type"] as JsonPrimitive).content) {
+        "id" -> Value.GlobalId(value)
+        "lid" -> Value.LocalId(value)
+        "ls" -> Value.LangString(value, (this["l"] as JsonPrimitive).content)
+        "p" -> Value.Primitive(value, (this["dt"] as JsonPrimitive).content)
+        else -> throw Exception("Unknown value type $type")
     }
 }
 
@@ -105,7 +87,7 @@ fun List<Hextuple?>.toSlice(): DataSlice = buildMap {
     for (hex in this@toSlice) {
         if (hex == null || hex.graph == "http://purl.org/link-lib/meta") continue
 
-        if (hex.graph != "http://purl.org/link-lib/supplant") throw Error("Non-supplant statement: $hex")
+        if (hex.graph != "http://purl.org/linked-delta/supplant") throw Error("Non-supplant statement: $hex")
 
         val record = this.getOrPut(hex.subject) {
             val id = if (hex.subject.startsWith("_"))
@@ -130,36 +112,4 @@ fun Hextuple.toValue(): Value = when (datatype) {
             Value.Primitive(value, datatype.value())
         else
             Value.LangString(value, language)
-}
-
-object RecordSerializer : KSerializer<Record> {
-    @OptIn(ExperimentalSerializationApi::class)
-    val valuesSerializer = ArraySerializer(Value.serializer())
-    val serializer = MapSerializer(String.serializer(), valuesSerializer)
-    override val descriptor: SerialDescriptor = serializer.descriptor
-
-    override fun serialize(encoder: Encoder, value: Record) {
-        val data = buildMap {
-            this["_id"] = JsonObject(value.id.toJsonElementMap())
-
-            for ((field, values) in value.fields) {
-                this[field] = buildJsonArray {
-                    for (v in values)
-                        this.add(v.toJsonElementMap())
-                }
-            }
-        }
-
-        val test = JsonObject(data)
-        encoder.encodeSerializableValue(JsonObject.serializer(), test)
-    }
-
-    override fun deserialize(decoder: Decoder): Record = serializer
-        .deserialize(decoder)
-        .let {
-            Record(
-                id = it["_id"]!![0],
-                fields = it.toMutableMap(),
-            )
-        }
 }

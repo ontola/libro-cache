@@ -24,7 +24,6 @@ class DistributionRepo(val storage: Storage) {
         val distId = ProjectRepo(storage).nextDistributionId(projectId)
         val key = distributionKey(projectId, distId)
 
-        storage.setAllListValues(*key, dataPart, values = distribution.data.map { Json.encodeToString(it) })
         storage.setHashValues(
             *key,
             entries = mapOf(
@@ -33,6 +32,7 @@ class DistributionRepo(val storage: Storage) {
                 versionKey to distribution.meta.version,
                 messageKey to distribution.meta.message,
                 createdAtKey to distribution.meta.createdAt.toString(),
+                dataKey to Json.encodeToString(distribution.data),
             ),
         )
     }
@@ -60,7 +60,7 @@ class DistributionRepo(val storage: Storage) {
     }
 
     private suspend fun getData(projectId: String, distId: String): DataSlice {
-        return storage.getString(*distributionKey(projectId, distId), dataPart)
+        return storage.getHashValue(*distributionKey(projectId, distId), hashKey = dataKey)
             ?.let { Json.decodeFromString(it) }
             ?: emptyMap()
     }

@@ -2,6 +2,7 @@ package io.ontola.studio
 
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.empathy.web.DataSlice
+import io.ontola.empathy.web.toSlice
 import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
@@ -56,8 +57,8 @@ fun Project.toDistribution(meta: DistributionMeta): Distribution {
     }
 
     return Distribution(
-        data = this.hextuples,
-        manifest = this.manifest,
+        data = hextuples.toSlice(),
+        manifest = manifest,
         sitemap = sitemap.joinToString(separator = "\n"),
         meta = meta,
     )
