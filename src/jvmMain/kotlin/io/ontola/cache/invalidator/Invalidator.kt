@@ -14,12 +14,16 @@ import io.ontola.cache.plugins.RedisConfig
 import io.ontola.cache.util.KeyManager
 import io.ontola.transactions.Deleted
 import io.ontola.transactions.Updated
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
 import mu.KotlinLogging
 import java.net.InetAddress
 import kotlin.concurrent.thread
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
 
 const val REDIS_INFO_NAME_INDEX = 1
 
@@ -58,7 +62,7 @@ suspend fun ensureConsumer(redisConn: RedisCoroutinesCommands<String, String>, c
     }
 }
 
-@OptIn(ExperimentalLettuceCoroutinesApi::class)
+@OptIn(ExperimentalLettuceCoroutinesApi::class, InternalCoroutinesApi::class, ExperimentalTime::class)
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
 fun Application.module(testing: Boolean = false) {
@@ -107,6 +111,8 @@ fun Application.module(testing: Boolean = false) {
                                 else -> logger.warn("Ignored message with type '$type'")
                             }
                         }
+
+                    delay(100.milliseconds)
                 }
             } finally {
                 streamRedisConn.xgroupDelconsumer(config.redis.invalidationChannel, consumer)
