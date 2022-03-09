@@ -252,7 +252,7 @@ fun Application.module(
         ) {
             cookie.httpOnly = true
             cookie.secure = true
-            cookie.extensions["SameSite"] = "Strict"
+            cookie.extensions["SameSite"] = "Lax"
             if (!testing) {
                 transform(
                     signedTransformer(signingSecret = config.sessions.sessionSecret)
@@ -262,7 +262,7 @@ fun Application.module(
         cookie<String>("deviceId") {
             cookie.httpOnly = true
             cookie.secure = true
-            cookie.extensions["SameSite"] = "Strict"
+            cookie.extensions["SameSite"] = "Lax"
             cookie.maxAge = 365.days
             transform(
                 signedTransformer(signingSecret = config.sessions.sessionSecret)
