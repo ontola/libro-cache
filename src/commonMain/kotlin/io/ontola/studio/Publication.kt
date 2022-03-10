@@ -8,6 +8,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 
 private object UrlAsStringSerializer : KSerializer<Url> {
@@ -24,6 +25,7 @@ private object UrlAsStringSerializer : KSerializer<Url> {
     }
 }
 
+@OptIn(ExperimentalJsExport::class)
 @Serializable
 @JsExport
 data class Publication(

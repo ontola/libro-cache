@@ -86,7 +86,7 @@ class RenderTest {
                     value = "<script src='http://test.com/script.js.jpg'</script> - <script>alert(1)</script> <base href=\"x55.is\">",
                     datatype = DataType.Literal("string"),
                     language = "",
-                    graph = "http://purl.org/link-lib/supplant",
+                    graph = "http://purl.org/linked-delta/supplant",
                 )
             ).toSlice()
 

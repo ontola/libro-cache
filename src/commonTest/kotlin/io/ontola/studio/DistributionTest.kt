@@ -34,7 +34,7 @@ class DistributionTest {
             value = "",
             datatype = DataType.fromValue(""),
             language = "",
-            graph = "",
+            graph = "http://purl.org/linked-delta/supplant",
         )
     )
 

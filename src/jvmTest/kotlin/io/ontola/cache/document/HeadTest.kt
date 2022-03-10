@@ -26,9 +26,9 @@ class HeadTest {
             val manifest = Manifest.forWebsite(href)
             val lang = "nl"
             val data = listOf(
-                Hextuple(href.toString(), "http://schema.org/name", "Elefanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "de", "http://purl.org/link-lib/supplant"),
-                Hextuple(href.toString(), "http://schema.org/name", "Olifanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "nl", "http://purl.org/link-lib/supplant"),
-                Hextuple(href.toString(), "http://schema.org/name", "Elephants", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "en", "http://purl.org/link-lib/supplant"),
+                Hextuple(href.toString(), "http://schema.org/name", "Elefanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "de", "http://purl.org/linked-delta/supplant"),
+                Hextuple(href.toString(), "http://schema.org/name", "Olifanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "nl", "http://purl.org/linked-delta/supplant"),
+                Hextuple(href.toString(), "http://schema.org/name", "Elephants", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "en", "http://purl.org/linked-delta/supplant"),
             ).shuffled().toSlice()
 
             val doc = createHTML().apply {
@@ -67,9 +67,9 @@ class HeadTest {
             val manifest = Manifest.forWebsite(href)
             val lang = "nl"
             val data = listOf(
-                Hextuple(href.toString(), "http://schema.org/name", "Elefanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "de", "http://purl.org/link-lib/supplant"),
-                Hextuple(href.toString(), "http://schema.org/name", "Olifanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "nl", "http://purl.org/link-lib/supplant"),
-                Hextuple(href.toString(), "http://schema.org/name", "Elephants", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "en", "http://purl.org/link-lib/supplant"),
+                Hextuple(href.toString(), "http://schema.org/name", "Elefanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "de", "http://purl.org/linked-delta/supplant"),
+                Hextuple(href.toString(), "http://schema.org/name", "Olifanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "nl", "http://purl.org/linked-delta/supplant"),
+                Hextuple(href.toString(), "http://schema.org/name", "Elephants", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "en", "http://purl.org/linked-delta/supplant"),
             ).shuffled().toSlice()
 
             val doc = createHTML().apply {

@@ -26,7 +26,7 @@ fun Routing.mountStudio() {
     val projectRepo = ProjectRepo(application.persistentStorage)
     val distributionRepo = DistributionRepo(application.persistentStorage)
     val publicationRepo = PublicationRepo(application.persistentStorage)
-    val skipAuth = true
+    val skipAuth = false
 
     val serializer = Json {
         encodeDefaults = true
