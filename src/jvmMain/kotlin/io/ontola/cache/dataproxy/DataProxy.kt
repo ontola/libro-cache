@@ -1,6 +1,7 @@
 package io.ontola.cache.dataproxy
 
 import io.ktor.client.request.forms.FormDataContent
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
@@ -88,7 +89,7 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
 
                 override val status: HttpStatusCode = response.status
                 override suspend fun writeTo(channel: ByteWriteChannel) {
-                    response.content.copyAndClose(channel)
+                    response.bodyAsChannel().copyAndClose(channel)
                 }
             }
         )
