@@ -1,9 +1,7 @@
 package io.ontola.cache.dataproxy
 
 import io.ktor.client.request.forms.FormDataContent
-import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
-import io.ktor.client.utils.EmptyContent.headers
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
@@ -11,6 +9,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.http.Url
+import io.ktor.http.content.ChannelWriterContent
 import io.ktor.http.content.OutgoingContent
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.ApplicationCallPipeline
@@ -26,6 +25,7 @@ import io.ktor.util.InternalAPI
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
+import io.ktor.utils.io.copyTo
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.util.isDownloadRequest
@@ -42,7 +42,7 @@ private fun Configuration.proxiedUri(
     ?: originalReq.uri
 
 suspend fun ApplicationCall.receiveChannelOrNull(): ByteReadChannel? {
-    val contentLength = headers["Content-Length"]?.toIntOrNull() ?: 0
+    val contentLength = request.headers["Content-Length"]?.toIntOrNull() ?: 0
 
     return if (contentLength > 0) {
         receiveChannel()
@@ -76,7 +76,19 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
         val isDownloadRequest = uri.isDownloadRequest()
 
         val requestUri = config.proxiedUri(originalReq, call)
-        val response = config.proxiedRequest(call, requestUri, originalReq.httpMethod, call.receiveChannelOrNull())
+        val reqContentType = call.request.headers["Content-Type"]?.let { ContentType.parse(it) }
+
+        val response = config.proxiedRequest(
+            call,
+            requestUri,
+            originalReq.httpMethod,
+            call.receiveChannelOrNull()?.let {
+                ChannelWriterContent(
+                    { it.copyTo(this) },
+                    contentType = reqContentType,
+                )
+            },
+        )
         val rule = config.matchOrDefault(requestUri)
 
         val proxiedHeaders = response.headers
@@ -101,7 +113,7 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
 
                 override val status: HttpStatusCode = response.status
                 override suspend fun writeTo(channel: ByteWriteChannel) {
-                    response.bodyAsChannel().copyAndClose(channel)
+                    response.content.copyAndClose(channel)
                 }
             }
         )

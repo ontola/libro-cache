@@ -16,6 +16,7 @@ internal fun HttpRequestBuilder.proxyHeaders(
     call: ApplicationCall,
     session: SessionData?,
     useWebsiteIRI: Boolean = true,
+    contentType: Boolean = true,
 ) {
     val request = call.request
 
@@ -32,7 +33,9 @@ internal fun HttpRequestBuilder.proxyHeaders(
         }
         proxySafeHeaders(request)
         copy(HttpHeaders.Accept, request)
-        copy(HttpHeaders.ContentType, request)
+        if (contentType) {
+            copy(HttpHeaders.ContentType, request)
+        }
         copy(HttpHeaders.Forwarded, request)
         copy(HttpHeaders.Origin, request)
         copy(HttpHeaders.Referrer, request)

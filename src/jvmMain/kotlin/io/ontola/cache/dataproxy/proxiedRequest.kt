@@ -4,6 +4,7 @@ import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpMethod
+import io.ktor.http.content.OutgoingContent
 import io.ktor.server.application.ApplicationCall
 import io.ontola.cache.plugins.services
 import io.ontola.cache.plugins.sessionManager
@@ -13,7 +14,7 @@ internal suspend fun Configuration.proxiedRequest(
     call: ApplicationCall,
     path: String,
     method: HttpMethod,
-    body: Any?,
+    body: OutgoingContent?,
 ): HttpResponse {
     if (call.tenantOrNull != null) {
         call.sessionManager.ensure()
@@ -30,7 +31,7 @@ internal suspend fun Configuration.proxiedRequest(
 
     return httpClient.request(call.services.route(path)) {
         this.method = method
-        proxyHeaders(call, session, useWebsiteIRI = false)
+        proxyHeaders(call, session, useWebsiteIRI = false, contentType = false)
         setBody(body)
     }
 }
