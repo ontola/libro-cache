@@ -3,6 +3,7 @@ package io.ontola.cache.dataproxy
 import io.ktor.client.request.forms.FormDataContent
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
+import io.ktor.client.utils.EmptyContent.headers
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
@@ -22,6 +23,7 @@ import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.util.AttributeKey
 import io.ktor.util.InternalAPI
+import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
 import io.ontola.cache.plugins.logger
@@ -38,6 +40,16 @@ private fun Configuration.proxiedUri(
     .find { (path, _) -> path.containsMatchIn(originalReq.uri) }
     ?.let { it.value(call.request) }
     ?: originalReq.uri
+
+suspend fun ApplicationCall.receiveChannelOrNull(): ByteReadChannel? {
+    val contentLength = headers["Content-Length"]?.toIntOrNull() ?: 0
+
+    return if (contentLength > 0) {
+        receiveChannel()
+    } else {
+        null
+    }
+}
 
 class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
     /**
@@ -64,7 +76,7 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
         val isDownloadRequest = uri.isDownloadRequest()
 
         val requestUri = config.proxiedUri(originalReq, call)
-        val response = config.proxiedRequest(call, requestUri, originalReq.httpMethod, call.receiveChannel())
+        val response = config.proxiedRequest(call, requestUri, originalReq.httpMethod, call.receiveChannelOrNull())
         val rule = config.matchOrDefault(requestUri)
 
         val proxiedHeaders = response.headers

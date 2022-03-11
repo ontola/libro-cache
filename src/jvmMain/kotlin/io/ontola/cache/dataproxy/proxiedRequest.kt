@@ -13,7 +13,7 @@ internal suspend fun Configuration.proxiedRequest(
     call: ApplicationCall,
     path: String,
     method: HttpMethod,
-    body: Any,
+    body: Any?,
 ): HttpResponse {
     if (call.tenantOrNull != null) {
         call.sessionManager.ensure()
