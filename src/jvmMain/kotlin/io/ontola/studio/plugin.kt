@@ -32,6 +32,7 @@ import io.ontola.util.fullUrl
 import io.ontola.util.origin
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.encodeToStream
+import mu.KotlinLogging
 
 private fun Int.onlyNonDefaultPort(): Int {
     if (this == 80 || this == 443) {
@@ -40,6 +41,8 @@ private fun Int.onlyNonDefaultPort(): Int {
 
     return this
 }
+
+private val logger = KotlinLogging.logger {}
 
 val StudioDeploymentKey = AttributeKey<PageRenderContext>("StudioDeploymentKey")
 
@@ -80,6 +83,7 @@ class Studio(private val configuration: Configuration) {
 
         match ?: return context.proceed()
         val (projectId, distId) = match
+        logger.debug { "Prefix match for project $projectId and distribution $distId" }
 
         val distribution = configuration.distributionRepo.get(projectId, distId) ?: return context.call.respond(HttpStatusCode.NotFound)
 
