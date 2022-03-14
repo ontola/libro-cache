@@ -40,6 +40,7 @@ class StorageTest {
     private val env = createTestEnvironment {
         (this.config as MapApplicationConfig).apply {
             put("ktor.deployment.port", "3080")
+            put("studio.domain", "test.rdf.studio")
         }
     }
 

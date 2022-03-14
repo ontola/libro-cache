@@ -4,6 +4,7 @@ package io.ontola.studio
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
+import io.ktor.server.application.application
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveText
@@ -12,6 +13,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
+import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.util.UrlSerializer
@@ -46,7 +48,7 @@ fun Routing.mountStudio() {
         val proto = serializer.decodeFromString<ProjectRequest>(call.receive())
         val project = projectRepo.create(proto)
 
-        call.respond(serializer.encodeToString(mapOf("iri" to "https://local.rdf.studio/_studio/projects/${project.name}")))
+        call.respond(serializer.encodeToString(mapOf("iri" to "${application.cacheConfig.studio.origin}/_studio/projects/${project.name}")))
     }
 
     get("/_studio/projects") {
@@ -67,7 +69,7 @@ fun Routing.mountStudio() {
         val id = call.parameters["projectId"] ?: return@put call.respond(HttpStatusCode.BadRequest)
         val project = projectRepo.store(id, serializer.decodeFromString(call.receiveText()))
 
-        call.respond(serializer.encodeToString(mapOf("iri" to "https://local.rdf.studio/_studio/projects/${project.name}")))
+        call.respond(serializer.encodeToString(mapOf("iri" to "${application.cacheConfig.studio.origin}/_studio/projects/${project.name}")))
     }
 
     get("/_studio/projects/{projectId}") {

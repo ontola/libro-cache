@@ -316,14 +316,13 @@ fun Application.module(
             "/.well-known/openid-configuration",
         )
 
-        val localStudioDomain = Url("https://local.rdf.studio")
         staticTenants = mapOf(
-            "local.rdf.studio" to TenantData(
+            config.studio.domain to TenantData(
                 client = cacheConfig.client,
                 isBlackListed = false,
-                websiteIRI = localStudioDomain,
-                websiteOrigin = localStudioDomain,
-                manifest = Manifest.forWebsite(localStudioDomain),
+                websiteIRI = config.studio.origin,
+                websiteOrigin = config.studio.origin,
+                manifest = Manifest.forWebsite(config.studio.origin),
             )
         )
     }

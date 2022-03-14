@@ -123,6 +123,11 @@ data class AssetsConfig(
     val defaultBundle: String,
 )
 
+data class StudioConfig(
+    val domain: String,
+    val origin: Url = Url("https://$domain"),
+)
+
 data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
     /**
      * Whether the application is running in test mode.
@@ -155,6 +160,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
      * The language to default to when.
      */
     val defaultLanguage: String,
+    val studio: StudioConfig,
     /**
      * Whether the invalidator should be running.
      */
@@ -245,6 +251,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
                 redis = redisConfig,
                 services = cacheConfig.config("services"),
                 defaultLanguage = defaultLanguage(cacheConfig, testing),
+                studio = studioConfig(config),
                 enableInvalidator = true, // TODO
                 maps = mapsConfig(cacheConfig, testing),
                 serverReportingKey = cacheConfig.config("reporting").propertyOrNull("serverReportingKey")?.getString(),
@@ -387,6 +394,10 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
                 )
             }
         }
+
+        private fun studioConfig(config: ApplicationConfig): StudioConfig = StudioConfig(
+            domain = config.config("studio").property("domain").getString(),
+        )
     }
 
     /**

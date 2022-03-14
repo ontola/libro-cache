@@ -23,6 +23,7 @@ import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.document.PageConfiguration
 import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.document.pageRenderContextFromCall
+import io.ontola.cache.plugins.StudioConfig
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.util.measured
@@ -44,11 +45,12 @@ val StudioDeploymentKey = AttributeKey<PageRenderContext>("StudioDeploymentKey")
 
 class Studio(private val configuration: Configuration) {
     class Configuration {
+        lateinit var studioConfig: StudioConfig
         lateinit var distributionRepo: DistributionRepo
         lateinit var pageConfig: PageConfiguration
     }
 
-    private fun hostLocalStudio(context: PipelineContext<Unit, ApplicationCall>) {
+    private fun hostStudio(context: PipelineContext<Unit, ApplicationCall>) {
         val uri = context.call.fullUrl()
 
         val ctx = context.call.pageRenderContextFromCall(
@@ -111,13 +113,14 @@ class Studio(private val configuration: Configuration) {
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Studio {
             val configuration = Configuration().apply {
+                studioConfig = pipeline.cacheConfig.studio
                 distributionRepo = DistributionRepo(pipeline.persistentStorage)
             }.apply(configure)
             val feature = Studio(configuration)
 
             pipeline.intercept(ApplicationCallPipeline.Plugins) {
-                if (call.request.host() == "local.rdf.studio") {
-                    feature.hostLocalStudio(this)
+                if (call.request.host() == configuration.studioConfig.domain) {
+                    feature.hostStudio(this)
                 } else {
                     feature.intercept(this)
                 }
