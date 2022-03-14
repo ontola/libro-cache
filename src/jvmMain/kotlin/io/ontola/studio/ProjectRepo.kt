@@ -21,13 +21,24 @@ class ProjectRepo(val storage: Storage) {
 
         val project = Project(
             name = id,
-            iri = Url("localhost"),
-            websiteIRI = Url("localhost"),
+            iri = request.manifest.ontola.websiteIRI,
+            websiteIRI = request.manifest.ontola.websiteIRI,
             resources = request.resources,
             hextuples = request.hextuples,
+            manifest = request.manifest,
         )
 
-        storage.setString(*projectKey(id), value = Json.encodeToString(project), expiration = null)
+        storage.setHashValues(
+            *projectKey(id),
+            entries = mapOf(
+                "name" to id,
+                "iri" to project.iri.toString(),
+                "websiteIRI" to project.websiteIRI.toString(),
+                "resources" to Json.encodeToString(project.resources),
+                "hextuples" to Json.encodeToString(project.hextuples),
+                "manifest" to Json.encodeToString(project.manifest),
+            )
+        )
 
         return project
     }
@@ -36,19 +47,42 @@ class ProjectRepo(val storage: Storage) {
         val project = get(projectId) ?: throw NotFoundException()
 
         val sanitised = project.copy(
-            iri = Url("localhost"),
-            websiteIRI = Url("localhost"),
             resources = request.resources,
             hextuples = request.hextuples,
+            manifest = request.manifest,
         )
-        storage.setString(*projectKey(projectId), value = Json.encodeToString(sanitised), expiration = null)
+
+        storage.setHashValues(
+            *projectKey(projectId),
+            entries = mapOf(
+                "iri" to sanitised.iri.toString(),
+                "websiteIRI" to sanitised.websiteIRI.toString(),
+                "resources" to Json.encodeToString(sanitised.resources),
+                "hextuples" to Json.encodeToString(sanitised.hextuples),
+                "manifest" to Json.encodeToString(sanitised.manifest),
+            )
+        )
 
         return sanitised
     }
 
-    suspend fun get(projectId: String): Project? = storage
-        .getString(*projectKey(projectId))
-        ?.let { Json.decodeFromString<Project>(it) }
+    suspend fun get(projectId: String): Project? {
+        val name = storage.getHashValue(*projectKey(projectId), hashKey = "name") ?: return null
+        val iri = storage.getHashValue(*projectKey(projectId), hashKey = "iri") ?: return null
+        val websiteIRI = storage.getHashValue(*projectKey(projectId), hashKey = "websiteIRI") ?: return null
+        val resources = storage.getHashValue(*projectKey(projectId), hashKey = "resources") ?: return null
+        val hextuples = storage.getHashValue(*projectKey(projectId), hashKey = "hextuples") ?: return null
+        val manifest = storage.getHashValue(*projectKey(projectId), hashKey = "manifest") ?: return null
+
+        return Project(
+            name = name,
+            iri = Url(iri),
+            websiteIRI = Url(websiteIRI),
+            resources = Json.decodeFromString(resources),
+            hextuples = Json.decodeFromString(hextuples),
+            manifest = Json.decodeFromString(manifest),
+        )
+    }
 
     @OptIn(FlowPreview::class)
     suspend fun findAll(): List<List<String>> {
