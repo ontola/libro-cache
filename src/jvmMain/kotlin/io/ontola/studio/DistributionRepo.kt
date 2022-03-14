@@ -18,7 +18,7 @@ private const val startsWith = "start"
 
 class DistributionRepo(val storage: Storage) {
     private fun distributionKey(projectId: String, distributionId: String): Array<String> =
-        arrayOf(docsPart, projectId, distributionsPart, distributionId)
+        arrayOf(projectsPart, projectId, distributionsPart, distributionId)
 
     suspend fun store(projectId: String, distribution: Distribution) {
         val distId = ProjectRepo(storage).nextDistributionId(projectId)
@@ -70,7 +70,7 @@ class DistributionRepo(val storage: Storage) {
      */
     @OptIn(FlowPreview::class)
     suspend fun find(projectId: String): List<String> {
-        val keys = storage.keys(docsPart, projectId, distributionsPart, wildcard)
+        val keys = storage.keys(projectsPart, projectId, distributionsPart, wildcard)
 
         return keys.map { it.last() }
             .filter { it != "data" }

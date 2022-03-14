@@ -1,6 +1,5 @@
 package io.ontola.studio
 
-const val docsPart = "docs"
 const val routePart = "routes"
 const val startsWithPart = "start"
 const val wildcard = "*"
