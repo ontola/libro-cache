@@ -45,7 +45,8 @@ fun <R> withCacheTestApplication(
         config = MapApplicationConfig(
             "ktor.deployment.environment" to "test",
             "ktor.deployment.port" to "3080",
-            "studio.domain" to "test.rdf.studio"
+            "studio.domain" to "test.rdf.studio",
+            "studio.skipAuth" to "false",
         )
         log = KtorSimpleLogger("ktor.test")
         developmentMode = false

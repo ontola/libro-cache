@@ -28,7 +28,6 @@ fun Routing.mountStudio() {
     val projectRepo = ProjectRepo(application.persistentStorage)
     val distributionRepo = DistributionRepo(application.persistentStorage)
     val publicationRepo = PublicationRepo(application.persistentStorage)
-    val skipAuth = false
 
     val serializer = Json {
         encodeDefaults = true
@@ -42,17 +41,18 @@ fun Routing.mountStudio() {
     }
 
     post("/_studio/projects") {
-        if (!skipAuth && !call.sessionManager.isStaff)
+        val studioConfig = application.cacheConfig.studio
+        if (!studioConfig.skipAuth && !call.sessionManager.isStaff)
             return@post call.respond(HttpStatusCode.Forbidden)
 
         val proto = serializer.decodeFromString<ProjectRequest>(call.receive())
         val project = projectRepo.create(proto)
 
-        call.respond(serializer.encodeToString(mapOf("iri" to "${application.cacheConfig.studio.origin}/_studio/projects/${project.name}")))
+        call.respond(serializer.encodeToString(mapOf("iri" to "${studioConfig.origin}/_studio/projects/${project.name}")))
     }
 
     get("/_studio/projects") {
-        if (!skipAuth && !call.sessionManager.isStaff)
+        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val projects = projectRepo
@@ -63,17 +63,18 @@ fun Routing.mountStudio() {
     }
 
     put("/_studio/projects/{projectId}") {
-        if (!skipAuth && !call.sessionManager.isStaff)
+        val studioConfig = application.cacheConfig.studio
+        if (!studioConfig.skipAuth && !call.sessionManager.isStaff)
             return@put call.respond(HttpStatusCode.Forbidden)
 
         val id = call.parameters["projectId"] ?: return@put call.respond(HttpStatusCode.BadRequest)
         val project = projectRepo.store(id, serializer.decodeFromString(call.receiveText()))
 
-        call.respond(serializer.encodeToString(mapOf("iri" to "${application.cacheConfig.studio.origin}/_studio/projects/${project.name}")))
+        call.respond(serializer.encodeToString(mapOf("iri" to "${studioConfig.origin}/_studio/projects/${project.name}")))
     }
 
     get("/_studio/projects/{projectId}") {
-        if (!skipAuth && !call.sessionManager.isStaff)
+        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val id = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
@@ -83,7 +84,7 @@ fun Routing.mountStudio() {
     }
 
     get("/_studio/projects/{projectId}/distributions/{distributionId}") {
-        if (!skipAuth && !call.sessionManager.isStaff)
+        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val projectId = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
@@ -95,7 +96,7 @@ fun Routing.mountStudio() {
     }
 
     get("/_studio/projects/{projectId}/distributions/{distributionId}/meta") {
-        if (!skipAuth && !call.sessionManager.isStaff)
+        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val projectId = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
@@ -106,7 +107,7 @@ fun Routing.mountStudio() {
     }
 
     get("/_studio/projects/{projectId}/distributions") {
-        if (!skipAuth && !call.sessionManager.isStaff)
+        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val id = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
@@ -116,7 +117,7 @@ fun Routing.mountStudio() {
     }
 
     post("/_studio/projects/{projectId}/distributions") {
-        if (!skipAuth && !call.sessionManager.isStaff)
+        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@post call.respond(HttpStatusCode.Forbidden)
 
         val id = call.parameters["projectId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
@@ -129,7 +130,7 @@ fun Routing.mountStudio() {
     }
 
     post<String>("/_studio/projects/{projectId}/distributions/{distId}/publication") { startRoute ->
-        if (!skipAuth && !call.sessionManager.isStaff)
+        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@post call.respond(HttpStatusCode.Forbidden)
 
         val projectId = call.parameters["projectId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
@@ -147,7 +148,7 @@ fun Routing.mountStudio() {
     }
 
     post<String>("/_studio/projects/{projectId}/distributions/{distId}/publication/unmount") { startRoute ->
-        if (!skipAuth && !call.sessionManager.isStaff)
+        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@post call.respond(HttpStatusCode.Forbidden)
 
         val projectId = call.parameters["projectId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
@@ -167,7 +168,7 @@ fun Routing.mountStudio() {
     }
 
     get("/_studio/projects/{projectId}/publications") {
-        if (!skipAuth && !call.sessionManager.isStaff)
+        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val projectId = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)

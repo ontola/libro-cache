@@ -124,6 +124,7 @@ data class AssetsConfig(
 )
 
 data class StudioConfig(
+    val skipAuth: Boolean,
     val domain: String,
     val origin: Url = Url("https://$domain"),
 )
@@ -396,6 +397,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
         }
 
         private fun studioConfig(config: ApplicationConfig): StudioConfig = StudioConfig(
+            skipAuth = config.config("studio").property("skipAuth").getString().toBoolean(),
             domain = config.config("studio").property("domain").getString(),
         )
     }
