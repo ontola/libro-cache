@@ -1,20 +1,14 @@
 package io.ontola.studio
 
-import io.ktor.http.Url
 import io.ontola.cache.plugins.Storage
 import io.ontola.empathy.web.DataSlice
-import io.ontola.util.stem
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-
-private const val routePrefix = "routes"
-private const val startsWith = "start"
 
 class DistributionRepo(val storage: Storage) {
     private fun distributionKey(projectId: String, distributionId: String): Array<String> =
@@ -75,27 +69,5 @@ class DistributionRepo(val storage: Storage) {
         return keys.map { it.last() }
             .filter { it != "data" }
             .toList()
-    }
-
-    suspend fun distributionPairForRoute(url: Url): Pair<String, String>? {
-        val allRoutes = storage.keys(routePart, startsWithPart, wildcard)
-        val stemmed = url.stem()
-
-        val match = allRoutes
-            .firstOrNull { it.last() == stemmed || stemmed.startsWith("${it.last()}/") }
-            ?.toTypedArray()
-            ?: return null
-
-        return storage.getString(*match)?.let { Json.decodeFromString(it) }
-    }
-
-    suspend fun publishDistributionToRoute(projectId: String, distId: String, startRoute: String) {
-        storage.setString(
-            routePrefix,
-            startsWith,
-            startRoute,
-            value = Json.encodeToString(Pair(projectId, distId)),
-            expiration = null,
-        )
     }
 }

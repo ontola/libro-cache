@@ -2,68 +2,68 @@ package io.ontola.studio
 
 import io.ktor.http.Url
 import io.ontola.cache.plugins.Storage
-import io.ontola.cache.util.KeyMap
+import io.ontola.util.stem
+import io.ontola.util.withTrailingSlash
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-private const val url = "url"
-
 class PublicationRepo(val storage: Storage) {
-    private val publicationKeyMap = KeyMap(routePart, startsWithPart, url)
-
-    private fun publicationKey(route: Url) = arrayOf(routePart, startsWithPart, route.toString())
+    private val publicationsKey = arrayOf(routePart, startsWithPart)
 
     @OptIn(FlowPreview::class)
-    suspend fun find(predicate: ((p: Publication) -> Boolean)?): List<Publication> {
-        val keysFlow = storage.keys(routePart, startsWithPart, wildcard)
-        val publications = keysFlow.mapNotNull {
-            val value = storage.getString(*it.toTypedArray()) ?: return@mapNotNull null
-            val distributionPair = Json.decodeFromString<Pair<String, String>>(value)
+    private suspend fun find(predicate: ((p: Publication) -> Boolean)?): List<Publication> = getAll()
+        .filter { predicate?.invoke(it) == true }
 
-            val pub = Publication(
-                startRoute = Url(publicationKeyMap.getPart(it, url)),
-                projectId = distributionPair.first,
-                distributionId = distributionPair.second,
-            )
-
-            return@mapNotNull if (predicate?.invoke(pub) == true) pub else null
-        }.toList()
-
-        return publications
-    }
-
-    suspend fun getPublicationsOfProject(projectId: String): List<Publication> = find() {
+    suspend fun getPublicationsOfProject(projectId: String): List<Publication> = find {
         it.projectId == projectId
     }
 
+    /**
+     * Searches for a [Publication] which is applicable for the given [route]
+     */
+    suspend fun match(route: Url): Publication? {
+        val stemmed = route.stem()
+
+        return find {
+            it.startRoute.toString() == stemmed ||
+                stemmed.startsWith(it.startRoute.withTrailingSlash)
+        }.firstOrNull()
+    }
+
     suspend fun store(publication: Publication) {
-        storage.setString(
-            routePart,
-            startsWithPart,
-            publication.startRoute.toString(),
-            value = Json.encodeToString(
-                Pair(
-                    publication.projectId,
-                    publication.distributionId,
-                ),
-            ),
-            expiration = null,
+        storage.setHashValues(
+            *publicationsKey,
+            entries = mapOf(
+                publication.startRoute.toString() to Json.encodeToString(
+                    Pair(
+                        publication.projectId,
+                        publication.distributionId,
+                    ),
+                )
+            )
         )
     }
 
     suspend fun delete(publication: Publication): Boolean {
-        val foundPublications = find() {
-            it == publication
-        }
+        val publicationRoute = find { it == publication }
+            .firstOrNull()
+            ?.startRoute
+            ?: return false
 
-        if (foundPublications.isEmpty()) return false
-
-        val deleted = storage.deleteKey(*publicationKey(foundPublications[0].startRoute)) ?: 0
-
-        return deleted > 0
+        return storage.deleteHashValue(*publicationsKey, hashKey = publicationRoute.toString())
     }
+
+    private suspend fun getAll(): List<Publication> = storage
+        .getHash(routePart, startsWithPart)
+        .map { (key, value) ->
+            val (projectId, distributionId) = Json.decodeFromString<Pair<String, String>>(value)
+
+            Publication(
+                startRoute = Url(key),
+                projectId = projectId,
+                distributionId = distributionId,
+            )
+        }
 }

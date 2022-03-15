@@ -28,7 +28,7 @@ data class TestStorageAdapterBuilder(
     private val keys = mutableListOf<String>()
     private val values = mutableListOf<String>()
     private val hKeys = mutableListOf<String>()
-    private val hValues = mutableListOf<Map<String, String>>()
+    private val hValues = mutableListOf<MutableMap<String, String>>()
 
     fun addManifest(website: Url, manifest: Manifest) {
         memoizedManifests[website.toString()] = manifest
@@ -38,7 +38,7 @@ data class TestStorageAdapterBuilder(
         val adapter = mockk<StorageAdapter<String, String>>()
 
         adapter.initGetSetDel()
-        adapter.initHmGetHSet()
+        adapter.initHashCommands()
         adapter.initEmptyRedisFeatures()
         adapter.initCacheEntries()
         initManifests()
@@ -89,8 +89,40 @@ data class TestStorageAdapterBuilder(
         coEvery { del(capture(key)) } returns null
     }
 
-    private fun StorageAdapter<String, String>.initHmGetHSet() {
+    private fun StorageAdapter<String, String>.initHashCommands() {
         coEvery { hset(capture(hKeys), capture(hValues)) } returns null
+
+        val delKey = slot<String>()
+        val delField0 = slot<String>()
+        coEvery {
+            hdel(capture(delKey), capture(delField0))
+        } answers {
+            val i = hKeys.indexOf(delKey.captured)
+
+            if (i == -1) {
+                null
+            } else if (hValues[i].remove(delField0.captured) != null) {
+                1L
+            } else {
+                0L
+            }
+        }
+
+        val getAllKey = slot<String>()
+        coEvery {
+            hgetall(capture(getAllKey))
+        } answers {
+            val i = hKeys.indexOf(getAllKey.captured)
+
+            if (i == -1) {
+                emptyFlow()
+            } else {
+                hValues[i]
+                    .entries
+                    .asFlow()
+                    .map { Pair(it.key, it.value) }
+            }
+        }
 
         fun hmgetImpl(key: String, fields: List<String>): Flow<Pair<String, String>> {
             val i = hKeys.indexOf(key)

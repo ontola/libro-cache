@@ -50,6 +50,7 @@ class Studio(private val configuration: Configuration) {
     class Configuration {
         lateinit var studioConfig: StudioConfig
         lateinit var distributionRepo: DistributionRepo
+        lateinit var publicationRepo: PublicationRepo
         lateinit var pageConfig: PageConfiguration
     }
 
@@ -58,7 +59,9 @@ class Studio(private val configuration: Configuration) {
 
         val ctx = context.call.pageRenderContextFromCall(
             data = null,
-            manifest = Manifest.forWebsite(Url(uri.origin())),
+            manifest = Manifest.forWebsite(Url(uri.origin())).copy(
+                name = "Studio",
+            ),
             uri = uri,
         )
         context.call.attributes.put(StudioDeploymentKey, ctx)
@@ -67,7 +70,7 @@ class Studio(private val configuration: Configuration) {
     @OptIn(ExperimentalSerializationApi::class)
     private suspend fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
         lateinit var uri: Url
-        val match = context.measured("studioLookup") {
+        val publication = context.measured("studioLookup") {
             val origin = context.call.request.origin
             uri = URLBuilder(
                 protocol = URLProtocol.createOrDefault(origin.scheme),
@@ -78,14 +81,14 @@ class Studio(private val configuration: Configuration) {
                 parameters.appendAll(context.call.request.queryParameters)
             }.build()
 
-            configuration.distributionRepo.distributionPairForRoute(uri)
+            configuration.publicationRepo.match(uri)
         }
 
-        match ?: return context.proceed()
-        val (projectId, distId) = match
-        logger.debug { "Prefix match for project $projectId and distribution $distId" }
+        publication ?: return context.proceed()
+        logger.debug { "Prefix match for project ${publication.projectId} and distribution ${publication.distributionId}" }
 
-        val distribution = configuration.distributionRepo.get(projectId, distId) ?: return context.call.respond(HttpStatusCode.NotFound)
+        val distribution = configuration.distributionRepo.get(publication.projectId, publication.distributionId)
+            ?: return context.call.respond(HttpStatusCode.NotFound)
 
         if (uri.filename() == "manifest.json") {
             context.call.respondOutputStream(ContentType.Application.Json) {
@@ -119,6 +122,7 @@ class Studio(private val configuration: Configuration) {
             val configuration = Configuration().apply {
                 studioConfig = pipeline.cacheConfig.studio
                 distributionRepo = DistributionRepo(pipeline.persistentStorage)
+                publicationRepo = PublicationRepo(pipeline.persistentStorage)
             }.apply(configure)
             val feature = Studio(configuration)
 

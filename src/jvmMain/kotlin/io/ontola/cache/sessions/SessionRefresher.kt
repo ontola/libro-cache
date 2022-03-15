@@ -84,7 +84,10 @@ class SessionRefresher(private val configuration: CacheSession.Configuration) {
                     refreshToken = refreshResponse.refreshToken,
                 ),
             )
-        } catch (e: InvalidGrantException) {
+        } catch (e: Exception) {
+            if (e !is InvalidGrantException) {
+                configuration.cacheConfig.notify(e)
+            }
             null
         }
     }

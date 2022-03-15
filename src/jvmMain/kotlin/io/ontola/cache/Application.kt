@@ -296,6 +296,8 @@ fun Application.module(
             .build()
     }
 
+    install(Studio)
+
     install(Tenantization) {
         blacklist = listOf(
             cspReportEndpointPath,
@@ -322,7 +324,9 @@ fun Application.module(
                 isBlackListed = false,
                 websiteIRI = config.studio.origin,
                 websiteOrigin = config.studio.origin,
-                manifest = Manifest.forWebsite(config.studio.origin),
+                manifest = Manifest.forWebsite(config.studio.origin).copy(
+                    name = "Studio",
+                ),
             )
         )
     }
@@ -340,8 +344,6 @@ fun Application.module(
             Regex("^/oauth/register"),
         )
     }
-
-    install(Studio)
 
     install(WebSockets)
 

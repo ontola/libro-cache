@@ -13,6 +13,7 @@ import io.ontola.cache.util.KeyManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toSet
 import mu.KotlinLogging
 import java.time.Instant
 import kotlin.time.Duration
@@ -25,7 +26,11 @@ interface StorageAdapter<K : Any, V : Any> {
 
     suspend fun get(key: K): V?
 
+    suspend fun hdel(key: K, vararg fields: V): Long?
+
     suspend fun hget(key: String, field: String): String?
+
+    fun hgetall(key: K): Flow<Pair<K, V>>
 
     fun hmget(key: K, vararg fields: K): Flow<Pair<K, V?>>
 
@@ -43,7 +48,11 @@ interface StorageAdapter<K : Any, V : Any> {
 
     suspend fun lrange(key: String, start: Long, stop: Long): List<String>
 
+    suspend fun sadd(key: K, vararg members: V): Long?
+
     suspend fun set(key: K, value: V): String?
+
+    suspend fun smembers(key: K): Flow<V>
 }
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
@@ -52,12 +61,20 @@ class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : Storag
         return client.del(key)
     }
 
+    override suspend fun hdel(key: String, vararg fields: String): Long? {
+        return client.hdel(key, *fields)
+    }
+
     override suspend fun expire(key: String, seconds: Long): Boolean? {
         return client.expire(key, seconds)
     }
 
     override suspend fun hget(key: String, field: String): String? {
         return client.hget(key, field)
+    }
+
+    override fun hgetall(key: String): Flow<Pair<String, String>> {
+        return client.hgetall(key).map { Pair(it.key, it.getValueOrElse(null)) }
     }
 
     override fun hmget(key: String, vararg fields: String): Flow<Pair<String, String?>> {
@@ -97,12 +114,18 @@ class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : Storag
         return client.incr(key)
     }
 
+    override suspend fun sadd(key: String, vararg members: String): Long? {
+        return client.sadd(key, *members)
+    }
+
     override suspend fun set(key: String, value: String): String? {
         return client.set(key, value)
     }
-}
 
-typealias TempString = Pair<Long, String>
+    override suspend fun smembers(key: String): Flow<String> {
+        return client.smembers(key)
+    }
+}
 
 private val logger = KotlinLogging.logger {}
 
@@ -147,6 +170,12 @@ class Storage(
             cacheControl = CacheControl.valueOf(hash["cacheControl"]!!),
             contents = hash["contents"],
         )
+    }
+
+    suspend fun setAdd(vararg key: String, member: String): Long? {
+        val prefixed = keyManager.toKey(*key)
+
+        return adapter.sadd(prefixed, member)
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
@@ -195,16 +224,41 @@ class Storage(
             .map { keyManager.fromKey(it) }
     }
 
+    suspend fun getSet(vararg key: String): Set<String>? {
+        val prefixed = keyManager.toKey(*key)
+
+        return adapter.smembers(prefixed).toSet()
+    }
+
     suspend fun getString(vararg key: String): String? {
         val prefixed = keyManager.toKey(*key)
 
         return adapter.get(prefixed)
     }
 
+    suspend fun getHash(vararg key: String): Map<String, String> {
+        val prefixed = keyManager.toKey(*key)
+
+        return adapter
+            .hgetall(prefixed)
+            .fold(mutableMapOf()) { map, (k, v) ->
+                map[k] = v
+                map
+            }
+    }
+
     suspend fun getHashValue(vararg key: String, hashKey: String): String? {
         val prefixed = keyManager.toKey(*key)
 
         return adapter.hget(prefixed, hashKey)
+    }
+
+    suspend fun deleteHashValue(vararg key: String, hashKey: String): Boolean {
+        val prefixed = keyManager.toKey(*key)
+
+        val removed = adapter.hdel(prefixed, hashKey) ?: 0
+
+        return removed > 0
     }
 
     suspend fun setHashValues(vararg key: String, entries: Map<String, String>): Long? {

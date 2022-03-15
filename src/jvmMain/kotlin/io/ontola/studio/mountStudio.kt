@@ -17,6 +17,7 @@ import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.util.UrlSerializer
+import io.ontola.util.appendPath
 import io.ontola.util.fullUrl
 import io.ontola.util.rebase
 import kotlinx.serialization.UseSerializers
@@ -48,7 +49,13 @@ fun Routing.mountStudio() {
         val proto = serializer.decodeFromString<ProjectRequest>(call.receive())
         val project = projectRepo.create(proto)
 
-        call.respond(serializer.encodeToString(mapOf("iri" to "${studioConfig.origin}/_studio/projects/${project.name}")))
+        call.respond(
+            serializer.encodeToString(
+                mapOf(
+                    "iri" to studioConfig.origin.appendPath("/_studio/projects/${project.name}").toString(),
+                )
+            )
+        )
     }
 
     get("/_studio/projects") {
@@ -57,7 +64,7 @@ fun Routing.mountStudio() {
 
         val projects = projectRepo
             .findAll()
-            .map { call.fullUrl().rebase(it.last()).toString() }
+            .map { call.fullUrl().rebase(it).toString() }
 
         call.respond(serializer.encodeToString(projects))
     }
@@ -70,7 +77,13 @@ fun Routing.mountStudio() {
         val id = call.parameters["projectId"] ?: return@put call.respond(HttpStatusCode.BadRequest)
         val project = projectRepo.store(id, serializer.decodeFromString(call.receiveText()))
 
-        call.respond(serializer.encodeToString(mapOf("iri" to "${studioConfig.origin}/_studio/projects/${project.name}")))
+        call.respond(
+            serializer.encodeToString(
+                mapOf(
+                    "iri" to studioConfig.origin.appendPath("/_studio/projects/${project.name}").toString(),
+                )
+            )
+        )
     }
 
     get("/_studio/projects/{projectId}") {

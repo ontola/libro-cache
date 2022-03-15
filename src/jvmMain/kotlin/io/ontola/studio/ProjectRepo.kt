@@ -4,12 +4,13 @@ import io.ktor.http.Url
 import io.ktor.server.plugins.NotFoundException
 import io.ontola.cache.plugins.Storage
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class ProjectRepo(val storage: Storage) {
+    private val projectSetKey = projectsPart
+
     private fun projectKey(projectId: String): Array<String> = arrayOf(projectsPart, projectId)
 
     suspend fun nextDistributionId(id: String): String {
@@ -39,6 +40,7 @@ class ProjectRepo(val storage: Storage) {
                 "manifest" to Json.encodeToString(project.manifest),
             )
         )
+        storage.setAdd(projectSetKey, member = id)
 
         return project
     }
@@ -62,6 +64,7 @@ class ProjectRepo(val storage: Storage) {
                 "manifest" to Json.encodeToString(sanitised.manifest),
             )
         )
+        storage.setAdd(projectSetKey, member = projectId)
 
         return sanitised
     }
@@ -85,9 +88,8 @@ class ProjectRepo(val storage: Storage) {
     }
 
     @OptIn(FlowPreview::class)
-    suspend fun findAll(): List<List<String>> {
-        return storage.keys(projectsPart, "[^:]")
-            .toList()
+    suspend fun findAll(): Set<String> {
+        return storage.getSet(projectsPart) ?: emptySet()
     }
 
     private suspend fun nextProjectId(): String {

@@ -43,3 +43,6 @@ fun Url.rebase(fullPath: String): Url = URLBuilder(this).apply {
 
 val Url.withoutTrailingSlash
     get() = this.toString().trimEnd('/')
+
+val Url.withTrailingSlash
+    get() = "$withoutTrailingSlash/"
