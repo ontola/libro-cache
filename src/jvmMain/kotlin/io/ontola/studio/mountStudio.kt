@@ -46,16 +46,20 @@ fun Routing.mountStudio() {
         if (!studioConfig.skipAuth && !call.sessionManager.isStaff)
             return@post call.respond(HttpStatusCode.Forbidden)
 
-        val proto = serializer.decodeFromString<ProjectRequest>(call.receive())
-        val project = projectRepo.create(proto)
-
-        call.respond(
-            serializer.encodeToString(
+        try {
+            val proto = serializer.decodeFromString<ProjectRequest>(call.receive())
+            val project = projectRepo.create(proto)
+            val body = serializer.encodeToString(
                 mapOf(
                     "iri" to studioConfig.origin.appendPath("/_studio/projects/${project.name}").toString(),
                 )
             )
-        )
+
+            call.respond(body)
+        } catch (e: Exception) {
+            application.cacheConfig.notify(e)
+            call.respond(HttpStatusCode.InternalServerError)
+        }
     }
 
     get("/_studio/projects") {
@@ -75,15 +79,19 @@ fun Routing.mountStudio() {
             return@put call.respond(HttpStatusCode.Forbidden)
 
         val id = call.parameters["projectId"] ?: return@put call.respond(HttpStatusCode.BadRequest)
-        val project = projectRepo.store(id, serializer.decodeFromString(call.receiveText()))
-
-        call.respond(
-            serializer.encodeToString(
+        try {
+            val project = projectRepo.store(id, serializer.decodeFromString(call.receiveText()))
+            val body = serializer.encodeToString(
                 mapOf(
                     "iri" to studioConfig.origin.appendPath("/_studio/projects/${project.name}").toString(),
                 )
             )
-        )
+
+            call.respond(body)
+        } catch (e: Exception) {
+            application.cacheConfig.notify(e)
+            call.respond(HttpStatusCode.InternalServerError)
+        }
     }
 
     get("/_studio/projects/{projectId}") {
