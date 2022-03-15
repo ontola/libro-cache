@@ -10,6 +10,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 
+const val supplantGraph = "http://purl.org/linked-delta/supplant"
+
 @Serializable
 sealed class Value(
     @Transient
@@ -87,7 +89,7 @@ fun List<Hextuple?>.toSlice(): DataSlice = buildMap {
     for (hex in this@toSlice) {
         if (hex == null || hex.graph == "http://purl.org/link-lib/meta") continue
 
-        if (hex.graph != "http://purl.org/linked-delta/supplant") throw Error("Non-supplant statement: $hex")
+        if (hex.graph != supplantGraph) throw Error("Non-supplant statement: $hex")
 
         val record = this.getOrPut(hex.subject) {
             val id = if (hex.subject.startsWith("_"))

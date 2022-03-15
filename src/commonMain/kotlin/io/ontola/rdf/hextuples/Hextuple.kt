@@ -53,11 +53,18 @@ object HextupleSerializer : KSerializer<Hextuple> {
     }
 
     override fun deserialize(decoder: Decoder): Hextuple = serializer.deserialize(decoder).let {
+        val datatype = DataType.fromValue(it[3])
+        val objValue = if (datatype is DataType.LocalId) {
+            it[2].trimStart('_', ':')
+        } else {
+            it[2]
+        }
+
         Hextuple(
             subject = it[0],
             predicate = it[1],
-            value = it[2],
-            datatype = DataType.fromValue(it[3]),
+            value = objValue,
+            datatype = datatype,
             language = it[4],
             graph = it[5],
         )

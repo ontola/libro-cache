@@ -1,12 +1,14 @@
 package io.ontola.empathy.web
 
+import io.ontola.rdf.hextuples.DataType
 import io.ontola.rdf.hextuples.Hextuple
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-val hex = """
+private val slice = """
 {
    "https://argu.co/info":{
       "_id":{
@@ -29,65 +31,56 @@ val hex = """
       ],
       "https://ns.ontola.io/core#coverPhoto":[
          {
-            "type":"p",
-            "v":"https://argu.co/info#CoverImage",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://argu.co/info#CoverImage"
          }
       ],
       "https://argu.co/ns/sales#header":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://argu.co/ns/sales#header>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://argu.co/ns/sales#header>"
          }
       ],
       "https://argu.co/ns/sales#callToActionBlock":[
          {
-            "type":"p",
-            "v":"https://argu.co/info#CTABlock",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://argu.co/info#CTABlock"
          }
       ],
       "https://ns.ontola.io/core#navigationsMenu":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>"
          }
       ],
       "https://argu.co/ns/sales#showcase":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://argu.co/ns/sales#showcase>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://argu.co/ns/sales#showcase>"
          }
       ],
       "https://argu.co/ns/sales#cases":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://argu.co/ns/sales#cases>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://argu.co/ns/sales#cases>"
          }
       ],
       "https://argu.co/ns/sales#propositions":[
          {
-            "type":"p",
-            "v":"https://argu.co/info#propositions",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://argu.co/info#propositions"
          }
       ],
       "https://argu.co/ns/sales#duoBlock":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://argu.co/ns/sales#duoBlock>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://argu.co/ns/sales#duoBlock>"
          }
       ],
       "https://argu.co/ns/sales#blogs":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://argu.co/ns/sales#blogs>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://argu.co/ns/sales#blogs>"
          }
       ]
    },
@@ -98,9 +91,8 @@ val hex = """
       },
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":[
          {
-            "type":"p",
-            "v":"https://argu.co/ns/sales#Header",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://argu.co/ns/sales#Header"
          }
       ],
       "http://schema.org/name":[
@@ -119,9 +111,8 @@ val hex = """
       ],
       "https://argu.co/ns/sales#buttonLink":[
          {
-            "type":"p",
-            "v":"https://calendly.com/argu_co/online-demo",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://calendly.com/argu_co/online-demo"
          }
       ],
       "https://argu.co/ns/sales#buttonText":[
@@ -133,23 +124,20 @@ val hex = """
       ],
       "https://argu.co/ns/sales#backgroundImage":[
          {
-            "type":"p",
-            "v":"https://dptr8y9slmfgv.cloudfront.net/sales/images/header.svg",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://dptr8y9slmfgv.cloudfront.net/sales/images/header.svg"
          }
       ],
       "https://argu.co/ns/sales#backgroundImageMobile":[
          {
-            "type":"p",
-            "v":"https://dptr8y9slmfgv.cloudfront.net/sales/images/header_mobile.svg",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://dptr8y9slmfgv.cloudfront.net/sales/images/header_mobile.svg"
          }
       ],
       "https://argu.co/ns/sales#backgroundImageXL":[
          {
-            "type":"p",
-            "v":"https://dptr8y9slmfgv.cloudfront.net/sales/images/header_xl.svg",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://dptr8y9slmfgv.cloudfront.net/sales/images/header_xl.svg"
          }
       ]
    },
@@ -160,23 +148,20 @@ val hex = """
       },
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":[
          {
-            "type":"p",
-            "v":"https://ns.ontola.io/core#MenuItem",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://ns.ontola.io/core#MenuItem"
          }
       ],
       "https://argu.co/ns/sales#callToAction":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://argu.co/ns/sales#callToAction>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://argu.co/ns/sales#callToAction>"
          }
       ],
       "https://ns.ontola.io/core#menuItems":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>"
          }
       ]
    },
@@ -187,9 +172,8 @@ val hex = """
       },
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":[
          {
-            "type":"p",
-            "v":"https://argu.co/ns/sales#CallToActionButton",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://argu.co/ns/sales#CallToActionButton"
          }
       ],
       "http://schema.org/text":[
@@ -201,9 +185,8 @@ val hex = """
       ],
       "https://ns.ontola.io/core#href":[
          {
-            "type":"p",
-            "v":"https://calendly.com/argu_co/online-demo",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://calendly.com/argu_co/online-demo"
          }
       ]
    },
@@ -214,79 +197,68 @@ val hex = """
       },
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":[
          {
-            "type":"p",
-            "v":"http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq",
-            "dt":"globalId"
+            "type":"id",
+            "v":"http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq"
          }
       ],
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_0":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_0>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_0>"
          }
       ],
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_1":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_1>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_1>"
          }
       ],
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_2":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_2>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_2>"
          }
       ],
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_3":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_3>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_3>"
          }
       ],
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_4":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_4>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_4>"
          }
       ],
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_5":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_5>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_5>"
          }
       ],
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_6":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_6>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_6>"
          }
       ],
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_7":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_7>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_7>"
          }
       ],
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_8":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_8>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_8>"
          }
       ],
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_9":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_9>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_9>"
          }
       ]
    },
@@ -297,23 +269,20 @@ val hex = """
       },
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":[
          {
-            "type":"p",
-            "v":"https://ns.ontola.io/core#MenuItem",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://ns.ontola.io/core#MenuItem"
          }
       ],
       "http://schema.org/image":[
          {
-            "type":"p",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_0>.<http://schema.org/image>",
-            "dt":"localId"
+            "type":"lid",
+            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_0>.<http://schema.org/image>"
          }
       ],
       "http://schema.org/isPartOf":[
          {
-            "type":"p",
-            "v":"https://argu.co/info",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://argu.co/info"
          }
       ],
       "http://schema.org/name":[
@@ -325,9 +294,8 @@ val hex = """
       ],
       "https://ns.ontola.io/core#href":[
          {
-            "type":"p",
-            "v":"https://argu.co/info",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://argu.co/info"
          }
       ]
    },
@@ -338,9 +306,8 @@ val hex = """
       },
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":[
          {
-            "type":"p",
-            "v":"https://ns.ontola.io/core#PictureSet",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://ns.ontola.io/core#PictureSet"
          }
       ],
       "https://ns.ontola.io/core#ariaLabel":[
@@ -352,16 +319,14 @@ val hex = """
       ],
       "https://ns.ontola.io/core#format/svg":[
          {
-            "type":"p",
-            "v":"https://dptr8y9slmfgv.cloudfront.net/sales/images/argu-logo.svg",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://dptr8y9slmfgv.cloudfront.net/sales/images/argu-logo.svg"
          }
       ],
       "https://ns.ontola.io/core#format/png":[
          {
-            "type":"p",
-            "v":"https://dptr8y9slmfgv.cloudfront.net/sales/images/argu-logo.png",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://dptr8y9slmfgv.cloudfront.net/sales/images/argu-logo.png"
          }
       ]
    },
@@ -372,9 +337,8 @@ val hex = """
       },
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":[
          {
-            "type":"p",
-            "v":"https://ns.ontola.io/core#MenuItem",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://ns.ontola.io/core#MenuItem"
          }
       ],
       "http://schema.org/name":[
@@ -386,13 +350,49 @@ val hex = """
       ],
       "https://ns.ontola.io/core#href":[
          {
-            "type":"p",
-            "v":"https://argu.co/info/functionaliteiten",
-            "dt":"globalId"
+            "type":"id",
+            "v":"https://argu.co/info/functionaliteiten"
          }
       ]
    }
 }
+""".trimIndent()
+
+private val hex = """
+[
+    [
+        "https://argu.co/info",
+        "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+        "https://argu.co/ns/sales#HomePage",
+        "globalId",
+        "",
+        "http://purl.org/linked-delta/supplant"
+    ],
+    [
+        "https://argu.co/info",
+        "http://schema.org/name",
+        "Argu - Beslis samen beter",
+        "http://www.w3.org/2001/XMLSchema#string",
+        "",
+        "http://purl.org/linked-delta/supplant"
+    ],
+    [
+        "https://argu.co/info",
+        "http://schema.org/description",
+        "Argu is een gebruiksklaar participatieplatform voor iedere organisatie. Betrek meer burgers, bouw een community en beslis beter.  Vraag vrijblijvend een demo aan.",
+        "http://www.w3.org/2001/XMLSchema#string",
+        "",
+        "http://purl.org/linked-delta/supplant"
+    ],
+    [
+        "https://argu.co/info",
+        "https://ns.ontola.io/core#coverPhoto",
+        "https://argu.co/info#CoverImage",
+        "globalId",
+        "",
+        "http://purl.org/linked-delta/supplant"
+    ]
+]
 """.trimIndent()
 
 class SeedTest {
@@ -405,8 +405,39 @@ class SeedTest {
 
     @Test
     fun testToSlice() {
-        val result = Json.decodeFromString<DataSlice>(hex)
+        val data = listOf(
+            Hextuple("https://argu.co/info", "https://ns.ontola.io/core#coverPhoto", "https://argu.co/info#CoverImage", DataType.GlobalId(), "", supplantGraph),
+        )
+        val result = data.toSlice()
 
-        assertTrue(!result.isEmpty())
+        assertEquals(
+            Value.GlobalId("https://argu.co/info#CoverImage"),
+            result["https://argu.co/info"]?.get("https://ns.ontola.io/core#coverPhoto")?.first()!! as Value.GlobalId,
+        )
+    }
+
+    @Test
+    fun testSliceParsing() {
+        val result = Json.decodeFromString<DataSlice>(slice)
+
+        assertTrue(result.isNotEmpty())
+        assertEquals(
+            Value.GlobalId("https://argu.co/info#CoverImage"),
+            result["https://argu.co/info"]?.get("https://ns.ontola.io/core#coverPhoto")?.first()!! as Value.GlobalId,
+        )
+    }
+
+    @Test
+    fun test() {
+        val data = Json.decodeFromString<List<Hextuple>>(hex)
+
+        assertEquals(data.size, 4)
+
+        val seed = data.toSlice()
+
+        assertEquals(
+            Value.GlobalId("https://argu.co/info#CoverImage"),
+            seed["https://argu.co/info"]?.get("https://ns.ontola.io/core#coverPhoto")?.first()!! as Value.GlobalId,
+        )
     }
 }
