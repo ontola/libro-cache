@@ -44,6 +44,7 @@ object CSPSettings {
         CSPEntry("https://www.facebook.com"),
         CSPEntry("https://analytics.argu.co"),
         CSPEntry("https://argu-logos.s3.eu-central-1.amazonaws.com"),
+        CSPEntry("https://dptr8y9slmfgv.cloudfront.net"),
         CSPEntry("https://maxcdn.bootstrapcdn.com"),
         CSPEntry("https://fonts.gstatic.com"),
         CSPEntry { ctx -> "ws://${ctx.host}" },
