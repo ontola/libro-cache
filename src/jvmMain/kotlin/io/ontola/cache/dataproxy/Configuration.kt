@@ -71,21 +71,25 @@ class Configuration {
         HttpHeaders.Upgrade.lowercase(),
         *HttpHeaders.UnsafeHeadersList.toTypedArray()
     )
-    val verbatimClient = HttpClient(CIO) {
-        followRedirects = false
-        expectSuccess = false
-        install(Logging) {
-            configureClientLogging()
+    val verbatimClient by lazy {
+        HttpClient(CIO) {
+            followRedirects = false
+            expectSuccess = false
+            install(Logging) {
+                configureClientLogging()
+            }
+            if (skipCertificateValidation) disableCertValidation()
         }
-        if (skipCertificateValidation) disableCertValidation()
     }
-    val redirectingClient = HttpClient(CIO) {
-        followRedirects = true
-        expectSuccess = false
-        install(Logging) {
-            configureClientLogging()
+    val redirectingClient by lazy {
+        HttpClient(CIO) {
+            followRedirects = true
+            expectSuccess = false
+            install(Logging) {
+                configureClientLogging()
+            }
+            if (skipCertificateValidation) disableCertValidation()
         }
-        if (skipCertificateValidation) disableCertValidation()
     }
     lateinit var binaryClient: HttpClient
 
