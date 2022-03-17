@@ -11,6 +11,7 @@ import io.ktor.http.URLBuilder
 import io.ktor.http.contentType
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
+import io.ktor.server.response.header
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
@@ -64,6 +65,10 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
         logger.error(msg)
 
         throw RuntimeException(msg)
+    }
+
+    res.headers[CacheHttpHeaders.XAPIVersion]?.let {
+        call.response.header(CacheHttpHeaders.XAPIVersion, it)
     }
 
     val newAuthorization = res.headers[CacheHttpHeaders.NewAuthorization]
