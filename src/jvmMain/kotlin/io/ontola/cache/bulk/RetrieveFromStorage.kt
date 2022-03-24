@@ -4,7 +4,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.util.pipeline.PipelineContext
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.ontola.cache.plugins.sessionManager
+import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.measured
 
@@ -12,7 +12,7 @@ import io.ontola.cache.util.measured
 internal suspend fun PipelineContext<Unit, ApplicationCall>.readFromStorage(
     requested: List<CacheRequest>,
 ): Map<String, CacheEntry> = measured("readFromStorage") {
-    val lang = call.sessionManager.language
+    val lang = call.language
     val storage = call.application.storage
 
     requested

@@ -34,9 +34,9 @@ import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.isHTML
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
+import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.services
-import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.TokenPair
 import io.ontola.cache.tenantization.tenant
@@ -72,7 +72,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.headRequest(
     uri: String = call.request.uri,
     websiteBase: Url = call.tenant.websiteIRI,
 ): HeadResponse = measured("headRequest") {
-    val lang = call.sessionManager.language
+    val lang = call.language
     val headResponse = client.head(call.services.route(uri)) {
         expectSuccess = false
         initHeaders(call, lang, websiteBase)

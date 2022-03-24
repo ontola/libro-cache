@@ -22,6 +22,7 @@ import io.ontola.cache.BadGatewayException
 import io.ontola.cache.TenantNotFoundException
 import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.plugins.cacheConfig
+import io.ontola.cache.plugins.setManifestLanguage
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.UrlSerializer
 import io.ontola.cache.util.measuredHit
@@ -143,6 +144,7 @@ class Tenantization(private val configuration: Configuration) {
             val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
             val manifest = getManifest(context, websiteBase)
 
+            context.call.setManifestLanguage(manifest.lang)
             context.call.attributes.put(
                 TenantizationKey,
                 TenantData(

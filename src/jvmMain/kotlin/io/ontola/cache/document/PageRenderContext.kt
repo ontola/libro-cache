@@ -5,6 +5,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.assets.assets
 import io.ontola.cache.plugins.cacheConfig
+import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.requestUriFromTenant
@@ -33,7 +34,7 @@ fun ApplicationCall.pageRenderContextFromCall(
 
     return PageRenderContext(
         uri = uri,
-        lang = sessionManager.language,
+        lang = language,
         isUser = sessionManager.isUser,
         csrfToken = sessionManager.session!!.csrfToken,
         manifest = manifest ?: tenant.manifest,

@@ -27,7 +27,6 @@ import io.ontola.cache.plugins.setPreferredLanguage
 import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.copy
-import io.ontola.cache.util.preferredLanguage
 import io.ontola.cache.util.proxySafeHeaders
 import io.ontola.util.appendPath
 import kotlinx.coroutines.runBlocking
@@ -55,17 +54,15 @@ class SessionManager(
                 call.sessions.set(value)
             }
             claims()?.user?.language.let {
-                call.setPreferredLanguage(language)
+                call.setPreferredLanguage(it)
             }
         }
 
     val host: String?
         get() = call.request.header(HttpHeaders.Host)
 
-    val language: String
+    val language: String?
         get() = claims()?.user?.language
-            ?: call.request.header(HttpHeaders.AcceptLanguage)?.preferredLanguage()
-            ?: configuration.cacheConfig.defaultLanguage
 
     val isUser: Boolean
         get() = claims()?.user?.type == UserType.User

@@ -12,8 +12,8 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
+import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.services
-import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.util.measured
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.map
 internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizePlain(
     resources: List<String>,
 ): Flow<SPIResourceResponseItem> = measured("authorizePlain;i=${resources.size}") {
-    val lang = call.sessionManager.language
+    val lang = call.language
 
     resources
         .asFlow()

@@ -18,8 +18,8 @@ import io.ktor.server.sessions.set
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
+import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.services
-import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.TokenPair
 import io.ontola.cache.tenantization.tenant
@@ -36,7 +36,7 @@ val logger = KotlinLogging.logger {}
 internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
     resources: List<String>,
 ): Flow<SPIResourceResponseItem> = measured("authorizeBulk;i=${resources.size}") {
-    val lang = call.sessionManager.language
+    val lang = call.language
     val bulkUri = URLBuilder(call.tenant.websiteIRI)
         .apply { appendPath("spi", "bulk") }
         .build()

@@ -64,6 +64,7 @@ import io.ontola.cache.plugins.Logging
 import io.ontola.cache.plugins.Redirect
 import io.ontola.cache.plugins.RedisAdapter
 import io.ontola.cache.plugins.ServiceRegistry
+import io.ontola.cache.plugins.SessionLanguage
 import io.ontola.cache.plugins.Storage
 import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.plugins.Versions
@@ -426,6 +427,8 @@ fun Application.module(
             if (skipCertificateValidation) disableCertValidation()
         }
     }
+
+    install(SessionLanguage)
 
     routing {
         if (testing) {

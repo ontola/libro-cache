@@ -10,8 +10,8 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
+import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.logger
-import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.measured
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,7 +48,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.coldHandler(updatedEntries: L
     updatedEntries?.let {
         if (it.isNotEmpty()) {
             call.logger.debug { "Updating redis after responding (${it.size} entries)" }
-            call.application.storage.setCacheEntries(it, call.sessionManager.language)
+            call.application.storage.setCacheEntries(it, call.language)
         }
     }
 }
