@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import kotlin.js.JsExport
 
-// Keep in sync with /libro/app/modules/Studio/async/context/ProjectContext.ts
+// Keep in sync with /libro/app/modules/Studio/async/lib/types.ts
 @Serializable
 enum class ResourceType {
     RDF,
