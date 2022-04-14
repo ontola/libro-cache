@@ -12,15 +12,15 @@ data class Record(
     val entries
         get() = fields
 
-    operator fun get(key: String): Array<Value>? {
-        if (key == "_id") {
+    operator fun get(field: String): Array<Value>? {
+        if (field == "_id") {
             throw Exception("Use id directly.")
         }
 
-        return fields[key]
+        return fields[field]
     }
 
-    operator fun set(predicate: String, value: Array<Value>) {
-        this.fields[predicate] = value
+    operator fun set(field: String, value: Array<Value>) {
+        this.fields[field] = value
     }
 }
