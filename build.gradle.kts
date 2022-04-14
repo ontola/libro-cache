@@ -155,6 +155,21 @@ repositories {
     maven("https://jitpack.io")
 }
 
+tasks.withType<JavaExec> {
+    val dotenv = file(".env")
+    if (dotenv.exists()) {
+        dotenv.readLines().forEach {
+            if (it.isNotBlank() && !it.startsWith('#')) {
+                val (key, value) = it.split('=')
+                if (key.isNotBlank() && value.isNotBlank()) {
+                    System.setProperty(key, value)
+                    environment(key, value)
+                }
+            }
+        }
+    }
+}
+
 tasks.named<JavaExec>("run") {
     dependsOn(tasks.named<Jar>("jvmJar"))
     classpath(tasks.named<Jar>("jvmJar"))

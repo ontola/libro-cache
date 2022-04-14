@@ -11,4 +11,5 @@ _This project is likely to be renamed to `libro-server` in the near future, as i
 
 - `Apex` and other Ontola services must be running. See [`core`](https://gitlab.com/ontola/core/).
 - Make sure you have a `.env` from [`core`](https://gitlab.com/ontola/core/) symlinked to this directory.
+- See [resources/application.conf] for configuration options
 - Run `./gradlew`
