@@ -44,16 +44,18 @@ fun metaDataFromData(
     if (subjectData == null)
         return MetaData(appName = manifest.shortName, url = url)
 
-    val text = findValue(subjectData, MetaDataPredicates.TextPredicates, lang)
-    val name = findValue(subjectData, MetaDataPredicates.NamePredicates, lang)
+    val websiteIRI = manifest.ontola.websiteIRI
 
-    val coverPhoto = findValue(subjectData, MetaDataPredicates.CoverPredicates, lang)
+    val text = findValue(subjectData, MetaDataPredicates.TextPredicates, lang, websiteIRI)
+    val name = findValue(subjectData, MetaDataPredicates.NamePredicates, lang, websiteIRI)
+
+    val coverPhoto = findValue(subjectData, MetaDataPredicates.CoverPredicates, lang, websiteIRI)
     val coverPhotoQuads = data[coverPhoto]
-    val coverURL = findValue(coverPhotoQuads, MetaDataPredicates.CoverUrlPredicates, lang)
+    val coverURL = findValue(coverPhotoQuads, MetaDataPredicates.CoverUrlPredicates, lang, websiteIRI)
 
-    val image = findValue(subjectData, MetaDataPredicates.ImagePredicates, lang)
+    val image = findValue(subjectData, MetaDataPredicates.ImagePredicates, lang, websiteIRI)
     val imageQuads = data[image]
-    val imageURL = findValue(imageQuads, MetaDataPredicates.AvatarUrlPredicates, lang)
+    val imageURL = findValue(imageQuads, MetaDataPredicates.AvatarUrlPredicates, lang, websiteIRI)
 
     val appIcon = findLargestIcon(manifest.icons ?: emptyArray())
     val strippedText = stripMarkdown(text)

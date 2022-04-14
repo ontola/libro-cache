@@ -388,6 +388,7 @@ fun Application.module(
         contentTypes = listOf(
             ContentType.parse("application/hex+x-ndjson"),
             ContentType.parse("application/json"),
+            ContentType.parse("application/empathy+json"),
             ContentType.parse("application/ld+json"),
             ContentType.parse("application/n-quads"),
             ContentType.parse("application/n-triples"),
@@ -396,6 +397,7 @@ fun Application.module(
         )
         extensions = listOf(
             "hndjson",
+            "empjson",
             "json",
             "jsonld",
             "nq",

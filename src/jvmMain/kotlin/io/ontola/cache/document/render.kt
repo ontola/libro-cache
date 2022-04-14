@@ -147,7 +147,7 @@ private val JsonInHtmlEscaper = AggregateTranslator(
 )
 
 fun BODY.seedBlock(nonce: String, data: DataSlice) {
-    script(type = "application/link-rehydrate+json") {
+    script(type = "application/empathy+json") {
         this.nonce = nonce
         attributes["id"] = "seed"
         unsafe {

@@ -14,9 +14,11 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.jsonObject
 
 object RecordSerializer : KSerializer<Record> {
+    class UnknownElementException : Exception()
+
+    private val valueSerializer = Value.serializer()
     @OptIn(ExperimentalSerializationApi::class)
-    val valueSerializer = Value.serializer()
-    val valuesSerializer = ArraySerializer(valueSerializer)
+    private val valuesSerializer = ArraySerializer(valueSerializer)
     val serializer = MapSerializer(String.serializer(), valuesSerializer)
     override val descriptor: SerialDescriptor = serializer.descriptor
 
@@ -25,18 +27,20 @@ object RecordSerializer : KSerializer<Record> {
             this["_id"] = JsonObject(value.id.toJsonElementMap())
 
             for ((field, values) in value.fields) {
-                this[field] = buildJsonArray {
-                    for (v in values)
-                        this.add(v.toJsonElementMap())
+                if (values.size == 1) {
+                    this[field] = values[0].toJsonElementMap()
+                } else {
+                    this[field] = buildJsonArray {
+                        for (v in values)
+                            this.add(v.toJsonElementMap())
+                    }
                 }
             }
         }
 
-        val test = JsonObject(data)
-        encoder.encodeSerializableValue(JsonObject.serializer(), test)
+        encoder.encodeSerializableValue(JsonObject.serializer(), JsonObject(data))
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override fun deserialize(decoder: Decoder): Record {
         val entries = decoder.decodeSerializableValue(JsonObject.serializer()).entries
 
@@ -46,10 +50,14 @@ object RecordSerializer : KSerializer<Record> {
         for ((key, value) in entries) {
             if (key == "_id") {
                 id = value.jsonObject.toValue()
-            } else {
-                fields[key] = (value as JsonArray)
+            } else if (value is JsonObject) {
+                fields[key] = arrayOf(value.toValue())
+            } else if (value is JsonArray) {
+                fields[key] = value
                     .map { it.jsonObject.toValue() }
                     .toTypedArray()
+            } else {
+                throw UnknownElementException()
             }
         }
 

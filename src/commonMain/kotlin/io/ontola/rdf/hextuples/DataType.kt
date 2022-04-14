@@ -1,5 +1,7 @@
 package io.ontola.rdf.hextuples
 
+import io.ontola.empathy.web.Value
+
 interface Valuable {
     fun value(): String
 }

@@ -162,7 +162,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
                                 null
                             }
                         }
-                        .toSlice()
+                        .toSlice(ctx.manifest.ontola.websiteIRI)
                 }
 
                 indexPage(ctx)
