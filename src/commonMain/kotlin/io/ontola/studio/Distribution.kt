@@ -30,7 +30,7 @@ data class Distribution(
     val sitemap: String,
 )
 
-val blackList = listOf<String>("#", "_", "menus/footer")
+val blackList = listOf("#", "_", "menus/footer")
 
 fun allowedString(hextuple: String): Boolean {
     for (substring in blackList) {
@@ -47,9 +47,9 @@ fun Project.toDistribution(meta: DistributionMeta): Distribution {
     }
 
     val sitemap = HashSet<String>()
-    for (hextuple in hextuples) {
-        if (allowedString(hextuple.subject)) {
-            sitemap.add(hextuple.subject)
+    for (subject in data.keys) {
+        if (allowedString(subject)) {
+            sitemap.add(subject)
         }
     }
     if (sitemap.isEmpty()) {
@@ -57,7 +57,7 @@ fun Project.toDistribution(meta: DistributionMeta): Distribution {
     }
 
     return Distribution(
-        data = hextuples.toSlice(),
+        data = data,
         manifest = manifest,
         sitemap = sitemap.joinToString(separator = "\n"),
         meta = meta,

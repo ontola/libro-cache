@@ -49,6 +49,7 @@ object CSPSettings {
         CSPEntry("https://fonts.gstatic.com"),
         CSPEntry { ctx -> "ws://${ctx.host}" },
         CSPEntry { ctx -> "wss://${ctx.host}" },
+        CSPEntry { ctx -> if (ctx.host == "local.rdf.studio") "*" else null },
         CSPEntry { ctx -> if (!ctx.development) "https://notify.bugsnag.com" else null },
         CSPEntry { ctx -> if (!ctx.development) "https://sessions.bugsnag.com" else null },
         CSPEntry { ctx -> if (ctx.manifest?.ontola?.tracking?.any { it.type.canCallUA() } == true) "https://www.google-analytics.com" else null },

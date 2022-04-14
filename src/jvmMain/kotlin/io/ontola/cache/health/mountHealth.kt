@@ -10,6 +10,7 @@ import kotlinx.css.Color
 import kotlinx.css.CssBuilder
 import kotlinx.css.backgroundColor
 import kotlinx.css.thead
+import kotlinx.css.title
 import kotlinx.css.tr
 import kotlinx.html.FlowOrMetaDataContent
 import kotlinx.html.body

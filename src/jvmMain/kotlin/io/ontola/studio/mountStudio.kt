@@ -2,6 +2,12 @@
 
 package io.ontola.studio
 
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.expectSuccess
+import io.ktor.client.request.get
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.server.application.application
@@ -13,13 +19,17 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
+import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.plugins.sessionManager
+import io.ontola.empathy.web.DataSlice
+import io.ontola.empathy.web.toHextuples
 import io.ontola.util.UrlSerializer
 import io.ontola.util.appendPath
 import io.ontola.util.fullUrl
 import io.ontola.util.rebase
+import it.skrape.core.htmlDocument
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -39,6 +49,33 @@ fun Routing.mountStudio() {
 
     get("/_studio/editorContext.bundle.json") {
         call.respond(serializer.encodeToString(EditorContext()))
+    }
+
+    post("/_studio/import") {
+        val studioConfig = application.cacheConfig.studio
+        if (!studioConfig.skipAuth && !call.sessionManager.isStaff)
+            return@post call.respond(HttpStatusCode.Forbidden)
+
+        val request = serializer.decodeFromString<ImportRequest>(call.receive())
+
+        val data = fetchSiteData(request.url)
+
+        val proto = ProjectRequest(
+            hextuples = data.second.toHextuples(),
+            manifest = data.first,
+            pages = emptyList(),
+            resources = emptyList(),
+            sitemap = "",
+        )
+        val project = projectRepo.create(proto)
+
+        val body = serializer.encodeToString(
+            mapOf(
+                "iri" to studioConfig.origin.appendPath("/_studio/projects/${project.name}").toString(),
+            )
+        )
+
+        call.respond(body)
     }
 
     post("/_studio/projects") {
@@ -197,4 +234,27 @@ fun Routing.mountStudio() {
 
         call.respond(Json.encodeToString(publications))
     }
+}
+
+private suspend fun fetchSiteData(url: Url): Pair<Manifest, DataSlice> {
+    val response = HttpClient(CIO).get(url) {
+        headers[HttpHeaders.Accept] = "text/html"
+        expectSuccess = false
+    }
+    val body = response.body<String>()
+
+    val data = htmlDocument(body) {
+        val manifestData = findLast("script[type='application/javascript']")
+            .html
+            .removePrefix("window.WEBSITE_MANIFEST = JSON.parse('")
+            .removeSuffix("');")
+        val seed = findFirst("#seed")
+
+        Pair(
+            Json.decodeFromString<Manifest>(manifestData),
+            Json.decodeFromString<DataSlice>(seed.html),
+        )
+    }
+
+    return data
 }

@@ -108,6 +108,8 @@ kotlin {
                 implementation("io.lettuce:lettuce-core:$lettuce_version")
 
                 implementation("com.bugsnag:bugsnag:$bugsnag_version")
+
+                implementation("it.skrape:skrapeit:1.1.5")
             }
         }
         val jvmTest by getting {
