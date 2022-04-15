@@ -4,6 +4,7 @@ import io.ontola.apex.webmanifest.Manifest
 import io.ontola.empathy.web.DataSlice
 import io.ontola.empathy.web.Record
 import io.ontola.empathy.web.Value
+import io.ontola.util.absolutize
 
 fun merge(a: Record?, b: Record?): Record? {
     val mergedFields = HashMap<String, Array<Value>>().apply {
@@ -35,11 +36,12 @@ fun metaDataFromData(
     data: DataSlice,
     lang: String,
 ): MetaData {
+    val subject = manifest.ontola.websiteIRI.absolutize(url)
     val subjectData =
-        if (url.endsWith('/'))
-            merge(data[url], data[url.slice(0..-1)])
+        if (subject.endsWith('/'))
+            merge(data[subject], data[subject.slice(0..-1)])
         else
-            data[url]
+            data[subject]
 
     if (subjectData == null)
         return MetaData(appName = manifest.shortName, url = url)

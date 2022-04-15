@@ -10,10 +10,14 @@ import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.CacheEntry
 import io.ontola.cache.util.KeyManager
+import io.ontola.empathy.web.DataSlice
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toSet
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import java.time.Instant
 import kotlin.time.Duration
@@ -168,7 +172,7 @@ class Storage(
             iri = hash["iri"]!!,
             status = HttpStatusCode.fromValue(hash["status"]!!.toInt()),
             cacheControl = CacheControl.valueOf(hash["cacheControl"]!!),
-            contents = hash["contents"],
+            contents = hash["contents"]?.let { Json.decodeFromString<DataSlice>(it) },
         )
     }
 
@@ -188,7 +192,7 @@ class Storage(
                         "iri" to it.iri,
                         "status" to it.status.value.toString(10),
                         "cacheControl" to it.cacheControl.toString(),
-                        "contents" to it.contents.orEmpty(),
+                        "contents" to Json.encodeToString(it.contents.orEmpty()),
                     )
                 }
             )

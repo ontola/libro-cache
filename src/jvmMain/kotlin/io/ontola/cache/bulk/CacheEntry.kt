@@ -1,6 +1,7 @@
 package io.ontola.cache.bulk
 
 import io.ktor.http.HttpStatusCode
+import io.ontola.empathy.web.DataSlice
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
@@ -8,7 +9,7 @@ data class CacheEntry(
     override val iri: String,
     val status: HttpStatusCode = HttpStatusCode.NotFound,
     val cacheControl: CacheControl = CacheControl.NoCache,
-    val contents: String? = null,
+    val contents: DataSlice? = null,
 ) : CacheRequest(iri) {
     companion object {
         val fields = arrayOf("iri", "status", "cacheControl", "contents")

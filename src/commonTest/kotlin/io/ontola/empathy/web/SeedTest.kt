@@ -406,13 +406,30 @@ class SeedTest {
     @Test
     fun testToSlice() {
         val data = listOf(
-            Hextuple("https://argu.co/info", "https://ns.ontola.io/core#coverPhoto", "https://argu.co/info#CoverImage", DataType.GlobalId(), "", supplantGraph),
+            Hextuple("https://argu.co/info", "https://example.com/ns#coverPhoto", "https://argu.co/info#CoverImage", DataType.GlobalId(), "", supplantGraph),
         )
         val result = data.toSlice()
 
         assertEquals(
             Value.GlobalId("https://argu.co/info#CoverImage"),
-            result["https://argu.co/info"]?.get("https://ns.ontola.io/core#coverPhoto")?.first()!! as Value.GlobalId,
+            result["https://argu.co/info"]?.get("https://example.com/ns#coverPhoto")?.first()!! as Value.GlobalId,
+        )
+    }
+    @Test
+    fun testToSliceWithLocalIds() {
+        val data = listOf(
+            Hextuple("https://example.com/a", "http://example.com/creator", "abc", DataType.LocalId(), "", supplantGraph),
+            Hextuple("_:abc", "http://example.com/name", "BlankName", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "", supplantGraph),
+        )
+        val result = data.toSlice()
+
+        assertEquals(
+            Value.LocalId("abc"),
+            result["https://example.com/a"]?.get("http://example.com/creator")?.first()!! as Value.LocalId,
+        )
+        assertEquals(
+            Value.Str("BlankName"),
+            result["_:abc"]?.get("http://example.com/name")?.first()!! as Value.Str,
         )
     }
 
@@ -437,7 +454,7 @@ class SeedTest {
 
         assertEquals(
             Value.GlobalId("https://argu.co/info#CoverImage"),
-            seed["https://argu.co/info"]?.get("https://ns.ontola.io/core#coverPhoto")?.first()!! as Value.GlobalId,
+            seed["https://argu.co/info"]?.get("coverPhoto")?.first()!! as Value.GlobalId,
         )
     }
 }

@@ -43,6 +43,7 @@ import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.measured
+import io.ontola.empathy.web.DataSlice
 import io.ontola.empathy.web.toSlice
 import io.ontola.rdf.hextuples.Hextuple
 import io.ontola.studio.StudioDeploymentKey
@@ -155,14 +156,19 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
                     ctx.data = stream
                         .toString(Charset.forName("UTF-8"))
                         .split("\n")
+                        .filter { it.isNotBlank() }
                         .map {
                             try {
-                                Hextuple.fromArray(Json.decodeFromString(it))
+                                Json.decodeFromString<DataSlice>(it)
                             } catch (e: SerializationException) {
                                 null
                             }
                         }
-                        .toSlice(ctx.manifest.ontola.websiteIRI)
+                        .fold(mutableMapOf()) { acc, curr ->
+                            // TODO merge values
+                            curr?.forEach { entry -> acc.merge(entry.key, entry.value) { new, old -> new } }
+                            acc
+                        }
                 }
 
                 indexPage(ctx)

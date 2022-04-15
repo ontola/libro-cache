@@ -142,8 +142,8 @@ fun JsonObject.toValue(): Value {
         "lid" -> Value.LocalId(value)
         "s" -> Value.Str(value)
         "b" -> Value.Bool(value)
-        "i" -> Value.Primitive(value, (this["l"] as JsonPrimitive).content)
-        "l" -> Value.Primitive(value, (this["l"] as JsonPrimitive).content)
+        "i" -> Value.Int(value)
+        "l" -> Value.Long(value)
         "dt" -> Value.DateTime(value)
         "ls" -> Value.LangString(value, (this["l"] as JsonPrimitive).content)
         "p" -> Value.Primitive(value, (this["dt"] as JsonPrimitive).content)
@@ -236,8 +236,8 @@ val shortMap = mapOf(
     "http://www.w3.org/2000/01/rdf-schema#comment" to "rdfscomment",
     "http://schema.org/rangeIncludes" to "rangeIncludes",
     "http://schema.org/domainIncludes" to "domainIncludes",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_0" to "_0",
 
-    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_0" to "0",
     "https://ns.ontola.io/core#_destroy" to "Destroy",
     "https://argu.co/ns/core#acceptTerms" to "acceptTerms",
     "https://argu.co/ns/core#acceptedTerms" to "acceptedTerms",

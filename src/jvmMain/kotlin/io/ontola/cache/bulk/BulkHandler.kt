@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.toList
 
 val hexJson = ContentType.parse("application/hex+x-ndjson")
+val ndEmpJson = ContentType.parse("application/empathy+x-ndjson")
 
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun PipelineContext<Unit, ApplicationCall>.collectResources(resources: List<CacheRequest>): Flow<CacheEntry> {
@@ -65,7 +66,7 @@ fun Routing.mountBulkHandler() {
 
             collectResources(requested)
                 .also {
-                    call.respondOutputStream(hexJson, HttpStatusCode.OK) {
+                    call.respondOutputStream(ndEmpJson, HttpStatusCode.OK) {
                         entriesToOutputStream(it, this)
                     }
                 }

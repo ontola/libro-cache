@@ -44,9 +44,12 @@ fun Url.rebase(fullPath: String): Url = URLBuilder(this).apply {
 fun Url?.absolutize(other: String): String {
     this ?: return other
 
-    if (other.startsWith(toString())) {
-        return other.removePrefix(toString())
-    }
+    val prefix = withoutTrailingSlash
+
+    if (other == prefix)
+        return "/"
+    if (other.startsWith(prefix))
+        return other.removePrefix(prefix)
 
     return other
 }
