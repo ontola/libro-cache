@@ -7,12 +7,12 @@ import kotlinx.serialization.Serializable
 data class Record(
     @SerialName("_id")
     val id: Value,
-    val fields: MutableMap<String, Array<Value>> = mutableMapOf(),
+    val fields: MutableMap<String, List<Value>> = mutableMapOf(),
 ) {
     val entries
         get() = fields
 
-    operator fun get(field: String): Array<Value>? {
+    operator fun get(field: String): List<Value>? {
         if (field == "_id") {
             throw Exception("Use id directly.")
         }
@@ -20,7 +20,7 @@ data class Record(
         return fields[field]
     }
 
-    operator fun set(field: String, value: Array<Value>) {
+    operator fun set(field: String, value: List<Value>) {
         this.fields[field] = value
     }
 }

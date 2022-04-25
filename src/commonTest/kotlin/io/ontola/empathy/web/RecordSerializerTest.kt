@@ -43,6 +43,14 @@ class RecordSerializerTest {
             }
         }
     """.trimIndent()
+    private val localIdSerialized = """
+        {
+            "_id": {
+                "type": "lid",
+                "v": "_:abc"
+            }
+        }
+    """.trimIndent()
 
     @Test
     fun testDeserialization() {
@@ -79,6 +87,18 @@ class RecordSerializerTest {
         val serialized = json.encodeToString(record)
 
         assertEquals(homeSerialized, serialized)
+    }
+
+    @Test
+    fun testLocalIdSerialization() {
+        val record = Record(
+            Value.LocalId("_:abc"),
+            mutableMapOf()
+        )
+
+        val serialized = json.encodeToString(record)
+
+        assertEquals(localIdSerialized, serialized)
     }
 
     private fun testProp(value: Value, serializedProp: String) {

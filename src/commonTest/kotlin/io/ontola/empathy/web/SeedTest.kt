@@ -210,7 +210,7 @@ private val slice = """
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_1":[
          {
             "type":"lid",
-            "v":"_:https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_1>"
+            "v":"_:abc"
          }
       ],
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#_2":[
@@ -330,10 +330,10 @@ private val slice = """
          }
       ]
    },
-   "https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_1>":{
+   "_:abc":{
       "_id":{
-         "type":"id",
-         "v":"https://argu.co/info.<https://ns.ontola.io/core#navigationsMenu>.<https://ns.ontola.io/core#menuItems>.<http://www.w3.org/1999/02/22-rdf-syntax-ns#_1>"
+         "type":"lid",
+         "v":"_:abc"
       },
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":[
          {
@@ -391,6 +391,14 @@ private val hex = """
         "globalId",
         "",
         "http://purl.org/linked-delta/supplant"
+    ],
+    [
+        "_:abc",
+        "http://schema.org/name",
+        "https://example.com/a",
+        "globalId",
+        "",
+        "http://purl.org/linked-delta/supplant"
     ]
 ]
 """.trimIndent()
@@ -424,7 +432,7 @@ class SeedTest {
         val result = data.toSlice()
 
         assertEquals(
-            Value.LocalId("abc"),
+            Value.LocalId("_:abc"),
             result["https://example.com/a"]?.get("http://example.com/creator")?.first()!! as Value.LocalId,
         )
         assertEquals(
@@ -442,19 +450,27 @@ class SeedTest {
             Value.GlobalId("https://argu.co/info#CoverImage"),
             result["https://argu.co/info"]?.get("https://ns.ontola.io/core#coverPhoto")?.first()!! as Value.GlobalId,
         )
+        assertEquals(
+            Value.LocalId("_:abc"),
+            result["_:abc"]?.id as Value.LocalId,
+        )
     }
 
     @Test
     fun test() {
         val data = Json.decodeFromString<List<Hextuple>>(hex)
 
-        assertEquals(data.size, 4)
+        assertEquals(data.size, 5)
 
         val seed = data.toSlice()
 
         assertEquals(
             Value.GlobalId("https://argu.co/info#CoverImage"),
             seed["https://argu.co/info"]?.get("coverPhoto")?.first()!! as Value.GlobalId,
+        )
+        assertEquals(
+            Value.GlobalId("https://example.com/a"),
+            seed["_:abc"]?.get("name")?.first()!! as Value.GlobalId,
         )
     }
 }

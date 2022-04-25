@@ -184,30 +184,76 @@ fun DataSlice.toHextuples(): List<Hextuple> = buildList {
     }
 }
 
+fun List<DataSlice>.merge(): DataSlice = buildMap {
+    for (record in this@merge) {
+        for ((k, v) in record) {
+            put(k, v)
+        }
+    }
+}
+
+fun DataSlice.compact(websiteIRI: Url?): DataSlice {
+    websiteIRI ?: return this
+
+    return this.map { (key, value) ->
+        val id = if (key.startsWith("_"))
+            Value.LocalId(key)
+        else
+            shortenedGlobalId(key, websiteIRI)
+
+        id.value to value.compact(websiteIRI)
+    }.toMap()
+}
+
+fun Record.compact(websiteIRI: Url?): Record {
+    websiteIRI ?: return this
+
+    fun shortenId(id: String): Value = if (id.startsWith("_"))
+        Value.LocalId(id)
+    else
+        shortenedGlobalId(id, websiteIRI)
+
+    val compactedFields = fields
+        .mapKeys { (key) -> shortenId(key).value }
+        .mapValues { (k, value) ->
+            value.map {
+                if (it is Value.GlobalId) {
+                    shortenedGlobalId(it.value, websiteIRI)
+                } else {
+                    it
+                }
+            }
+        }
+        .toMutableMap()
+
+    return Record(shortenId(id.value), compactedFields)
+}
+
 fun List<Hextuple?>.toSlice(websiteIRI: Url? = null): DataSlice = buildMap {
     for (hex in this@toSlice) {
         if (hex == null || hex.graph == "http://purl.org/link-lib/meta") continue
 
         if (hex.graph != supplantGraph) throw Error("Non-supplant statement: $hex")
 
-        val record = this.getOrPut(shortenedGlobalIdString(hex.subject, websiteIRI)) {
-            val id = if (hex.subject.startsWith("_"))
-                Value.LocalId(hex.subject)
-            else
-                shortenedGlobalId(hex.subject, websiteIRI)
+        val id = if (hex.subject.startsWith("_"))
+            Value.LocalId(hex.subject)
+        else
+            shortenedGlobalId(hex.subject, websiteIRI)
+
+        val record = this.getOrPut(id.value) {
             Record(id)
         }
-        val field = record.entries.getOrPut(shortenedGlobalIdString(hex.predicate, websiteIRI)) { arrayOf() }
+        val field = record.entries.getOrPut(shortenedGlobalIdString(hex.predicate, websiteIRI)) { listOf() }
         val value = hex.toValue(websiteIRI)
-        record[shortenedGlobalIdString(hex.predicate, websiteIRI)] = arrayOf(*field, value)
+        record[shortenedGlobalIdString(hex.predicate, websiteIRI)] = listOf(*field.toTypedArray(), value)
 
-        put(shortenedGlobalIdString(hex.subject, websiteIRI), record)
+        put(id.value, record)
     }
 }
 
 fun Hextuple.toValue(websiteIRI: Url?): Value = when (datatype) {
     is DataType.GlobalId -> shortenedGlobalId(value, websiteIRI)
-    is DataType.LocalId -> Value.LocalId(value)
+    is DataType.LocalId -> Value.LocalId("_:$value")
     else -> when (datatype.value()) {
         "http://www.w3.org/2001/XMLSchema#string" -> Value.Str(value)
         "http://www.w3.org/2001/XMLSchema#boolean" -> Value.Bool(value)

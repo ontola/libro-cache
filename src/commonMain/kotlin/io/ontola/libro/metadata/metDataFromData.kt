@@ -7,7 +7,7 @@ import io.ontola.empathy.web.Value
 import io.ontola.util.absolutize
 
 fun merge(a: Record?, b: Record?): Record? {
-    val mergedFields = HashMap<String, Array<Value>>().apply {
+    val mergedFields = HashMap<String, List<Value>>().apply {
         if (a == null && b == null)
             return null
 

@@ -8,8 +8,9 @@ import io.ktor.server.application.call
 import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.services
 import io.ontola.cache.tenantization.tenant
-import io.ontola.empathy.web.toSlice
-import io.ontola.rdf.hextuples.Hextuple
+import io.ontola.empathy.web.DataSlice
+import io.ontola.empathy.web.compact
+import io.ontola.empathy.web.merge
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -44,8 +45,9 @@ suspend fun PipelineContext<Unit, ApplicationCall>.authorize(toAuthorize: Flow<C
                 cacheControl = entry.cache,
                 contents = scopeBlankNodes(entry.body)
                     ?.split("\n")
-                    ?.map { Json.decodeFromString<Hextuple>(it) }
-                    ?.toSlice(call.tenant.websiteIRI),
+                    ?.map { Json.decodeFromString<DataSlice>(it) }
+                    ?.merge()
+                    ?.compact(call.tenant.websiteIRI),
             )
         }
 }

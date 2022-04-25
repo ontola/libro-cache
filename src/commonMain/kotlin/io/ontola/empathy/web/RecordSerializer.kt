@@ -45,17 +45,15 @@ object RecordSerializer : KSerializer<Record> {
         val entries = decoder.decodeSerializableValue(JsonObject.serializer()).entries
 
         lateinit var id: Value
-        val fields = mutableMapOf<String, Array<Value>>()
+        val fields = mutableMapOf<String, List<Value>>()
 
         for ((key, value) in entries) {
             if (key == "_id") {
                 id = value.jsonObject.toValue()
             } else if (value is JsonObject) {
-                fields[key] = arrayOf(value.toValue())
+                fields[key] = listOf(value.toValue())
             } else if (value is JsonArray) {
-                fields[key] = value
-                    .map { it.jsonObject.toValue() }
-                    .toTypedArray()
+                fields[key] = value.map { it.jsonObject.toValue() }
             } else {
                 throw UnknownElementException()
             }

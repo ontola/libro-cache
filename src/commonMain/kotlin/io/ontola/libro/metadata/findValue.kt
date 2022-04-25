@@ -9,7 +9,7 @@ fun findValue(data: Record?, predicates: Array<String>, preferredLang: String, w
     if (data == null) return null
 
     return predicates
-        .flatMap { data[shortenedGlobalIdString(it, websiteIRI)]?.asList() ?: emptyList() }
+        .flatMap { data[shortenedGlobalIdString(it, websiteIRI)] ?: emptyList() }
         .filter { it.value.isNotBlank() }
         .minByOrNull { if (it is Value.LangString && preferredLang == it.lang) 0 else 1 }
         ?.value
