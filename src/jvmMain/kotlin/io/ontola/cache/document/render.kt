@@ -146,12 +146,12 @@ private val JsonInHtmlEscaper = AggregateTranslator(
     ),
 )
 
-fun BODY.seedBlock(nonce: String, data: DataSlice) {
+fun BODY.seedBlock(nonce: String, data: DataSlice, serializer: Json) {
     script(type = "application/empathy+json") {
         this.nonce = nonce
         attributes["id"] = "seed"
         unsafe {
-            +JsonInHtmlEscaper.translate(Json.encodeToString(data))
+            +JsonInHtmlEscaper.translate(serializer.encodeToString(data))
         }
     }
     script(type = "application/javascript") {
@@ -166,9 +166,10 @@ fun BODY.seedBlock(nonce: String, data: DataSlice) {
 @OptIn(ExperimentalSerializationApi::class)
 fun BODY.manifestBlock(nonce: String, manifest: Manifest, serializer: Json) {
     script(type = "application/javascript") {
+        attributes["id"] = "manifest"
         this.nonce = nonce
         unsafe {
-            raw("window.WEBSITE_MANIFEST = JSON.parse('${serializer.encodeToString(manifest)}');")
+            raw("window.WEBSITE_MANIFEST = JSON.parse(`${serializer.encodeToString(manifest)}`);")
         }
     }
 }
@@ -208,7 +209,7 @@ fun HTML.indexPage(ctx: PageRenderContext) {
         themeBlock(manifest)
         preloadBlock(nonce, config, manifest)
         serviceWorkerBlock(nonce, manifest)
-        seedBlock(nonce, data)
+        seedBlock(nonce, data, ctx.serializer)
         assetsBlock(nonce, config)
 //            deferredBodyStyles(nonceStr)
         manifestBlock(nonce, manifest, ctx.serializer)

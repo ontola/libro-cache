@@ -190,6 +190,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
      */
     val clientOverride: HttpClient? = null,
     val serializer: Json = Json {
+        prettyPrint = env == "development"
         encodeDefaults = true
         isLenient = false
         ignoreUnknownKeys = false
