@@ -417,7 +417,7 @@ fun Application.module(
         )
         transforms[Regex("^/([\\w/]*/)?login$")] = loginTransform
 
-        skipCertificateValidation = testing || this@module.cacheConfig.isDev
+        developmentMode = testing || this@module.cacheConfig.isDev
 
         binaryClient = HttpClient(CIO) {
             followRedirects = true
@@ -426,7 +426,12 @@ fun Application.module(
             install(io.ktor.client.plugins.logging.Logging) {
                 configureClientLogging()
             }
-            if (skipCertificateValidation) disableCertValidation()
+            if (this@install.developmentMode) {
+                disableCertValidation()
+                engine {
+                    requestTimeout = 1.days.inWholeMilliseconds
+                }
+            }
         }
     }
 

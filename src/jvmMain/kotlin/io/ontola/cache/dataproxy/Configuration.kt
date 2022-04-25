@@ -10,6 +10,7 @@ import io.ktor.server.request.ApplicationRequest
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.configureClientLogging
 import io.ontola.util.disableCertValidation
+import kotlin.time.Duration.Companion.days
 
 enum class ProxyClient {
     VerbatimBackend,
@@ -59,7 +60,7 @@ class Configuration {
      */
     var extensions: List<String> = emptyList()
 
-    var skipCertificateValidation: Boolean = false
+    var developmentMode: Boolean = false
 
     val unsafeList = listOf(
         CacheHttpHeaders.NewAuthorization.lowercase(),
@@ -78,7 +79,12 @@ class Configuration {
             install(Logging) {
                 configureClientLogging()
             }
-            if (skipCertificateValidation) disableCertValidation()
+            if (this@Configuration.developmentMode) {
+                disableCertValidation()
+                engine {
+                    requestTimeout = 1.days.inWholeMilliseconds
+                }
+            }
         }
     }
     val redirectingClient by lazy {
@@ -88,7 +94,12 @@ class Configuration {
             install(Logging) {
                 configureClientLogging()
             }
-            if (skipCertificateValidation) disableCertValidation()
+            if (this@Configuration.developmentMode) {
+                disableCertValidation()
+                engine {
+                    requestTimeout = 1.days.inWholeMilliseconds
+                }
+            }
         }
     }
     lateinit var binaryClient: HttpClient
