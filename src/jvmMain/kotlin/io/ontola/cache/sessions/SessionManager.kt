@@ -19,7 +19,7 @@ import io.ktor.server.sessions.clear
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
-import io.ontola.cache.plugins.CacheSession
+import io.ontola.cache.plugins.CacheSessionConfiguration
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.logger
@@ -42,7 +42,7 @@ val unsafeMethods = listOf(
 
 class SessionManager(
     private val call: ApplicationCall,
-    private val configuration: CacheSession.Configuration,
+    private val configuration: CacheSessionConfiguration,
     private val refresher: SessionRefresher = SessionRefresher(configuration),
 ) {
     var session: SessionData?

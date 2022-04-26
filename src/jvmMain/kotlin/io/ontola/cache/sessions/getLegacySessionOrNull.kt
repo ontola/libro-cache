@@ -2,14 +2,14 @@ package io.ontola.cache.sessions
 
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.header
-import io.ontola.cache.plugins.CacheSession
+import io.ontola.cache.plugins.CacheSessionConfiguration
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 @Deprecated("Until sessions are migrated")
 internal suspend fun getLegacySessionOrNull(
     call: ApplicationCall,
-    config: CacheSession.Configuration,
+    config: CacheSessionConfiguration,
 ): LegacySession? {
     val sessionsConfig = config.cacheConfig.sessions
 

@@ -12,7 +12,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.fullPath
-import io.ontola.cache.plugins.CacheSession
+import io.ontola.cache.plugins.CacheSessionConfiguration
 import io.ontola.util.appendPath
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -66,7 +66,7 @@ data class OIDCRequest(
     }
 }
 
-class SessionRefresher(private val configuration: CacheSession.Configuration) {
+class SessionRefresher(private val configuration: CacheSessionConfiguration) {
     private val logger = KotlinLogging.logger {}
 
     /**
