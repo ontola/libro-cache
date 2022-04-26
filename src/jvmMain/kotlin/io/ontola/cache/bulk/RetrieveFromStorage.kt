@@ -1,8 +1,6 @@
 package io.ontola.cache.bulk
 
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.util.pipeline.PipelineContext
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.storage

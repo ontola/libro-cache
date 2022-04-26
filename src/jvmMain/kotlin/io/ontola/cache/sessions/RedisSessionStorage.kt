@@ -1,5 +1,6 @@
 package io.ontola.cache.sessions
 
+import io.ktor.server.sessions.SessionStorage
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.ontola.cache.plugins.RedisConfig
 import io.ontola.cache.plugins.StorageAdapter
@@ -10,19 +11,16 @@ private const val sessionPrefix = "session"
 class RedisSessionStorage(
     private val redis: StorageAdapter<String, String>,
     config: RedisConfig,
-) : SimplifiedSessionStorage() {
+) : SessionStorage {
     private val keyManager = KeyManager(config)
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    override suspend fun read(id: String): ByteArray? {
-        return redis.get(keyManager.toKey(sessionPrefix, id))?.toByteArray(Charsets.UTF_8)
-    }
+    override suspend fun read(id: String): String = redis.get(keyManager.toKey(sessionPrefix, id))
+        ?: throw NoSuchElementException()
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    override suspend fun write(id: String, data: ByteArray?) {
-        data?.let {
-            redis.set(keyManager.toKey(sessionPrefix, id), it.decodeToString())
-        }
+    override suspend fun write(id: String, value: String) {
+        redis.set(keyManager.toKey(sessionPrefix, id), value)
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)

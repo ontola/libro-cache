@@ -44,7 +44,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties:$serialization_version")
 
                 implementation("io.ktor:ktor-http:$ktor_version")
-//                implementation("io.ktor:ktor-utils:$ktor_version")
+                implementation("io.ktor:ktor-utils:$ktor_version")
                 implementation("io.ktor:ktor-serialization:$ktor_version")
 
                 implementation("io.ktor:ktor-client-core:$ktor_version")
@@ -72,7 +72,6 @@ kotlin {
                 implementation("ch.qos.logback:logback-classic:$logback_version")
                 implementation("io.github.microutils:kotlin-logging:$kotlin_logging_version")
 
-//                implementation("io.ktor:ktor-utils:$ktor_version")
                 implementation("io.ktor:ktor-server-core:$ktor_version")
                 implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
                 implementation("io.ktor:ktor-server-caching-headers:$ktor_version")
@@ -151,7 +150,6 @@ application {
 
 repositories {
     mavenLocal()
-    maven("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
     mavenCentral()
     maven("https://jitpack.io")
 }

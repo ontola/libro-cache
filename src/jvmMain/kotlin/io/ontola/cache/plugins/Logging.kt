@@ -9,8 +9,6 @@ import mu.KLogger
 import mu.KotlinLogging
 import java.time.Instant
 
-private val key = AttributeKey<KLogger>("KLogger")
-
 val Logging = createApplicationPlugin(name = "Logging") {
     val feature = KotlinLogging.logger {}
     feature.info {
@@ -39,7 +37,7 @@ val Logging = createApplicationPlugin(name = "Logging") {
 private val KLoggerKey = AttributeKey<KLogger>("KLoggerKey")
 
 private val TimingsKey = AttributeKey<MutableList<Pair<List<String>, Long>>>("TimingsKey")
-private val StartKey = AttributeKey<MutableList<Pair<List<String>, Long>>>("TimingsStartKey")
+private val StartKey = AttributeKey<Long>("TimingsStartKey")
 
 internal val ApplicationCall.logger: KLogger
     get() = attributes.getOrNull(KLoggerKey) ?: reportMissingRegistry()

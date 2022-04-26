@@ -2,13 +2,13 @@ package io.ontola.cache.util
 
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
-import io.ktor.server.plugins.CallLogging
+import io.ktor.server.plugins.callloging.CallLoggingConfig
 import mu.KotlinLogging
 import org.slf4j.event.Level
 
 private val kLogger = KotlinLogging.logger {}
 
-fun CallLogging.Configuration.configureCallLogging() {
+fun CallLoggingConfig.configureCallLogging() {
     level = when {
         kLogger.isTraceEnabled -> Level.TRACE
         kLogger.isDebugEnabled -> Level.DEBUG

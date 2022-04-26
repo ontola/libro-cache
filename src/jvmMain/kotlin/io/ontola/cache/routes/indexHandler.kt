@@ -20,7 +20,6 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.AttributeKey
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.CacheRequest
 import io.ontola.cache.bulk.coldHandler
