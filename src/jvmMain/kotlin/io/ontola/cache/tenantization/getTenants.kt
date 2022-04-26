@@ -18,6 +18,7 @@ import io.ontola.cache.plugins.services
 import io.ontola.cache.util.UrlSerializer
 import io.ontola.cache.util.copy
 import io.ontola.cache.util.proxySafeHeaders
+import kotlinx.css.header
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 
@@ -33,13 +34,13 @@ data class TenantsResponse(
     val sites: List<TenantDescription>,
 )
 
-internal suspend fun PipelineContext<*, ApplicationCall>.getTenants(): TenantsResponse {
-    val request = application.cacheConfig.client.get(call.services.route("/_public/spi/tenants")) {
+internal suspend fun ApplicationCall.getTenants(): TenantsResponse {
+    val request = application.cacheConfig.client.get(services.route("/_public/spi/tenants")) {
         headers {
-            header(HttpHeaders.Authorization, "Bearer ${context.application.cacheConfig.sessions.oAuthToken}")
-            proxySafeHeaders(context.request)
-            copy(HttpHeaders.XForwardedFor, context.request)
-            copy("X-Real-Ip", context.request)
+            header(HttpHeaders.Authorization, "Bearer ${application.cacheConfig.sessions.oAuthToken}")
+            proxySafeHeaders(request)
+            copy(HttpHeaders.XForwardedFor, request)
+            copy("X-Real-Ip", request)
         }
     }
 

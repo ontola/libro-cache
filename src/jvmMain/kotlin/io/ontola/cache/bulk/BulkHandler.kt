@@ -9,7 +9,6 @@ import io.ktor.server.response.respondOutputStream
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
 import io.ktor.util.AttributeKey
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.storage
@@ -24,31 +23,31 @@ import kotlinx.coroutines.flow.toList
 val hexJson = ContentType.parse("application/hex+x-ndjson")
 
 @OptIn(ExperimentalCoroutinesApi::class)
-suspend fun PipelineContext<Unit, ApplicationCall>.collectResources(resources: List<CacheRequest>): Flow<CacheEntry> {
+suspend fun ApplicationCall.collectResources(resources: List<CacheRequest>): Flow<CacheEntry> {
     val result = readAndPartition(resources)
-    call.response.header("Link-Cache", result.stats.toString())
+    response.header("Link-Cache", result.stats.toString())
 
     if (result.entirelyPublic) {
-        call.logger.debug { "All ${resources.size} resources in cache" }
+        logger.debug { "All ${resources.size} resources in cache" }
 
         return result.cachedPublic.asFlow()
     }
 
     val toAuthorize = result.notCached + result.cachedNotPublic
 
-    call.logger.debug { "Requesting ${toAuthorize.size} resources" }
-    call.logger.trace { "Requesting ${toAuthorize.joinToString(", ") { it.iri }}" }
+    logger.debug { "Requesting ${toAuthorize.size} resources" }
+    logger.trace { "Requesting ${toAuthorize.joinToString(", ") { it.iri }}" }
 
     val entries = authorize(toAuthorize.asFlow())
 
     return merge(result.cachedPublic.asFlow(), entries)
 }
 
-suspend fun PipelineContext<Unit, ApplicationCall>.coldHandler(updatedEntries: List<CacheEntry>?) = measured("handler cold") {
+suspend fun ApplicationCall.coldHandler(updatedEntries: List<CacheEntry>?) = measured("handler cold") {
     updatedEntries?.let {
         if (it.isNotEmpty()) {
-            call.logger.debug { "Updating redis after responding (${it.size} entries)" }
-            call.application.storage.setCacheEntries(it, call.language)
+            logger.debug { "Updating redis after responding (${it.size} entries)" }
+            application.storage.setCacheEntries(it, language)
         }
     }
 }
@@ -59,11 +58,11 @@ fun Routing.mountBulkHandler() {
             return@post
         }
 
-        val updatedEntries: List<CacheEntry>? = measured("handler hot") {
+        val updatedEntries: List<CacheEntry>? = call.measured("handler hot") {
             val requested = requestedResources()
             call.logger.debug { "Fetching ${requested.size} resources from cache" }
 
-            collectResources(requested)
+            call.collectResources(requested)
                 .also {
                     call.respondOutputStream(hexJson, HttpStatusCode.OK) {
                         entriesToOutputStream(it, this)
@@ -73,6 +72,6 @@ fun Routing.mountBulkHandler() {
                 .toList()
         }
 
-        coldHandler(updatedEntries)
+        call.coldHandler(updatedEntries)
     }
 }

@@ -11,10 +11,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.authority
 import io.ktor.http.formUrlEncode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.application
-import io.ktor.server.application.call
 import io.ktor.server.request.header
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.tenantization.getTenants
 import io.ontola.cache.util.CacheHttpHeaders
@@ -24,15 +21,15 @@ class BulkCheck : Check() {
         name = "Bulk endpoint"
     }
 
-    override suspend fun runTest(context: PipelineContext<Unit, ApplicationCall>): Exception? {
-        val tenant = context.getTenants().sites.first().location
-        val origin = "http://localhost:${context.application.cacheConfig.port}"
+    override suspend fun runTest(call: ApplicationCall): Exception? {
+        val tenant = call.getTenants().sites.first().location
+        val origin = "http://localhost:${call.application.cacheConfig.port}"
 
         val response = HttpClient(CIO).post("$origin/link-lib/bulk") {
             headers {
                 header(HttpHeaders.Accept, "application/hex+x-ndjson")
                 header(HttpHeaders.ContentType, "application/x-www-form-urlencoded")
-                header(HttpHeaders.Cookie, context.call.request.header(HttpHeaders.Cookie))
+                header(HttpHeaders.Cookie, call.request.header(HttpHeaders.Cookie))
                 header(CacheHttpHeaders.WebsiteIri, tenant)
                 header(HttpHeaders.XForwardedHost, tenant.authority)
                 header(HttpHeaders.XForwardedProto, "https")

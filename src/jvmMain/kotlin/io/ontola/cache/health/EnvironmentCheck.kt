@@ -1,8 +1,6 @@
 package io.ontola.cache.health
 
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.application
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 
 class EnvironmentCheck : Check() {
@@ -10,8 +8,8 @@ class EnvironmentCheck : Check() {
         name = "Environment variables"
     }
 
-    override suspend fun runTest(context: PipelineContext<Unit, ApplicationCall>): Exception? {
-        val config = context.application.cacheConfig
+    override suspend fun runTest(call: ApplicationCall): Exception? {
+        val config = call.application.cacheConfig
         val env = config.env
         val failed = buildList {
             fun checkValue(k: String, v: String?) {

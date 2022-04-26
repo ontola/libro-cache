@@ -10,12 +10,10 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.contentType
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.response.header
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.language
@@ -33,21 +31,20 @@ import kotlin.time.Duration.Companion.seconds
 
 val logger = KotlinLogging.logger {}
 
-internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
+internal suspend fun ApplicationCall.authorizeBulk(
     resources: List<String>,
 ): Flow<SPIResourceResponseItem> = measured("authorizeBulk;i=${resources.size}") {
-    val lang = call.language
-    val bulkUri = URLBuilder(call.tenant.websiteIRI)
+    val bulkUri = URLBuilder(tenant.websiteIRI)
         .apply { appendPath("spi", "bulk") }
         .build()
         .encodedPath
 
-    val res: HttpResponse = call.application.cacheConfig.client.post(call.services.route(bulkUri)) {
+    val res: HttpResponse = application.cacheConfig.client.post(services.route(bulkUri)) {
         timeout {
             requestTimeoutMillis = 120.seconds.inWholeMilliseconds
         }
         contentType(ContentType.Application.Json)
-        initHeaders(call, lang)
+        initHeaders(this@authorizeBulk, language)
         setBody(
             SPIAuthorizeRequest(
                 resources = resources.map { r ->
@@ -68,23 +65,23 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizeBulk(
     }
 
     res.headers[CacheHttpHeaders.XAPIVersion]?.let {
-        call.response.header(CacheHttpHeaders.XAPIVersion, it)
+        response.header(CacheHttpHeaders.XAPIVersion, it)
     }
 
     val newAuthorization = res.headers[CacheHttpHeaders.NewAuthorization]
     val newRefreshToken = res.headers[CacheHttpHeaders.NewRefreshToken]
 
     if (newAuthorization != null && newRefreshToken != null) {
-        val existing = call.sessions.get<SessionData>() ?: SessionData()
+        val existing = sessions.get<SessionData>() ?: SessionData()
         val newSession = existing.copy(
             credentials = TokenPair(
                 accessToken = newAuthorization,
                 refreshToken = newRefreshToken,
             ),
-            deviceId = call.deviceId,
+            deviceId = deviceId,
         )
 
-        call.sessions.set(newSession)
+        sessions.set(newSession)
     }
 
     res.body<List<SPIResourceResponseItem>>().asFlow()

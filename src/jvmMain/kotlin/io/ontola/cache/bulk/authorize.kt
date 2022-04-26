@@ -4,8 +4,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.services
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -16,10 +14,10 @@ import kotlinx.coroutines.flow.toList
 import java.util.UUID
 
 @OptIn(FlowPreview::class)
-suspend fun PipelineContext<Unit, ApplicationCall>.authorize(toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
+suspend fun ApplicationCall.authorize(toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
     return toAuthorize
         .toList()
-        .groupBy { call.services.resolve(Url(it.iri).fullPath) }
+        .groupBy { services.resolve(Url(it.iri).fullPath) }
         .map {
             val service = it.key
             val resources = it.value.map { e -> e.iri }
