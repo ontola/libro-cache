@@ -3,6 +3,7 @@ package io.ontola.cache.plugins
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCallPipeline
 import io.ktor.server.application.ApplicationPlugin
+import io.ktor.server.application.createApplicationPlugin
 import io.ktor.util.AttributeKey
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.FlushMode
@@ -133,19 +134,22 @@ class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : Storag
 
 private val logger = KotlinLogging.logger {}
 
+class StorageConfiguration {
+    lateinit var adapter: StorageAdapter<String, String>
+    lateinit var persistentAdapter: StorageAdapter<String, String>
+    lateinit var keyManager: KeyManager
+    var expiration: Long? = null
+
+    fun complete(cacheConfig: CacheConfig) {
+        if (!this::keyManager.isInitialized) keyManager = KeyManager(cacheConfig.redis)
+    }
+}
+
 class Storage(
     private val adapter: StorageAdapter<String, String>,
     private val keyManager: KeyManager,
     private val expiration: Long?,
 ) {
-
-    class Configuration {
-        lateinit var adapter: StorageAdapter<String, String>
-        lateinit var persistentAdapter: StorageAdapter<String, String>
-        lateinit var keyManager: KeyManager
-        var expiration: Long? = null
-    }
-
     suspend fun clear(): String? {
         logger.warn { "Executing cache clear" }
         return adapter.flushdbAsync()
@@ -288,33 +292,25 @@ class Storage(
 
         return adapter.incr(prefixed)
     }
+}
 
-    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, Storage> {
-        override val key = AttributeKey<Storage>("Storage")
+val StoragePlugin = createApplicationPlugin(name = "Storage", ::StorageConfiguration) {
+    pluginConfig.complete(application.cacheConfig)
 
-        override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Storage {
-            val config = Configuration()
-                .apply {
-                    keyManager = KeyManager(pipeline.cacheConfig.redis)
-                }.apply(configure)
+    val feature = Storage(
+        pluginConfig.adapter,
+        pluginConfig.keyManager,
+        pluginConfig.expiration,
+    )
 
-            val feature = Storage(
-                config.adapter,
-                config.keyManager,
-                config.expiration,
-            )
-            pipeline.attributes.put(StorageKey, feature)
+    val persistentFeature = Storage(
+        pluginConfig.persistentAdapter,
+        pluginConfig.keyManager,
+        pluginConfig.expiration,
+    )
 
-            val persistentFeature = Storage(
-                config.persistentAdapter,
-                config.keyManager,
-                config.expiration,
-            )
-            pipeline.attributes.put(PersistedStorageKey, persistentFeature)
-
-            return feature
-        }
-    }
+    application.attributes.put(StorageKey, feature)
+    application.attributes.put(PersistedStorageKey, persistentFeature)
 }
 
 private val StorageKey = AttributeKey<Storage>("StorageKey")
