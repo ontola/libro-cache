@@ -2,8 +2,6 @@ package io.ontola.cache.health
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.application
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.routes.headRequest
 import io.ontola.cache.tenantization.getTenants
@@ -13,11 +11,11 @@ class HeadRequestCheck : Check() {
         name = "Backend data fetching"
     }
 
-    override suspend fun runTest(context: PipelineContext<Unit, ApplicationCall>): Exception? {
-        val tenant = context.getTenants().sites.first().location
+    override suspend fun runTest(call: ApplicationCall): Exception? {
+        val tenant = call.getTenants().sites.first().location
 
-        val response = context.headRequest(
-            context.application.cacheConfig.client,
+        val response = call.headRequest(
+            call.application.cacheConfig.client,
             tenant.encodedPath,
             tenant
         )

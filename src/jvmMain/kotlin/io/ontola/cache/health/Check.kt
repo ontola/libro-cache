@@ -1,7 +1,6 @@
 package io.ontola.cache.health
 
 import io.ktor.server.application.ApplicationCall
-import io.ktor.util.pipeline.PipelineContext
 
 abstract class Check {
     lateinit var name: String
@@ -10,9 +9,9 @@ abstract class Check {
     lateinit var error: Exception
     lateinit var debug: String
 
-    suspend fun run(context: PipelineContext<Unit, ApplicationCall>) {
+    suspend fun run(call: ApplicationCall) {
         try {
-            val output = this.runTest(context)
+            val output = this.runTest(call)
 
             if (output is Exception) {
                 fail(output)
@@ -30,5 +29,5 @@ abstract class Check {
         message = error.message!!
     }
 
-    abstract suspend fun runTest(context: PipelineContext<Unit, ApplicationCall>): Exception?
+    abstract suspend fun runTest(call: ApplicationCall): Exception?
 }

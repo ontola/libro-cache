@@ -70,7 +70,7 @@ class Studio(private val configuration: Configuration) {
     @OptIn(ExperimentalSerializationApi::class)
     private suspend fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
         lateinit var uri: Url
-        val publication = context.measured("studioLookup") {
+        val publication = context.call.measured("studioLookup") {
             val origin = context.call.request.origin
             uri = URLBuilder(
                 protocol = URLProtocol.createOrDefault(origin.scheme),

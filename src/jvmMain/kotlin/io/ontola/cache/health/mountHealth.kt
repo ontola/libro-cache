@@ -40,7 +40,7 @@ fun Routing.mountHealth() {
             BulkCheck(),
         )
 
-        checks.forEach { it.run(this) }
+        checks.forEach { it.run(call) }
 
         if (checks.any { it.result == CheckResult.Fail }) {
             call.response.status(HttpStatusCode.ServiceUnavailable)

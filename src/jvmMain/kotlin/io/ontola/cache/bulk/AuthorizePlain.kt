@@ -9,8 +9,6 @@ import io.ktor.client.request.url
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.services
@@ -19,18 +17,18 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 
-internal suspend fun PipelineContext<Unit, ApplicationCall>.authorizePlain(
+internal suspend fun ApplicationCall.authorizePlain(
     resources: List<String>,
 ): Flow<SPIResourceResponseItem> = measured("authorizePlain;i=${resources.size}") {
-    val lang = call.language
+    val lang = language
 
     resources
         .asFlow()
         .map {
             it to measured("authorizePlain - $it") {
-                call.application.cacheConfig.client.get {
-                    url(call.services.route(Url(it).fullPath))
-                    initHeaders(call, lang)
+                application.cacheConfig.client.get {
+                    url(services.route(Url(it).fullPath))
+                    initHeaders(this@authorizePlain, lang)
                     headers {
                         header("Accept", "application/hex+x-ndjson")
                     }

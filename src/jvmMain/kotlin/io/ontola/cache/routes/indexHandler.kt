@@ -20,7 +20,6 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.AttributeKey
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.bulk.CacheControl
 import io.ontola.cache.bulk.CacheRequest
 import io.ontola.cache.bulk.coldHandler
@@ -66,18 +65,18 @@ data class HeadResponse(
     val includeResources: List<String>? = emptyList(),
 )
 
-suspend fun PipelineContext<Unit, ApplicationCall>.headRequest(
+suspend fun ApplicationCall.headRequest(
     client: HttpClient,
-    uri: String = call.request.uri,
-    websiteBase: Url = call.tenant.websiteIRI,
+    uri: String = request.uri,
+    websiteBase: Url = tenant.websiteIRI,
 ): HeadResponse = measured("headRequest") {
-    val lang = call.language
-    val headResponse = client.head(call.services.route(uri)) {
+    val lang = language
+    val headResponse = client.head(services.route(uri)) {
         expectSuccess = false
-        initHeaders(call, lang, websiteBase)
+        initHeaders(this@headRequest, lang, websiteBase)
     }
 
-    call.logger.debug { "Head response status ${headResponse.status}" }
+    logger.debug { "Head response status ${headResponse.status}" }
 
     HeadResponse(
         headResponse.status,
@@ -92,22 +91,22 @@ suspend fun PipelineContext<Unit, ApplicationCall>.headRequest(
     )
 }
 
-fun PipelineContext<Unit, ApplicationCall>.updateSessionAccessToken(head: HeadResponse) {
+fun ApplicationCall.updateSessionAccessToken(head: HeadResponse) {
     if (head.newAuthorization != null && head.newRefreshToken == null) {
         throw Exception("refreshToken is missing while accessToken is present")
     }
 
     if (head.newAuthorization != null && head.newRefreshToken != null) {
-        val existing = call.sessions.get<SessionData>() ?: SessionData()
+        val existing = sessions.get<SessionData>() ?: SessionData()
         val newSession = existing.copy(
             credentials = TokenPair(
                 accessToken = head.newAuthorization,
                 refreshToken = head.newRefreshToken,
             ),
-            deviceId = call.deviceId,
+            deviceId = deviceId,
         )
 
-        call.sessions.set(newSession)
+        sessions.set(newSession)
     }
 }
 
@@ -122,16 +121,16 @@ val redirectStatuses = listOf(
 
 fun HttpStatusCode.isRedirect(): Boolean = redirectStatuses.contains(this)
 
-fun PipelineContext<Unit, ApplicationCall>.respondServerRedirect(head: HeadResponse) {
+fun ApplicationCall.respondServerRedirect(head: HeadResponse) {
     if (head.location == null) {
         throw Exception("Trying to redirect with missing Location header.")
     }
 
-    call.response.header(HttpHeaders.Location, head.location)
-    call.response.status(head.statusCode)
+    response.header(HttpHeaders.Location, head.location)
+    response.status(head.statusCode)
 }
 
-suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
+suspend fun ApplicationCall.respondRenderWithData(
     ctx: PageRenderContext,
     includes: List<String>?,
     status: HttpStatusCode,
@@ -149,7 +148,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
         }
 
         measured("render") {
-            call.respondHtml(status) {
+            respondHtml(status) {
                 if (ctx.data == null) {
                     ctx.data = stream
                         .toString(Charset.forName("UTF-8"))
@@ -179,24 +178,24 @@ suspend fun PipelineContext<Unit, ApplicationCall>.respondRenderWithData(
     coldHandler(updatedEntries)
 }
 
-suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClient) {
-    if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
+suspend fun ApplicationCall.indexHandler(client: HttpClient) {
+    if (attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
         return
     }
 
-    if (!call.request.isHTML()) {
-        return call.respond(HttpStatusCode.NotFound)
+    if (!request.isHTML()) {
+        return respond(HttpStatusCode.NotFound)
     }
 
-    if (call.attributes.getOrNull(StudioDeploymentKey) != null) {
-        val deployment = call.attributes[StudioDeploymentKey].apply {
-            nonce = call.nonce
+    if (attributes.getOrNull(StudioDeploymentKey) != null) {
+        val deployment = attributes[StudioDeploymentKey].apply {
+            nonce = this@indexHandler.nonce
         }
 
         return respondRenderWithData(deployment, emptyList(), HttpStatusCode.OK)
     }
 
-    call.response.header(HttpHeaders.Vary, VaryHeader)
+    response.header(HttpHeaders.Vary, VaryHeader)
 
     val head = headRequest(client)
     updateSessionAccessToken(head)
@@ -206,12 +205,12 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
     }
 
     val includes = listOf(
-        URLBuilder(call.tenant.websiteIRI).apply { encodedPath = call.request.uri }.buildString(),
-        call.tenant.websiteIRI.appendPath("ns", "core").toString(),
+        URLBuilder(tenant.websiteIRI).apply { encodedPath = request.uri }.buildString(),
+        tenant.websiteIRI.appendPath("ns", "core").toString(),
     ) + (head.includeResources ?: emptyList())
 
-    val ctx = call.pageRenderContextFromCall().apply {
-        nonce = call.nonce
+    val ctx = pageRenderContextFromCall().apply {
+        this.nonce = this@indexHandler.nonce
     }
 
     respondRenderWithData(ctx, includes, head.statusCode)
@@ -219,6 +218,6 @@ suspend fun PipelineContext<Unit, ApplicationCall>.indexHandler(client: HttpClie
 
 fun Routing.mountIndex() {
     get("{...}") {
-        indexHandler(call.application.cacheConfig.client)
+        call.indexHandler(call.application.cacheConfig.client)
     }
 }

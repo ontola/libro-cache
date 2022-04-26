@@ -9,11 +9,11 @@ import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.measured
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
-internal suspend fun PipelineContext<Unit, ApplicationCall>.readFromStorage(
+internal suspend fun ApplicationCall.readFromStorage(
     requested: List<CacheRequest>,
 ): Map<String, CacheEntry> = measured("readFromStorage") {
-    val lang = call.language
-    val storage = call.application.storage
+    val lang = language
+    val storage = application.storage
 
     requested
         .map { req -> req.iri to storage.getCacheEntry(req.iri, lang) }

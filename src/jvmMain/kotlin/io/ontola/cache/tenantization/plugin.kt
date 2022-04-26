@@ -6,21 +6,17 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.ApplicationCallPipeline
-import io.ktor.server.application.ApplicationPlugin
-import io.ktor.server.application.application
-import io.ktor.server.application.call
+import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.plugin
-import io.ktor.server.locations.KtorExperimentalLocationsAPI
 import io.ktor.server.locations.url
 import io.ktor.server.request.path
 import io.ktor.server.request.uri
 import io.ktor.util.AttributeKey
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.BadGatewayException
 import io.ontola.cache.TenantNotFoundException
 import io.ontola.cache.document.PageRenderContext
+import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.setManifestLanguage
 import io.ontola.cache.plugins.storage
@@ -28,19 +24,11 @@ import io.ontola.cache.util.UrlSerializer
 import io.ontola.cache.util.measuredHit
 import io.ontola.studio.StudioDeploymentKey
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.decodeFromString
 import mu.KotlinLogging
 import kotlin.properties.Delegates
 import kotlin.time.ExperimentalTime
-
-@Serializable
-data class TenantFinderRequest(
-    @SerialName("iri")
-    val iri: String
-)
 
 private val TenantizationKey = AttributeKey<TenantData>("TenantizationKey")
 private val BlacklistedKey = AttributeKey<Boolean>("BlacklistedKey")
@@ -62,33 +50,38 @@ private fun ApplicationCall.reportMissingTenantization(): Nothing {
 class TenantizationNotYetConfiguredException :
     IllegalStateException("Libro tenantization are not yet ready: you are asking it to early before the Tenantization feature.")
 
-class Tenantization(private val configuration: Configuration) {
-    private val logger = KotlinLogging.logger {}
+class TenantizationConfiguration {
+    val logger = KotlinLogging.logger {}
 
-    class Configuration {
-        val logger = KotlinLogging.logger {}
+    /**
+     * List of IRI prefixes which aren't subject to tenantization.
+     */
+    var blacklist: List<String> = emptyList()
+    var dataExtensions: List<String> = emptyList()
+    var tenantExpiration by Delegates.notNull<Long>()
+    var staticTenants: Map<String, TenantData> = emptyMap()
 
-        /**
-         * List of IRI prefixes which aren't subject to tenantization.
-         */
-        var blacklist: List<String> = emptyList()
-        var dataExtensions: List<String> = emptyList()
-        var tenantExpiration by Delegates.notNull<Long>()
-        var staticTenants: Map<String, TenantData> = emptyMap()
+    fun staticTenant(url: Url): TenantData? = staticTenants[url.host]
 
-        fun staticTenant(url: Url): TenantData? = staticTenants[url.host]
-
-        fun isBlacklisted(path: String): Boolean {
-            return blacklist.any { fragment -> path.startsWith(fragment) } ||
-                dataExtensions.any { path.endsWith(it) }
-        }
+    fun isBlacklisted(path: String): Boolean {
+        return blacklist.any { fragment -> path.startsWith(fragment) } ||
+            dataExtensions.any { path.endsWith(it) }
     }
 
-    @Throws(TenantNotFoundException::class)
-    private suspend fun PipelineContext<*, ApplicationCall>.getWebsiteBase(): Url {
-        val websiteIRI = call.request.closeToWebsiteIRI(configuration.logger)
+    fun complete(cacheConfig: CacheConfig) {
+        this.tenantExpiration = cacheConfig.tenantExpiration
+    }
+}
 
-        val websiteBase = cachedLookup(CachedLookupKeys.WebsiteBase, expiration = configuration.tenantExpiration) {
+val Tenantization = createApplicationPlugin(name = "Tenantization", ::TenantizationConfiguration) {
+    val logger = KotlinLogging.logger {}
+    pluginConfig.complete(application.cacheConfig)
+
+    @Throws(TenantNotFoundException::class)
+    suspend fun ApplicationCall.getWebsiteBase(): Url {
+        val websiteIRI = request.closeToWebsiteIRI(pluginConfig.logger)
+
+        val websiteBase = cachedLookup(CachedLookupKeys.WebsiteBase, expiration = pluginConfig.tenantExpiration) {
             getTenant(websiteIRI).websiteBase
         }(websiteIRI) ?: throw TenantNotFoundException()
 
@@ -96,29 +89,29 @@ class Tenantization(private val configuration: Configuration) {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    private suspend fun getManifest(context: PipelineContext<*, ApplicationCall>, websiteBase: Url): Manifest {
-        val manifest = context.cachedLookup(
+    suspend fun getManifest(call: ApplicationCall, websiteBase: Url): Manifest {
+        val manifest = call.cachedLookup(
             CachedLookupKeys.Manifest,
-            expiration = configuration.tenantExpiration
+            expiration = pluginConfig.tenantExpiration
         ) {
-            context.getManifest(Url(it))
+            call.getManifest(Url(it))
         }(websiteBase.toString())
 
-        return context.application.cacheConfig.serializer.decodeFromString(manifest!!)
+        return call.application.cacheConfig.serializer.decodeFromString(manifest!!)
     }
 
-    private fun interceptDeployment(context: PipelineContext<Unit, ApplicationCall>, deployment: PageRenderContext) {
+    fun interceptDeployment(call: ApplicationCall, cacheConfig: CacheConfig, deployment: PageRenderContext) {
         try {
             val websiteBase = deployment.manifest.ontola.websiteIRI
 
             val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
-            val currentIRI = Url("$baseOrigin${context.call.request.path()}")
+            val currentIRI = Url("$baseOrigin${call.request.path()}")
             val manifest = deployment.manifest
 
-            context.call.attributes.put(
+            call.attributes.put(
                 TenantizationKey,
                 TenantData(
-                    client = context.application.cacheConfig.client,
+                    client = cacheConfig.client,
                     isBlackListed = false,
                     websiteIRI = manifest.ontola.websiteIRI,
                     websiteOrigin = baseOrigin,
@@ -137,18 +130,18 @@ class Tenantization(private val configuration: Configuration) {
         }
     }
 
-    private suspend fun intercept(context: PipelineContext<Unit, ApplicationCall>) {
+    suspend fun intercept(call: ApplicationCall, cacheConfig: CacheConfig) {
         try {
-            val websiteBase = context.getWebsiteBase()
+            val websiteBase = call.getWebsiteBase()
 
             val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
-            val manifest = getManifest(context, websiteBase)
+            val manifest = getManifest(call, websiteBase)
 
-            context.call.setManifestLanguage(manifest.lang)
-            context.call.attributes.put(
+            call.setManifestLanguage(manifest.lang)
+            call.attributes.put(
                 TenantizationKey,
                 TenantData(
-                    client = context.application.cacheConfig.client,
+                    client = cacheConfig.client,
                     isBlackListed = false,
                     websiteIRI = manifest.ontola.websiteIRI,
                     websiteOrigin = baseOrigin,
@@ -167,38 +160,24 @@ class Tenantization(private val configuration: Configuration) {
         }
     }
 
-    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, Tenantization> {
-        override val key = AttributeKey<Tenantization>("Tenantization")
+    onCall { call ->
+        val url = Url(call.url(call.request.uri))
+        val path = call.request.path()
 
-        @OptIn(KtorExperimentalLocationsAPI::class)
-        override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): Tenantization {
-            val configuration = Configuration().apply {
-                tenantExpiration = pipeline.cacheConfig.tenantExpiration
-            }.apply(configure)
-            val feature = Tenantization(configuration)
+        if (call.attributes.getOrNull(StudioDeploymentKey) != null) {
+            val deployment = call.attributes[StudioDeploymentKey]
+            call.attributes.put(BlacklistedKey, false)
+            interceptDeployment(call, this@createApplicationPlugin.application.cacheConfig, deployment)
+        } else if (pluginConfig.isBlacklisted(path)) {
+            call.attributes.put(BlacklistedKey, true)
+        } else {
+            call.attributes.put(BlacklistedKey, false)
 
-            pipeline.intercept(ApplicationCallPipeline.Plugins) {
-                val url = Url(call.url(call.request.uri))
-                val path = call.request.path()
-
-                if (call.attributes.getOrNull(StudioDeploymentKey) != null) {
-                    val deployment = call.attributes[StudioDeploymentKey]
-                    call.attributes.put(BlacklistedKey, false)
-                    feature.interceptDeployment(this, deployment)
-                } else if (configuration.isBlacklisted(path)) {
-                    call.attributes.put(BlacklistedKey, true)
-                } else {
-                    call.attributes.put(BlacklistedKey, false)
-
-                    val staticTenant = configuration.staticTenant(url)
-                    if (staticTenant != null)
-                        call.attributes.put(TenantizationKey, staticTenant)
-                    else
-                        feature.intercept(this)
-                }
-            }
-
-            return feature
+            val staticTenant = pluginConfig.staticTenant(url)
+            if (staticTenant != null)
+                call.attributes.put(TenantizationKey, staticTenant)
+            else
+                intercept(call, this@createApplicationPlugin.application.cacheConfig)
         }
     }
 }
@@ -209,7 +188,7 @@ enum class CachedLookupKeys {
 }
 
 @OptIn(ExperimentalTime::class)
-private fun PipelineContext<*, ApplicationCall>.cachedLookup(
+private fun ApplicationCall.cachedLookup(
     prefix: CachedLookupKeys,
     expiration: Long,
     block: suspend (v: String) -> String?,

@@ -4,8 +4,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.services
 import io.ontola.cache.tenantization.tenant
 import io.ontola.empathy.web.DataSlice
@@ -22,10 +20,10 @@ import kotlinx.serialization.json.Json
 import java.util.UUID
 
 @OptIn(FlowPreview::class)
-suspend fun PipelineContext<Unit, ApplicationCall>.authorize(toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
+suspend fun ApplicationCall.authorize(toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
     return toAuthorize
         .toList()
-        .groupBy { call.services.resolve(Url(it.iri).fullPath) }
+        .groupBy { services.resolve(Url(it.iri).fullPath) }
         .map {
             val service = it.key
             val resources = it.value.map { e -> e.iri }
@@ -47,7 +45,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.authorize(toAuthorize: Flow<C
                     ?.split("\n")
                     ?.map { Json.decodeFromString<DataSlice>(it) }
                     ?.merge()
-                    ?.compact(call.tenant.websiteIRI),
+                    ?.compact(tenant.websiteIRI),
             )
         }
 }
