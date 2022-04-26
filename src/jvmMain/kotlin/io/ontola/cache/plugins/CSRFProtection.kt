@@ -40,9 +40,8 @@ class CSRFConfiguration {
 
 val CsrfProtection = createApplicationPlugin(
     "CsrfProtection",
-    { CSRFConfiguration() },
+    ::CSRFConfiguration,
 ) {
-
     onCall { call ->
         if (pluginConfig.isBlacklisted(call.request.httpMethod, call.request.path())) {
             val csrfToken = call.sessions.get<SessionData>()?.csrfToken

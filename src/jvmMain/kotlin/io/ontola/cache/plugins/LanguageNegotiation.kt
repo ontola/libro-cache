@@ -13,9 +13,8 @@ class LanguageNegotiationConfiguration {
 
 val LanguageNegotiation = createApplicationPlugin(
     "LanguageNegotiation",
-    { LanguageNegotiationConfiguration() },
+    ::LanguageNegotiationConfiguration,
 ) {
-
     onCall { call ->
         call.attributes.put(
             LanguageNegotiationKey,
