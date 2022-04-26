@@ -65,8 +65,8 @@ import io.ontola.cache.plugins.Redirect
 import io.ontola.cache.plugins.RedisAdapter
 import io.ontola.cache.plugins.ServiceRegistry
 import io.ontola.cache.plugins.SessionLanguage
-import io.ontola.cache.plugins.Storage
 import io.ontola.cache.plugins.StorageAdapter
+import io.ontola.cache.plugins.StoragePlugin
 import io.ontola.cache.plugins.Versions
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.language
@@ -201,7 +201,7 @@ fun Application.module(
         }
     }
 
-    install(Storage) {
+    install(StoragePlugin) {
         this.adapter = adapter
         this.persistentAdapter = persistentAdapter
         this.expiration = config.cacheExpiration
