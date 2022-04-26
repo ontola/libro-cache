@@ -12,9 +12,6 @@ import io.ktor.http.Url
 import io.ktor.http.content.ChannelWriterContent
 import io.ktor.http.content.OutgoingContent
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.ApplicationCallPipeline
-import io.ktor.server.application.ApplicationPlugin
-import io.ktor.server.application.call
 import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.receiveChannel
@@ -26,11 +23,10 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
 import io.ktor.utils.io.copyTo
-import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.util.isDownloadRequest
 
-private val DataProxyKey = AttributeKey<DataProxy>("DataProxyKey")
+internal val DataProxyKey = AttributeKey<DataProxy>("DataProxyKey")
 
 private fun Configuration.proxiedUri(
     originalReq: ApplicationRequest,
@@ -70,7 +66,7 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
      * Proxies the request to the data server
      */
     @OptIn(InternalAPI::class)
-    private suspend fun interceptRequest(call: ApplicationCall) {
+    suspend fun interceptRequest(call: ApplicationCall) {
         val originalReq = call.request
         val uri = Url(originalReq.uri)
         val isDownloadRequest = uri.isDownloadRequest()
@@ -117,36 +113,5 @@ class DataProxy(private val config: Configuration, val call: ApplicationCall?) {
                 }
             }
         )
-    }
-
-    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, DataProxy> {
-        override val key = AttributeKey<DataProxy>("DataProxy")
-
-        override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): DataProxy {
-            val configuration = Configuration().apply(configure)
-            val feature = DataProxy(configuration, null)
-
-            pipeline.intercept(ApplicationCallPipeline.Plugins) {
-                call.attributes.put(DataProxyKey, DataProxy(configuration, call))
-                val shouldProxyHttp = configuration.shouldProxy(call.request)
-
-                call.logger.debug {
-                    val uri = call.request.uri
-                    val rule = configuration.matchOrDefault(uri)
-
-                    if (shouldProxyHttp)
-                        "Proxying request to backend: $uri, rule: $rule"
-                    else
-                        "Processing request: $uri, rule: $rule"
-                }
-
-                if (shouldProxyHttp) {
-                    feature.interceptRequest(call)
-                    finish()
-                }
-            }
-
-            return feature
-        }
     }
 }
