@@ -49,7 +49,7 @@ import io.ontola.cache.assets.Assets
 import io.ontola.cache.csp.CSP
 import io.ontola.cache.csp.cspReportEndpointPath
 import io.ontola.cache.csp.mountCSP
-import io.ontola.cache.dataproxy.DataProxy
+import io.ontola.cache.dataproxy.DataProxyPlugin
 import io.ontola.cache.dataproxy.ProxyClient
 import io.ontola.cache.dataproxy.ProxyRule
 import io.ontola.cache.health.mountHealth
@@ -348,7 +348,7 @@ fun Application.module(
 
     install(WebSockets)
 
-    install(DataProxy) {
+    install(DataProxyPlugin) {
         val loginTransform = { req: ApplicationRequest ->
             val websiteIri = req.header("website-iri")
 
