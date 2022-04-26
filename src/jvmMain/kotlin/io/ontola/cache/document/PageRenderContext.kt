@@ -40,7 +40,7 @@ fun ApplicationCall.pageRenderContextFromCall(
         manifest = manifest ?: tenant.manifest,
         configuration = PageConfiguration(
             appElement = "root",
-            assets = application.assets,
+            assets = assets,
             tileServerUrl = application.cacheConfig.maps?.mapboxTileURL,
             bugsnagOpts = application.cacheConfig.clientReportingKey?.let {
                 BugsnagOpts(
