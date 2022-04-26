@@ -4,6 +4,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.ApplicationCallPipeline
 import io.ktor.server.application.ApplicationPlugin
 import io.ktor.server.application.call
+import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.path
 import io.ktor.server.response.respondRedirect
