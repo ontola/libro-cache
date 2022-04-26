@@ -4,8 +4,7 @@ import com.bugsnag.Bugsnag
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCallPipeline
-import io.ktor.server.application.ApplicationPlugin
-import io.ktor.server.application.call
+import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.config.ApplicationConfig
 import io.ktor.util.AttributeKey
 import io.ktor.utils.io.printStack
@@ -443,34 +442,22 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
     }
 }
 
-/**
- * Application-broad feature.
- */
-class CacheConfiguration {
-    class Configuration {
-        lateinit var config: CacheConfig
-    }
+class Configuration {
+    lateinit var config: CacheConfig
+}
 
-    companion object Plugin : ApplicationPlugin<ApplicationCallPipeline, Configuration, CacheConfiguration> {
-        override val key = AttributeKey<CacheConfiguration>("CacheConfiguration")
+private val cacheConfigurationKey = AttributeKey<CacheConfig>("CacheConfiguration")
 
-        override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): CacheConfiguration {
-            val configuration = Configuration().apply(configure)
-            val feature = CacheConfiguration()
-            pipeline.attributes.put(CacheConfigurationKey, configuration.config)
+val CacheConfiguration = createApplicationPlugin(name = "CacheConfiguration", ::Configuration) {
+    application.attributes.put(cacheConfigurationKey, pluginConfig.config)
 
-            pipeline.intercept(ApplicationCallPipeline.Plugins) {
-                call.attributes.put(CacheConfigurationKey, configuration.config)
-            }
-            return feature
-        }
+    onCall {
+        it.attributes.put(cacheConfigurationKey, pluginConfig.config)
     }
 }
 
-private val CacheConfigurationKey = AttributeKey<CacheConfig>("CacheConfigurationKey")
-
 internal val ApplicationCallPipeline.cacheConfig: CacheConfig
-    get() = attributes.getOrNull(CacheConfigurationKey) ?: reportMissingRegistry()
+    get() = attributes.getOrNull(cacheConfigurationKey) ?: reportMissingRegistry()
 
 private fun reportMissingRegistry(): Nothing {
     throw CacheConfigurationNotYetConfiguredException()
