@@ -2,21 +2,16 @@ package io.ontola.util
 
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
+import io.ktor.http.appendPathSegments
 import io.ktor.http.authority
 import io.ktor.http.fullPath
 import io.ktor.http.hostWithPort
 
 fun Url.appendPath(path: String): Url = appendPath(*path.split("/").toTypedArray())
 
-fun Url.appendPath(vararg segments: String): Url {
-    return URLBuilder(this).apply {
-        pathSegments = pathSegments
-            // TODO: Remove after https://youtrack.jetbrains.com/issue/KTOR-3618 is fixed
-            .filter { it.isNotBlank() }
-            .toMutableList()
-            .apply { addAll(segments.filter { it.isNotBlank() }) }
-    }.build()
-}
+fun Url.appendPath(vararg segments: String): Url = URLBuilder(this)
+    .apply { appendPathSegments(*segments) }
+    .build()
 
 fun Url.filename(): String? = encodedPath.split("/").lastOrNull()
 
