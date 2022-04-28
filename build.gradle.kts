@@ -1,7 +1,6 @@
 val bugsnag_version: String by project
 val coroutines_version: String by project
 val datetime_version: String by project
-val graal_version: String by project
 val kotlin_css_version: String by project
 val kotlin_logging_version: String by project
 val kotlin_version: String by project
@@ -96,11 +95,6 @@ kotlin {
                 implementation("io.ktor:ktor-client-gson:$ktor_version")
 
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-css:$kotlin_css_version")
-
-                implementation("org.graalvm.sdk:graal-sdk:$graal_version")
-                implementation("org.graalvm.js:js:$graal_version")
-                implementation("org.graalvm.truffle:truffle-api:$graal_version")
-                implementation("org.graalvm.truffle:truffle-dsl-processor:$graal_version")
 
                 implementation("commons-codec:commons-codec:1.15")
                 implementation("org.apache.commons:commons-text:1.9")
