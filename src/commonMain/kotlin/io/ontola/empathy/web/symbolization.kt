@@ -1,277 +1,13 @@
 package io.ontola.empathy.web
 
 import io.ktor.http.Url
-import io.ontola.rdf.hextuples.DataType
-import io.ontola.rdf.hextuples.Hextuple
 import io.ontola.util.absolutize
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
 
-const val supplantGraph = "http://purl.org/linked-delta/supplant"
-
-@Serializable
-sealed class Value(
-    @Transient
-    val value: String = "",
-) {
-    @Serializable
-    @SerialName("id")
-    data class GlobalId(
-        @SerialName("v")
-        val id: String,
-    ) : Value(id)
-
-    @Serializable
-    @SerialName("lid")
-    data class LocalId(
-        @SerialName("v")
-        val id: String,
-    ) : Value(id)
-
-    @Serializable
-    @SerialName("b")
-    data class Bool(
-        @SerialName("v")
-        val lexical: String,
-    ) : Value(lexical)
-
-    /**
-     * 32-bit signed integer.
-     */
-    @Serializable
-    @SerialName("i")
-    data class Int(
-        @SerialName("v")
-        val lexical: String,
-    ) : Value(lexical)
-
-    /**
-     * 64-bit signed integer.
-     */
-    @Serializable
-    @SerialName("l")
-    data class Long(
-        @SerialName("v")
-        val lexical: String,
-    ) : Value(lexical)
-
-    @Serializable
-    @SerialName("s")
-    data class Str(
-        @SerialName("v")
-        val lexical: String,
-    ) : Value(lexical)
-
-    @Serializable
-    @SerialName("dt")
-    data class DateTime(
-        @SerialName("v")
-        val lexical: String,
-    ) : Value(lexical)
-
-    @Serializable
-    @SerialName("p")
-    data class Primitive(
-        @SerialName("v")
-        val lexical: String,
-        @SerialName("dt")
-        val dataType: String,
-    ) : Value(lexical)
-
-    @Serializable
-    @SerialName("ls")
-    data class LangString(
-        @SerialName("v")
-        val lexical: String,
-        @SerialName("l")
-        val lang: String,
-    ) : Value(lexical)
-}
-
-fun Value.toJsonElementMap(): JsonObject = when (this) {
-    is Value.GlobalId -> buildJsonObject {
-        put("type", JsonPrimitive("id"))
-        put("v", JsonPrimitive(this@toJsonElementMap.value))
-    }
-    is Value.LocalId -> buildJsonObject {
-        put("type", JsonPrimitive("lid"))
-        put("v", JsonPrimitive(this@toJsonElementMap.value))
-    }
-    is Value.Str -> buildJsonObject {
-        put("type", JsonPrimitive("s"))
-        put("v", JsonPrimitive(this@toJsonElementMap.value))
-    }
-    is Value.Bool -> buildJsonObject {
-        put("type", JsonPrimitive("b"))
-        put("v", JsonPrimitive(this@toJsonElementMap.value))
-    }
-    is Value.Int -> buildJsonObject {
-        put("type", JsonPrimitive("i"))
-        put("v", JsonPrimitive(this@toJsonElementMap.value))
-    }
-    is Value.Long -> buildJsonObject {
-        put("type", JsonPrimitive("l"))
-        put("v", JsonPrimitive(this@toJsonElementMap.value))
-    }
-    is Value.DateTime -> buildJsonObject {
-        put("type", JsonPrimitive("dt"))
-        put("v", JsonPrimitive(this@toJsonElementMap.value))
-    }
-    is Value.LangString -> buildJsonObject {
-        put("type", JsonPrimitive("ls"))
-        put("v", JsonPrimitive(this@toJsonElementMap.value))
-        put("l", JsonPrimitive(this@toJsonElementMap.lang))
-    }
-    is Value.Primitive -> buildJsonObject {
-        put("type", JsonPrimitive("p"))
-        put("v", JsonPrimitive(this@toJsonElementMap.value))
-        put("dt", JsonPrimitive(this@toJsonElementMap.dataType))
-    }
-}
-
-fun JsonObject.toValue(): Value {
-    val value = (this["v"] as JsonPrimitive).contentOrNull ?: throw Exception("No value for `v` key in Value")
-
-    return when (val type = (this["type"] as JsonPrimitive).content) {
-        "id" -> shortenedGlobalId(value, null)
-        "lid" -> Value.LocalId(value)
-        "s" -> Value.Str(value)
-        "b" -> Value.Bool(value)
-        "i" -> Value.Int(value)
-        "l" -> Value.Long(value)
-        "dt" -> Value.DateTime(value)
-        "ls" -> Value.LangString(value, (this["l"] as JsonPrimitive).content)
-        "p" -> Value.Primitive(value, (this["dt"] as JsonPrimitive).content)
-        else -> throw Exception("Unknown value type $type")
-    }
-}
-
-typealias DataSlice = Map<String, Record>
-
-fun DataSlice.toHextuples(): List<Hextuple> = buildList {
-    for (record in this@toHextuples.values) {
-        for ((predicate, value) in record.entries) {
-            value.forEach {
-                val (dataType, lang) = when (it) {
-                    is Value.GlobalId -> Pair("globalId", "")
-                    is Value.LocalId -> Pair("localId", "")
-                    is Value.Str -> Pair("http://www.w3.org/2001/XMLSchema#string", "")
-                    is Value.Bool -> Pair("http://www.w3.org/2001/XMLSchema#boolean", "")
-                    is Value.Int -> Pair("http://www.w3.org/2001/XMLSchema#integer", "")
-                    is Value.Long -> Pair("http://www.w3.org/2001/XMLSchema#long", "")
-                    is Value.DateTime -> Pair("http://www.w3.org/2001/XMLSchema#dateTime", "")
-                    is Value.Primitive -> Pair(it.dataType, "")
-                    is Value.LangString -> Pair("http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", it.lang)
-                }
-
-                add(
-                    Hextuple(
-                        record.id.value,
-                        predicate,
-                        it.value,
-                        DataType.fromValue(dataType),
-                        lang,
-                        supplantGraph,
-                    )
-                )
-            }
-        }
-    }
-}
-
-fun List<DataSlice>.merge(): DataSlice = buildMap {
-    for (record in this@merge) {
-        for ((k, v) in record) {
-            put(k, v)
-        }
-    }
-}
-
-fun DataSlice.compact(websiteIRI: Url?): DataSlice {
-    websiteIRI ?: return this
-
-    return this.map { (key, value) ->
-        val id = if (key.startsWith("_"))
-            Value.LocalId(key)
-        else
-            shortenedGlobalId(key, websiteIRI)
-
-        id.value to value.compact(websiteIRI)
-    }.toMap()
-}
-
-fun Record.compact(websiteIRI: Url?): Record {
-    websiteIRI ?: return this
-
-    fun shortenId(id: String): Value = if (id.startsWith("_"))
-        Value.LocalId(id)
-    else
-        shortenedGlobalId(id, websiteIRI)
-
-    val compactedFields = fields
-        .mapKeys { (key) -> shortenId(key).value }
-        .mapValues { (k, value) ->
-            value.map {
-                if (it is Value.GlobalId) {
-                    shortenedGlobalId(it.value, websiteIRI)
-                } else {
-                    it
-                }
-            }
-        }
-        .toMutableMap()
-
-    return Record(shortenId(id.value), compactedFields)
-}
-
-fun List<Hextuple?>.toSlice(websiteIRI: Url? = null): DataSlice = buildMap {
-    for (hex in this@toSlice) {
-        if (hex == null || hex.graph == "http://purl.org/link-lib/meta") continue
-
-        if (hex.graph != supplantGraph) throw Error("Non-supplant statement: $hex")
-
-        val id = if (hex.subject.startsWith("_"))
-            Value.LocalId(hex.subject)
-        else
-            shortenedGlobalId(hex.subject, websiteIRI)
-
-        val record = this.getOrPut(id.value) {
-            Record(id)
-        }
-        val field = record.entries.getOrPut(shortenedGlobalIdString(hex.predicate, websiteIRI)) { listOf() }
-        val value = hex.toValue(websiteIRI)
-        record[shortenedGlobalIdString(hex.predicate, websiteIRI)] = listOf(*field.toTypedArray(), value)
-
-        put(id.value, record)
-    }
-}
-
-fun Hextuple.toValue(websiteIRI: Url?): Value = when (datatype) {
-    is DataType.GlobalId -> shortenedGlobalId(value, websiteIRI)
-    is DataType.LocalId -> Value.LocalId("_:$value")
-    else -> when (datatype.value()) {
-        "http://www.w3.org/2001/XMLSchema#string" -> Value.Str(value)
-        "http://www.w3.org/2001/XMLSchema#boolean" -> Value.Bool(value)
-        "http://www.w3.org/2001/XMLSchema#integer" -> Value.Int(value)
-        "http://www.w3.org/2001/XMLSchema#long" -> Value.Long(value)
-        "http://www.w3.org/2001/XMLSchema#dateTime" -> Value.DateTime(value)
-        else -> if (language == "")
-            Value.Primitive(value, datatype.value())
-        else
-            Value.LangString(value, language)
-    }
-}
-
-fun shortenedGlobalIdString(v: String, websiteIRI: Url?): String = shortMap[v] ?: websiteIRI.absolutize(v)
+fun shortenedGlobalIdString(v: String, websiteIRI: Url?): String = symbolMap[v] ?: websiteIRI.absolutize(v)
 
 fun shortenedGlobalId(v: String, websiteIRI: Url?): Value.GlobalId = Value.GlobalId(shortenedGlobalIdString(v, websiteIRI))
 
-val shortMap = mapOf(
+val symbolMap = mapOf(
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property" to "Property",
     "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" to "isDefinedBy",
     "http://www.w3.org/2000/01/rdf-schema#Class" to "Class",
@@ -283,6 +19,16 @@ val shortMap = mapOf(
     "http://schema.org/rangeIncludes" to "rangeIncludes",
     "http://schema.org/domainIncludes" to "domainIncludes",
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#_0" to "_0",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_1" to "_1",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_2" to "_2",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_3" to "_3",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_4" to "_4",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_5" to "_5",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_6" to "_6",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_7" to "_7",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_8" to "_8",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_9" to "_9",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#_10" to "_10",
 
     "https://ns.ontola.io/core#_destroy" to "Destroy",
     "https://argu.co/ns/core#acceptTerms" to "acceptTerms",
@@ -706,3 +452,5 @@ val shortMap = mapOf(
     "http://www.w3.org/ns/shacl#xone" to "xone",
     "https://ns.ontola.io/core#zoomLevel" to "zoomLevel",
 )
+
+val reverseSymbolMap = symbolMap.entries.associate { (k, v) -> v to k }

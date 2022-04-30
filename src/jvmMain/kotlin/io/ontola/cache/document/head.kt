@@ -1,5 +1,6 @@
 package io.ontola.cache.document
 
+import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.apex.webmanifest.TrackerType
@@ -22,7 +23,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 fun HEAD.renderHead(
-    url: String,
+    url: Url,
     nonce: String,
     csrfToken: String,
     config: PageConfiguration,
@@ -53,7 +54,7 @@ fun HEAD.renderHead(
 }
 
 private fun HEAD.contentMetaTags(
-    url: String,
+    url: Url,
     manifest: Manifest,
     data: DataSlice,
     lang: String,
@@ -64,7 +65,7 @@ private fun HEAD.contentMetaTags(
     for (tag in tags) {
         when (tag.type) {
             "title" -> title { +tag.children!! }
-            "link" -> link(href = tag.href, rel = tag.rel) {
+            "link" -> link(href = tag.href.toString(), rel = tag.rel) {
                 tag.itemProp?.let { itemProp = it }
             }
             "meta" -> meta(name = tag.name, content = tag.content) {

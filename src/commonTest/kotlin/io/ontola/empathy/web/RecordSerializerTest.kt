@@ -76,11 +76,11 @@ class RecordSerializerTest {
         val record = Record(
             homeId,
             mutableMapOf(
-                name.value to arrayOf(
+                name.value to listOf(
                     homeNameNl,
                     homeNameEn,
                 ),
-                dateCreated.value to arrayOf(homeCreated)
+                dateCreated.value to listOf(homeCreated)
             )
         )
 
@@ -114,7 +114,7 @@ class RecordSerializerTest {
         val record = Record(
             homeId,
             mutableMapOf(
-                "prop" to arrayOf(value)
+                "prop" to listOf(value)
             )
         )
 

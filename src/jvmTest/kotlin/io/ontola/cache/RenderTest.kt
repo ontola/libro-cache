@@ -18,6 +18,7 @@ import it.skrape.core.htmlDocument
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.body
 import kotlinx.html.stream.createHTML
+import kotlinx.serialization.json.Json
 import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -92,7 +93,7 @@ class RenderTest {
 
             val html = createHTML().apply {
                 body {
-                    seedBlock("nonceval", data)
+                    seedBlock("nonceval", data, Json)
                 }
             }.finalize()
 
@@ -100,7 +101,7 @@ class RenderTest {
                 findFirst("script#seed") {
                     assertEquals(
                         """
-                        {"subject":{"_id":{"type":"id","v":"subject"},"predicate":[{"type":"p","v":"&lt;script src='http://test.com/script.js.jpg'&lt;/script&gt; - &lt;script&gt;alert(1)&lt;/script&gt; &lt;base href=\"x55.is\"&gt;","dt":"string"}]}}
+                        {"subject":{"_id":{"type":"id","v":"subject"},"predicate":{"type":"p","v":"&lt;script src='http://test.com/script.js.jpg'&lt;/script&gt; - &lt;script&gt;alert(1)&lt;/script&gt; &lt;base href=\"x55.is\"&gt;","dt":"string"}}}
                         """.trimIndent(),
                         this.html,
                     )

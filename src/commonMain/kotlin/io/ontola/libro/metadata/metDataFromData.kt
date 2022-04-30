@@ -1,5 +1,6 @@
 package io.ontola.libro.metadata
 
+import io.ktor.http.Url
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.empathy.web.DataSlice
 import io.ontola.empathy.web.Record
@@ -31,7 +32,7 @@ fun merge(a: Record?, b: Record?): Record? {
 }
 
 fun metaDataFromData(
-    url: String,
+    url: Url,
     manifest: Manifest,
     data: DataSlice,
     lang: String,

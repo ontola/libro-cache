@@ -44,8 +44,6 @@ import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.measured
 import io.ontola.empathy.web.DataSlice
-import io.ontola.empathy.web.toSlice
-import io.ontola.rdf.hextuples.Hextuple
 import io.ontola.studio.StudioDeploymentKey
 import io.ontola.util.appendPath
 import kotlinx.coroutines.flow.filter

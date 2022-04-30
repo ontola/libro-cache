@@ -41,6 +41,8 @@ fun Url.rebase(fullPath: String): Url = URLBuilder(this).apply {
     }
 }.build()
 
+fun Url?.absolutize(other: Url): String = absolutize(other.toString())
+
 fun Url?.absolutize(other: String): String {
     this ?: return other
 

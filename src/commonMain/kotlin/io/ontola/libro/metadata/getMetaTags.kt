@@ -31,7 +31,7 @@ fun getMetaTags(data: MetaData): List<TagProps> = buildList {
     )
     add(
         TagProps(
-            content = data.url,
+            content = data.url.toString(),
             property = "og:url",
             type = "meta",
         )

@@ -1,5 +1,6 @@
 package io.ontola.empathy.web
 
+import io.ktor.http.Url
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -11,6 +12,11 @@ data class Record(
 ) {
     val entries
         get() = fields
+
+    constructor(
+        id: Url,
+        fields: MutableMap<String, List<Value>> = mutableMapOf(),
+    ) : this(id.toValue(), fields)
 
     operator fun get(field: String): List<Value>? {
         if (field == "_id") {

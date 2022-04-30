@@ -5,6 +5,7 @@ import io.ontola.cache.assets.AssetsManifests
 import io.ontola.color.Color
 import io.ontola.color.isLight
 import io.ontola.empathy.web.DataSlice
+import io.ontola.empathy.web.reverseSymbolMap
 import kotlinx.html.BODY
 import kotlinx.html.HTML
 import kotlinx.html.body
@@ -154,11 +155,20 @@ fun BODY.seedBlock(nonce: String, data: DataSlice, serializer: Json) {
             +JsonInHtmlEscaper.translate(serializer.encodeToString(data))
         }
     }
+    script(type = "application/json") {
+        this.nonce = nonce
+        attributes["id"] = "symbolMap"
+        unsafe {
+            +JsonInHtmlEscaper.translate(serializer.encodeToString(reverseSymbolMap))
+        }
+    }
     script(type = "application/javascript") {
         this.nonce = nonce
         unsafe {
             +"var seed = document.getElementById('seed');"
             +"window.INITIAL__DATA = seed ? seed.textContent : '';"
+            +"var symbolMap = document.getElementById('symbolMap');"
+            +"window.EMP_SYMBOL_MAP = JSON.parse(symbolMap ? symbolMap.textContent : '{}');"
         }
     }
 }
@@ -192,7 +202,7 @@ fun BODY.assetsBlock(nonce: String, config: PageConfiguration) {
 }
 
 fun HTML.indexPage(ctx: PageRenderContext) {
-    val url = ctx.uri.toString()
+    val url = ctx.uri
     val nonce = ctx.nonce
     val config = ctx.configuration
     val manifest = ctx.manifest

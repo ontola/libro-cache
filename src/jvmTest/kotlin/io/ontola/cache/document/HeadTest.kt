@@ -4,9 +4,10 @@ import io.ktor.http.Url
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.assets.loadAssetsManifests
 import io.ontola.cache.plugins.generateCSRFToken
-import io.ontola.empathy.web.toSlice
-import io.ontola.rdf.hextuples.DataType
-import io.ontola.rdf.hextuples.Hextuple
+import io.ontola.empathy.web.DataSlice
+import io.ontola.empathy.web.Record
+import io.ontola.empathy.web.Value
+import io.ontola.empathy.web.compact
 import kotlinx.html.head
 import kotlinx.html.stream.createHTML
 import withCacheTestApplication
@@ -25,16 +26,23 @@ class HeadTest {
             val href = Url("https://mysite.local")
             val manifest = Manifest.forWebsite(href)
             val lang = "nl"
-            val data = listOf(
-                Hextuple(href.toString(), "http://schema.org/name", "Elefanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "de", "http://purl.org/linked-delta/supplant"),
-                Hextuple(href.toString(), "http://schema.org/name", "Olifanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "nl", "http://purl.org/linked-delta/supplant"),
-                Hextuple(href.toString(), "http://schema.org/name", "Elephants", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "en", "http://purl.org/linked-delta/supplant"),
-            ).shuffled().toSlice()
+            val data: DataSlice = mapOf(
+                href.toString() to Record(
+                    href,
+                    mutableMapOf(
+                        "http://schema.org/name" to listOf(
+                            Value.LangString("Elefanten", "de"),
+                            Value.LangString("Olifanten", "nl"),
+                            Value.LangString("Elephants", "en"),
+                        ).shuffled()
+                    )
+                )
+            ).compact(href)
 
             val doc = createHTML().apply {
                 head {
                     renderHead(
-                        href.toString(),
+                        href,
                         "nonce val",
                         csrf,
                         config,
@@ -66,16 +74,23 @@ class HeadTest {
             val href = Url("https://mysite.local/site")
             val manifest = Manifest.forWebsite(href)
             val lang = "nl"
-            val data = listOf(
-                Hextuple(href.toString(), "http://schema.org/name", "Elefanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "de", "http://purl.org/linked-delta/supplant"),
-                Hextuple(href.toString(), "http://schema.org/name", "Olifanten", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "nl", "http://purl.org/linked-delta/supplant"),
-                Hextuple(href.toString(), "http://schema.org/name", "Elephants", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "en", "http://purl.org/linked-delta/supplant"),
-            ).shuffled().toSlice()
+            val data: DataSlice = mapOf(
+                href.toString() to Record(
+                    href,
+                    mutableMapOf(
+                        "http://schema.org/name" to listOf(
+                            Value.LangString("Elefanten", "de"),
+                            Value.LangString("Olifanten", "nl"),
+                            Value.LangString("Elephants", "en"),
+                        ).shuffled()
+                    )
+                )
+            ).compact(href)
 
             val doc = createHTML().apply {
                 head {
                     renderHead(
-                        href.toString(),
+                        href,
                         "nonce val",
                         csrf,
                         config,
