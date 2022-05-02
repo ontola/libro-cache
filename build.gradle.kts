@@ -45,6 +45,7 @@ kotlin {
                 implementation("io.ktor:ktor-http:$ktor_version")
                 implementation("io.ktor:ktor-utils:$ktor_version")
                 implementation("io.ktor:ktor-serialization:$ktor_version")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
 
                 implementation("io.ktor:ktor-client-core:$ktor_version")
                 implementation("io.ktor:ktor-client-cio:$ktor_version")
