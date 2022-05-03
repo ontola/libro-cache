@@ -2,6 +2,7 @@ package io.ontola.studio
 
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.empathy.web.DataSlice
+import io.ontola.empathy.web.splitMultilingual
 import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
@@ -51,7 +52,7 @@ fun Project.toDistribution(meta: DistributionMeta): Distribution {
     }
 
     return Distribution(
-        data = data,
+        data = data.splitMultilingual(websiteIRI),
         manifest = manifest,
         sitemap = sitemap.joinToString(separator = "\n"),
         meta = meta,

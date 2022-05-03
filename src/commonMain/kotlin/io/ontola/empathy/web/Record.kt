@@ -4,18 +4,20 @@ import io.ktor.http.Url
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+typealias FieldSet = MutableMap<String, List<Value>>
+
 @Serializable(with = RecordSerializer::class)
 data class Record(
     @SerialName("_id")
     val id: Value,
-    val fields: MutableMap<String, List<Value>> = mutableMapOf(),
+    val fields: FieldSet = mutableMapOf(),
 ) {
     val entries
         get() = fields
 
     constructor(
         id: Url,
-        fields: MutableMap<String, List<Value>> = mutableMapOf(),
+        fields: FieldSet = mutableMapOf(),
     ) : this(id.toValue(), fields)
 
     operator fun get(field: String): List<Value>? {

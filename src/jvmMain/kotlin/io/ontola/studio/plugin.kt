@@ -14,6 +14,7 @@ import io.ktor.server.request.host
 import io.ktor.server.request.path
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondOutputStream
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import io.ktor.util.AttributeKey
 import io.ontola.apex.webmanifest.Manifest
@@ -24,6 +25,7 @@ import io.ontola.cache.plugins.StudioConfig
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.util.measured
+import io.ontola.empathy.web.translations
 import io.ontola.util.filename
 import io.ontola.util.fullUrl
 import io.ontola.util.origin
@@ -94,14 +96,18 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
         val distribution = pluginConfig.distributionRepo.get(publication.projectId, publication.distributionId)
             ?: return call.respond(HttpStatusCode.NotFound)
 
+        val record = distribution.data[uri.toString()]
+
         if (uri.filename() == "manifest.json") {
             call.respondOutputStream(ContentType.Application.Json) {
                 application.cacheConfig.serializer.encodeToStream(distribution.manifest, this)
             }
         } else if (uri.filename() == "sitemap.txt") {
             call.respondText(distribution.sitemap)
-        } else if (distribution.data.isEmpty()) {
+        } else if (record == null) {
             call.respond(HttpStatusCode.NotFound)
+        } else if (!record.translations().isNullOrEmpty()) {
+            call.respondRedirect(record.translations()!!.first().value, permanent = false)
         } else {
             val ctx = call.pageRenderContextFromCall(
                 data = distribution.data,

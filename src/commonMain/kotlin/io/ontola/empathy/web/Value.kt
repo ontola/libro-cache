@@ -1,5 +1,6 @@
 package io.ontola.empathy.web
 
+import io.ktor.http.Url
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -14,7 +15,9 @@ sealed class Value(
     data class GlobalId(
         @SerialName("v")
         val id: String,
-    ) : Value(id)
+    ) : Value(id) {
+        constructor(url: Url) : this(url.toString())
+    }
 
     @Serializable
     @SerialName("lid")

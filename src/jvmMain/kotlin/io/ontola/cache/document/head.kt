@@ -6,6 +6,10 @@ import io.ontola.apex.webmanifest.Manifest
 import io.ontola.apex.webmanifest.TrackerType
 import io.ontola.apex.webmanifest.Tracking
 import io.ontola.empathy.web.DataSlice
+import io.ontola.empathy.web.Value
+import io.ontola.empathy.web.alternates
+import io.ontola.empathy.web.canonical
+import io.ontola.empathy.web.translations
 import io.ontola.libro.metadata.getMetaTags
 import io.ontola.libro.metadata.metaDataFromData
 import io.ontola.util.rebase
@@ -34,6 +38,7 @@ fun HEAD.renderHead(
     opening(manifest)
 
     contentMetaTags(url, manifest, data, lang)
+    alternates(url, data, lang)
     meta {
         name = "csrf-token"
         content = csrfToken
@@ -51,6 +56,23 @@ fun HEAD.renderHead(
     webAppConfig(manifest)
     preloader(nonce)
     appIcons(manifest)
+}
+
+private fun HEAD.alternates(
+    url: Url,
+    data: DataSlice,
+    lang: String,
+) {
+    data[url.toString()]
+        ?.let { it.canonical()?.first() }
+        ?.let { data[it.value] }
+        ?.translations()
+        ?.filter { it is Value.LangString && it.lang == lang }
+        ?.forEach {
+            link(rel = "alternative", href = it.value) {
+                hrefLang = (it as Value.LangString).lang
+            }
+        }
 }
 
 private fun HEAD.contentMetaTags(
