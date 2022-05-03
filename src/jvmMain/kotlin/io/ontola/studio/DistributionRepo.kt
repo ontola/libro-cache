@@ -2,7 +2,6 @@ package io.ontola.studio
 
 import io.ontola.cache.plugins.Storage
 import io.ontola.empathy.web.DataSlice
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
@@ -62,12 +61,15 @@ class DistributionRepo(val storage: Storage) {
     /**
      * Find all [Distribution] for the document with [projectId]
      */
-    @OptIn(FlowPreview::class)
     suspend fun find(projectId: String): List<String> {
         val keys = storage.keys(projectsPart, projectId, distributionsPart, wildcard)
 
-        return keys.map { it.last() }
+        return keys
+            .map { it.last() }
             .filter { it != "data" }
+            .map { it.toInt() }
             .toList()
+            .sortedDescending()
+            .map { it.toString() }
     }
 }
