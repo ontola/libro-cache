@@ -38,7 +38,7 @@ fun HEAD.renderHead(
     opening(manifest)
 
     contentMetaTags(url, manifest, data, lang)
-    alternates(url, data, lang)
+    alternates(url, data)
     meta {
         name = "csrf-token"
         content = csrfToken
@@ -61,16 +61,15 @@ fun HEAD.renderHead(
 private fun HEAD.alternates(
     url: Url,
     data: DataSlice,
-    lang: String,
 ) {
     data[url.toString()]
         ?.let { it.canonical()?.first() }
         ?.let { data[it.value] }
         ?.translations()
-        ?.filter { it is Value.LangString && it.lang == lang }
+        ?.filterIsInstance<Value.LangString>()
         ?.forEach {
             link(rel = "alternative", href = it.value) {
-                hrefLang = (it as Value.LangString).lang
+                hrefLang = it.lang
             }
         }
 }

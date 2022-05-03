@@ -68,7 +68,9 @@ fun DataSlice.splitMultilingual(websiteIRI: Url): DataSlice {
             val lang = record.language()?.value ?: return@map record
 
             record.copy(
-                fields = record.fields.mapValues { (_, values) ->
+                fields = record.fields.mapValues { (field, values) ->
+                    if (field == "_canonical") return@mapValues values
+
                     values.map { value ->
                         if (localisedRecords.contains(value)) {
                             localisedRecords[value]!!.translation(lang).let { Value.GlobalId(it.value) }

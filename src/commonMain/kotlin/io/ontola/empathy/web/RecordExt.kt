@@ -34,6 +34,6 @@ fun Record.canonical(): List<Value>? = fields["_canonical"]
 
 fun Record.language(): Value? = fields["_language"]?.first()
 
-fun Record.translations(): List<Value>? = fields["_translations"]
+fun Record.translations(): List<Value.LangString>? = fields["_translations"]?.filterIsInstance<Value.LangString>()
 
-fun Record.translation(lang: String): Value = translations()!!.first { it is Value.LangString && it.lang == lang }
+fun Record.translation(lang: String): Value = translations()!!.first { it.lang == lang }

@@ -2,12 +2,14 @@ package io.ontola.studio
 
 import io.ontola.cache.plugins.Storage
 import io.ontola.empathy.web.DataSlice
+import io.ontola.empathy.web.sitemap
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.apache.commons.lang3.math.NumberUtils.toInt
 
 class DistributionRepo(val storage: Storage) {
     private fun distributionKey(projectId: String, distributionId: String): Array<String> =
@@ -22,6 +24,7 @@ class DistributionRepo(val storage: Storage) {
             entries = mapOf(
                 manifestKey to Json.encodeToString(distribution.manifest),
                 sitemapKey to distribution.sitemap,
+                xmlSitemapKey to Json.encodeToString(distribution.xmlSitemap),
                 versionKey to distribution.meta.version,
                 messageKey to distribution.meta.message,
                 createdAtKey to distribution.meta.createdAt.toString(),
@@ -35,6 +38,7 @@ class DistributionRepo(val storage: Storage) {
         val data = getData(projectId, distId)
         val manifest = storage.getHashValue(*key, hashKey = manifestKey) ?: return null
         val sitemap = storage.getHashValue(*key, hashKey = sitemapKey) ?: return null
+        val xmlSitemap = storage.getHashValue(*key, hashKey = xmlSitemapKey)
         val version = storage.getHashValue(*key, hashKey = versionKey) ?: return null
         val message = storage.getHashValue(*key, hashKey = messageKey) ?: return null
         val createdAt = storage.getHashValue(*key, hashKey = createdAtKey) ?: return null
@@ -43,6 +47,7 @@ class DistributionRepo(val storage: Storage) {
             data = data,
             manifest = Json.decodeFromString(manifest),
             sitemap = sitemap,
+            xmlSitemap = xmlSitemap?.let { Json.decodeFromString(it) } ?: data.sitemap(),
             meta = DistributionMeta(
                 version = version,
                 message = message,

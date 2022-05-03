@@ -40,6 +40,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_version")
+                implementation("io.github.pdvrieze.xmlutil:serialization:0.84.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties:$serialization_version")
 
                 implementation("io.ktor:ktor-http:$ktor_version")

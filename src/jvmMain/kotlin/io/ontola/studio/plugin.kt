@@ -29,8 +29,13 @@ import io.ontola.empathy.web.translations
 import io.ontola.util.filename
 import io.ontola.util.fullUrl
 import io.ontola.util.origin
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.encodeToStream
 import mu.KotlinLogging
+import nl.adaptivity.xmlutil.XmlDeclMode
+import nl.adaptivity.xmlutil.core.XmlVersion
+import nl.adaptivity.xmlutil.serialization.XML
 
 private fun Int.onlyNonDefaultPort(): Int {
     if (this == 80 || this == 443) {
@@ -57,8 +62,14 @@ class StudioConfiguration {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
     pluginConfig.complete(application)
+    val xmlFormatter = XML {
+        xmlDeclMode = XmlDeclMode.Minimal
+        xmlVersion = XmlVersion.XML10
+        indent = 4
+    }
 
     fun hostStudio(call: ApplicationCall) {
         val uri = call.fullUrl()
@@ -103,7 +114,12 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
                 application.cacheConfig.serializer.encodeToStream(distribution.manifest, this)
             }
         } else if (uri.filename() == "sitemap.txt") {
-            call.respondText(distribution.sitemap)
+            call.respondText(xmlFormatter.encodeToString(distribution.sitemap))
+        } else if (uri.filename() == "sitemap.xml") {
+            call.respondText(
+                text = xmlFormatter.encodeToString(distribution.xmlSitemap),
+                contentType = ContentType.Application.Xml,
+            )
         } else if (record == null) {
             call.respond(HttpStatusCode.NotFound)
         } else if (!record.translations().isNullOrEmpty()) {

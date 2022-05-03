@@ -10,6 +10,7 @@ const val distributionCountPart = "distributionCount"
 
 const val manifestKey = "manifest"
 const val sitemapKey = "sitemap"
+const val xmlSitemapKey = "xmlSitemap"
 const val versionKey = "version"
 const val messageKey = "message"
 const val createdAtKey = "createdAt"
