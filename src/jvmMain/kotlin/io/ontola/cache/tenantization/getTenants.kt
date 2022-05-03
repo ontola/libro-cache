@@ -10,15 +10,11 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.application
-import io.ktor.server.application.call
-import io.ktor.util.pipeline.PipelineContext
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.services
 import io.ontola.cache.util.UrlSerializer
 import io.ontola.cache.util.copy
 import io.ontola.cache.util.proxySafeHeaders
-import kotlinx.css.header
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 

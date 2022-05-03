@@ -2,7 +2,6 @@ package io.ontola.cache.plugins
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCallPipeline
-import io.ktor.server.application.ApplicationPlugin
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.util.AttributeKey
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
