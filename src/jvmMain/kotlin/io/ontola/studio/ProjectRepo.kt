@@ -3,7 +3,10 @@ package io.ontola.studio
 import io.ktor.http.Url
 import io.ktor.server.plugins.NotFoundException
 import io.ontola.cache.plugins.Storage
+import io.ontola.empathy.web.toSlice
+import io.ontola.rdf.hextuples.Hextuple
 import kotlinx.coroutines.FlowPreview
+import kotlinx.css.data
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -25,7 +28,7 @@ class ProjectRepo(val storage: Storage) {
             iri = request.manifest.ontola.websiteIRI,
             websiteIRI = request.manifest.ontola.websiteIRI,
             resources = request.resources,
-            hextuples = request.hextuples,
+            data = request.data,
             manifest = request.manifest,
         )
 
@@ -36,7 +39,7 @@ class ProjectRepo(val storage: Storage) {
                 "iri" to project.iri.toString(),
                 "websiteIRI" to project.websiteIRI.toString(),
                 "resources" to Json.encodeToString(project.resources),
-                "hextuples" to Json.encodeToString(project.hextuples),
+                "data" to Json.encodeToString(project.data),
                 "manifest" to Json.encodeToString(project.manifest),
             )
         )
@@ -50,7 +53,7 @@ class ProjectRepo(val storage: Storage) {
 
         val sanitised = project.copy(
             resources = request.resources,
-            hextuples = request.hextuples,
+            data = request.data,
             manifest = request.manifest,
         )
 
@@ -60,7 +63,7 @@ class ProjectRepo(val storage: Storage) {
                 "iri" to sanitised.iri.toString(),
                 "websiteIRI" to sanitised.websiteIRI.toString(),
                 "resources" to Json.encodeToString(sanitised.resources),
-                "hextuples" to Json.encodeToString(sanitised.hextuples),
+                "data" to Json.encodeToString(sanitised.data),
                 "manifest" to Json.encodeToString(sanitised.manifest),
             )
         )
@@ -74,15 +77,23 @@ class ProjectRepo(val storage: Storage) {
         val iri = storage.getHashValue(*projectKey(projectId), hashKey = "iri") ?: return null
         val websiteIRI = storage.getHashValue(*projectKey(projectId), hashKey = "websiteIRI") ?: return null
         val resources = storage.getHashValue(*projectKey(projectId), hashKey = "resources") ?: return null
-        val hextuples = storage.getHashValue(*projectKey(projectId), hashKey = "hextuples") ?: return null
+        val hextuples = storage.getHashValue(*projectKey(projectId), hashKey = "hextuples")
+        val data = storage.getHashValue(*projectKey(projectId), hashKey = "data")
         val manifest = storage.getHashValue(*projectKey(projectId), hashKey = "manifest") ?: return null
+
+        if (hextuples == null && data == null) {
+            return null
+        }
+
+        val dataWithFallback = data?.let { Json.decodeFromString(it) }
+            ?: Json.decodeFromString<List<Hextuple>>(hextuples!!).toSlice(Url(websiteIRI))
 
         return Project(
             name = name,
             iri = Url(iri),
             websiteIRI = Url(websiteIRI),
             resources = Json.decodeFromString(resources),
-            hextuples = Json.decodeFromString(hextuples),
+            data = dataWithFallback,
             manifest = Json.decodeFromString(manifest),
         )
     }

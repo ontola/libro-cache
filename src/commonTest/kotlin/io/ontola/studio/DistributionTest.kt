@@ -39,7 +39,7 @@ class DistributionTest {
     )
 
     @Test
-    fun `test toDistribution throws for project with empty hextuples`() {
+    fun `test toDistribution throws for project without records`() {
         assertFailsWith<MalformedProjectException> {
             Project(name, iri, website, subResources, emptyList()).toDistribution(meta)
         }

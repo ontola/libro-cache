@@ -2,7 +2,6 @@ package io.ontola.studio
 
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.empathy.web.DataSlice
-import io.ontola.empathy.web.toSlice
 import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
@@ -32,7 +31,7 @@ data class Distribution(
 
 val blackList = listOf<String>("#", "_", "menus/footer")
 
-fun allowedString(hextuple: String): Boolean {
+fun allowedInSitemap(hextuple: String): Boolean {
     for (substring in blackList) {
         if (substring in hextuple) {
             return false
@@ -42,22 +41,17 @@ fun allowedString(hextuple: String): Boolean {
 }
 
 fun Project.toDistribution(meta: DistributionMeta): Distribution {
-    if (hextuples.isEmpty()) {
-        throw MalformedProjectException("Project didn't contain any hextuples.")
+    if (data.isEmpty()) {
+        throw MalformedProjectException("Project didn't contain any records.")
     }
 
-    val sitemap = HashSet<String>()
-    for (hextuple in hextuples) {
-        if (allowedString(hextuple.subject)) {
-            sitemap.add(hextuple.subject)
-        }
-    }
+    val sitemap = data.keys.filter(::allowedInSitemap)
     if (sitemap.isEmpty()) {
-        throw MalformedProjectException("Sitemap is empty")
+        throw MalformedProjectException("Project didn't contain any records valid for the sitemap.")
     }
 
     return Distribution(
-        data = hextuples.toSlice(),
+        data = data,
         manifest = manifest,
         sitemap = sitemap.joinToString(separator = "\n"),
         meta = meta,

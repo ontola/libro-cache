@@ -4,6 +4,8 @@ package io.ontola.studio
 
 import io.ktor.http.Url
 import io.ontola.apex.webmanifest.Manifest
+import io.ontola.empathy.web.DataSlice
+import io.ontola.empathy.web.toSlice
 import io.ontola.rdf.hextuples.Hextuple
 import io.ontola.util.UrlSerializer
 import kotlinx.serialization.Serializable
@@ -37,6 +39,6 @@ data class Project(
     val iri: Url,
     val websiteIRI: Url,
     val resources: List<SubResource>,
-    val hextuples: List<Hextuple>,
+    val data: DataSlice,
     val manifest: Manifest = Manifest.forWebsite(websiteIRI)
 )
