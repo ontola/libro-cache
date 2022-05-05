@@ -30,7 +30,7 @@ internal suspend fun ApplicationCall.authorizePlain(
                     url(services.route(Url(it).fullPath))
                     initHeaders(this@authorizePlain, lang)
                     headers {
-                        header("Accept", "application/hex+x-ndjson")
+                        header("Accept", "application/empathy+json")
                     }
                     expectSuccess = false
                 }
