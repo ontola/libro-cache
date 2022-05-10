@@ -5,6 +5,10 @@ import io.ontola.util.absolutize
 import io.ontola.util.appendPath
 import io.ontola.util.rebase
 
+/**
+ * Merges the slices in this list into one slice.
+ * Duplicate [Record]s are replaced by later entries.
+ */
 fun List<DataSlice>.merge(): DataSlice = buildMap {
     for (record in this@merge) {
         for ((k, v) in record) {
@@ -13,6 +17,9 @@ fun List<DataSlice>.merge(): DataSlice = buildMap {
     }
 }
 
+/**
+ * Absolutises every global id in this slice to [websiteIRI].
+ */
 fun DataSlice.compact(websiteIRI: Url?): DataSlice {
     websiteIRI ?: return this
 
