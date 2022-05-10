@@ -383,6 +383,7 @@ fun Application.module(
             ProxyRule(Regex("^/link-lib/bulk"), exclude = true),
             ProxyRule(Regex("^/([\\w/]*/)?logout"), exclude = true),
             ProxyRule(Regex("/static/"), exclude = true),
+            ProxyRule(Regex("/f_assets/"), exclude = true),
         )
 
         contentTypes = listOf(

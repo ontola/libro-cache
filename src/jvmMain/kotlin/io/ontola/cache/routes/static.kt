@@ -7,7 +7,7 @@ import io.ktor.server.http.content.static
 import io.ktor.server.routing.Routing
 
 fun Routing.mountStatic() {
-    static("f_assets") {
+    static("/f_assets") {
         preCompressed(CompressedFileType.BROTLI, CompressedFileType.GZIP) {
             files("assets")
         }
