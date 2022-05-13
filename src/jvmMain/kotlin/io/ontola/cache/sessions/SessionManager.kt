@@ -17,6 +17,7 @@ import io.ktor.server.request.header
 import io.ktor.server.request.httpMethod
 import io.ktor.server.sessions.clear
 import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessionId
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ontola.cache.plugins.CacheSessionConfiguration
@@ -32,6 +33,7 @@ import io.ontola.util.appendPath
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 
 val unsafeMethods = listOf(
     HttpMethod.Post,
@@ -45,6 +47,8 @@ class SessionManager(
     private val configuration: CacheSessionConfiguration,
     private val refresher: SessionRefresher = SessionRefresher(configuration),
 ) {
+    val logger = KotlinLogging.logger {}
+
     var session: SessionData?
         get() = refreshIfExpired(call.sessions.get<SessionData>())
         set(value) {
@@ -85,6 +89,7 @@ class SessionManager(
 
             session
         } catch (e: TokenExpiredException) {
+            logger.trace { "Refreshing expired token." }
             runBlocking {
                 this@SessionManager.session = refresher.refresh(session!!)
                 this@SessionManager.session
@@ -137,10 +142,18 @@ class SessionManager(
     }
 
     fun delete() {
+        logger.trace { "Deleting session ${call.sessionId}" }
         session = null
     }
 
     fun setAuthorization(accessToken: String, refreshToken: String) {
+        if (configuration.cacheConfig.isDev) {
+            logger.debug {
+                val prefix = session?.let { "Updating session ${call.sessionId}" } ?: "Creating session"
+                "$prefix with access '$accessToken' and refresh '$refreshToken'"
+            }
+        }
+
         session = (session ?: SessionData()).copy(
             credentials = TokenPair(
                 accessToken = accessToken,
@@ -166,6 +179,7 @@ class SessionManager(
     }
 
     private suspend fun guestToken(): OIDCTokenResponse {
+        logger.trace { "Requesting guest token" }
         val serviceToken = configuration.oAuthToken
         val path = call.tenant.websiteIRI.appendPath("oauth", "token").fullPath
         val response = call.application.cacheConfig.client.post(configuration.oidcUrl.appendPath(path)) {

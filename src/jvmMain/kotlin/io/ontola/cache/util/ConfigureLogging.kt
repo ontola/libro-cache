@@ -25,6 +25,6 @@ fun Logging.Config.configureClientLogging() {
     if (kLogger.isTraceEnabled) {
         level = LogLevel.ALL
     } else if (kLogger.isDebugEnabled) {
-        level = LogLevel.HEADERS
+        level = LogLevel.INFO
     }
 }
