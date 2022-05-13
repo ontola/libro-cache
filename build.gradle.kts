@@ -139,8 +139,11 @@ version = "1.0.0"
 application {
     mainClass.set("io.ktor.server.cio.EngineMain")
 
-    if (System.getenv("KTOR_ENV") == "development") {
-        applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
+    val dotenv = file(".env")
+    val devEnabledInDotfile = dotenv.exists() && dotenv.readLines().any { it == "KTOR_ENV=development" }
+
+    if (devEnabledInDotfile || System.getenv("KTOR_ENV") == "development") {
+        applicationDefaultJvmArgs += "-Dio.ktor.development=true"
     }
 }
 

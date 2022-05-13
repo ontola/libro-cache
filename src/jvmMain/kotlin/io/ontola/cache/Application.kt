@@ -258,7 +258,7 @@ fun Application.module(
             cookie.httpOnly = true
             cookie.secure = true
             cookie.extensions["SameSite"] = "Lax"
-            if (!testing) {
+            if (!testing && !config.isDev) {
                 transform(
                     signedTransformer(signingSecret = config.sessions.sessionSecret)
                 )
