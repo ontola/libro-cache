@@ -87,6 +87,7 @@ kotlin {
                 implementation("io.ktor:ktor-server-locations:$ktor_version")
                 implementation("io.ktor:ktor-server-compression:$ktor_version")
                 implementation("io.ktor:ktor-server-default-headers:$ktor_version")
+                implementation("io.ktor:ktor-server-call-id:$ktor_version")
                 implementation("io.ktor:ktor-server-call-logging:$ktor_version")
                 implementation("io.ktor:ktor-server-forwarded-header:$ktor_version")
                 implementation("io.ktor:ktor-server-sessions:$ktor_version")

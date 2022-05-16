@@ -22,6 +22,7 @@ import io.ktor.server.locations.Locations
 import io.ktor.server.logging.toLogString
 import io.ktor.server.metrics.micrometer.MicrometerMetrics
 import io.ktor.server.plugins.CachingHeaders
+import io.ktor.server.plugins.CallId
 import io.ktor.server.plugins.CallLogging
 import io.ktor.server.plugins.Compression
 import io.ktor.server.plugins.DefaultHeaders
@@ -29,6 +30,7 @@ import io.ktor.server.plugins.ForwardedHeaderSupport
 import io.ktor.server.plugins.HSTS
 import io.ktor.server.plugins.StatusPages
 import io.ktor.server.plugins.XForwardedHeaderSupport
+import io.ktor.server.plugins.callId
 import io.ktor.server.plugins.deflate
 import io.ktor.server.plugins.gzip
 import io.ktor.server.plugins.minimumSize
@@ -93,6 +95,7 @@ import io.ontola.studio.Studio
 import io.ontola.studio.mountStudio
 import io.ontola.util.appendPath
 import io.ontola.util.disableCertValidation
+import java.util.UUID
 import kotlin.collections.set
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
@@ -125,9 +128,15 @@ fun Application.module(
         registry = Metrics.metricsRegistry
     }
 
+    install(CallId) {
+        generate { UUID.randomUUID().toString() }
+    }
     install(Logging)
 
     install(CallLogging) {
+        mdc("callid") { call ->
+            call.callId
+        }
         configureCallLogging()
         filter { call -> call.request.path().startsWith("/") }
         format { call ->
