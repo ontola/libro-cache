@@ -155,18 +155,29 @@ repositories {
     maven("https://jitpack.io")
 }
 
-tasks.withType<JavaExec> {
+fun setEnvironmentFromDotEnv(): List<List<String>> {
     val dotenv = file(".env")
-    if (dotenv.exists()) {
-        dotenv.readLines().forEach {
-            if (it.isNotBlank() && !it.startsWith('#')) {
-                val (key, value) = it.split('=')
-                if (key.isNotBlank() && value.isNotBlank()) {
-                    System.setProperty(key, value)
-                    environment(key, value)
-                }
-            }
-        }
+
+    if (!dotenv.exists()) {
+        return emptyList()
+    }
+
+    return dotenv
+        .readLines()
+        .filter { it.isNotBlank() && !it.startsWith('#') }
+        .map { it.split('=') }
+        .filter { (key, value) -> key.isNotBlank() && value.isNotBlank() }
+}
+
+fun getEnvVar(name: String): String? = System.getenv(name)
+    ?: setEnvironmentFromDotEnv()
+        .find { it.first() == name }
+        ?.last()
+
+tasks.withType<JavaExec> {
+    setEnvironmentFromDotEnv().map { (key, value) ->
+        System.setProperty(key, value)
+        environment(key, value)
     }
 }
 
