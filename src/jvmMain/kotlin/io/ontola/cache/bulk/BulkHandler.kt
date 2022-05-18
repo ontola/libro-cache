@@ -13,7 +13,6 @@ import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.measured
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filter
@@ -23,7 +22,6 @@ import kotlinx.coroutines.flow.toList
 val hexJson = ContentType.parse("application/hex+x-ndjson")
 val ndEmpJson = ContentType.parse("application/empathy+x-ndjson")
 
-@OptIn(ExperimentalCoroutinesApi::class)
 suspend fun ApplicationCall.collectResources(resources: List<CacheRequest>): Flow<CacheEntry> {
     val result = readAndPartition(resources)
     response.header("Link-Cache", result.stats.toString())
@@ -64,9 +62,9 @@ fun Routing.mountBulkHandler() {
             call.logger.debug { "Fetching ${requested.size} resources from cache" }
 
             call.collectResources(requested)
-                .also {
+                .also { entry ->
                     call.respondOutputStream(ndEmpJson, HttpStatusCode.OK) {
-                        entriesToOutputStream(it, this)
+                        entriesToOutputStream(entry, this)
                     }
                 }
                 .filter { it.cacheControl != CacheControl.Private && it.status == HttpStatusCode.OK }

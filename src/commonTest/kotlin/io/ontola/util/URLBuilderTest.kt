@@ -6,6 +6,12 @@ import kotlin.test.assertEquals
 
 class URLBuilderTest {
     @Test
+    fun testBuilderWithRoot() {
+        val value = URLBuilder("http://ex.com/").buildString()
+        assertEquals("http://ex.com/", value)
+    }
+
+    @Test
     fun testAppendPathEmptyWithRoot() {
         val value = URLBuilder("http://ex.com/").apply { appendPath() }.buildString()
         assertEquals("http://ex.com/", value)

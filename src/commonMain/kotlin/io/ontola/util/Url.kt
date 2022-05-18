@@ -9,13 +9,7 @@ import io.ktor.http.hostWithPort
 fun Url.appendPath(path: String): Url = appendPath(*path.split("/").toTypedArray())
 
 fun Url.appendPath(vararg segments: String): Url {
-    return URLBuilder(this).apply {
-        pathSegments = pathSegments
-            // TODO: Remove after https://youtrack.jetbrains.com/issue/KTOR-3618 is fixed
-            .filter { it.isNotBlank() }
-            .toMutableList()
-            .apply { addAll(segments.filter { it.isNotBlank() }) }
-    }.build()
+    return URLBuilder(this).apply { appendPath(*segments) }.build()
 }
 
 fun Url.filename(): String? = encodedPath.split("/").lastOrNull()

@@ -24,10 +24,10 @@ internal suspend fun ApplicationCall.authorizePlain(
 
     resources
         .asFlow()
-        .map {
-            it to measured("authorizePlain - $it") {
+        .map { resource ->
+            resource to measured("authorizePlain - $resource") {
                 application.cacheConfig.client.get {
-                    url(services.route(Url(it).fullPath))
+                    url(services.route(Url(resource).fullPath))
                     initHeaders(this@authorizePlain, lang)
                     headers {
                         header("Accept", "application/empathy+json")

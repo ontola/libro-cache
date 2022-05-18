@@ -32,7 +32,7 @@ class RenderTest {
             val websiteIRI = Url("https://mysite.local")
 
             withCacheTestApplication({
-                clientBuilder.setHeadResponse(Url("$websiteIRI/"), HeadResponse(HttpStatusCode.OK))
+                clientBuilder.setHeadResponse(websiteIRI, HeadResponse(HttpStatusCode.OK))
                 initTenant(websiteIRI)
             }) {
                 handleRequest(HttpMethod.Get, "/") {

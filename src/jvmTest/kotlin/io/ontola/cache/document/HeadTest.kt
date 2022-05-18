@@ -58,7 +58,7 @@ class HeadTest {
             assertContains(html, "<meta name=\"website\" content=\"https://mysite.local\">")
             assertContains(html, "<link href=\"/manifest.json\" rel=\"manifest\">")
             assertContains(html, "<meta content=\"Olifanten | Libro\" property=\"og:title\">")
-            assertContains(html, "<meta content=\"https://mysite.local/\" property=\"og:url\">")
+            assertContains(html, "<meta content=\"https://mysite.local\" property=\"og:url\">")
             assertContains(html, "<meta name=\"csrf-token\" content=\"$csrf\">")
         }
     }

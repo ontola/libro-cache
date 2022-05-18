@@ -28,6 +28,7 @@ import io.ontola.studio.StudioDeploymentKey
 import io.ontola.util.fullUrl
 import io.ontola.util.origin
 import io.ontola.util.rebase
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.decodeFromString
 import mu.KotlinLogging
@@ -105,7 +106,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
         )
     }
 
-    suspend fun intercept(call: ApplicationCall, cacheConfig: CacheConfig) {
+    fun intercept(call: ApplicationCall, cacheConfig: CacheConfig) = runBlocking {
         try {
             val websiteBase = call.getWebsiteBase()
 
