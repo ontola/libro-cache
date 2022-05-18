@@ -18,7 +18,6 @@ suspend fun <T : Any?> ApplicationCall.measured(vararg name: String, block: susp
     return res
 }
 
-@OptIn(ExperimentalStdlibApi::class)
 suspend fun <T : Any?> ApplicationCall.measuredHit(vararg name: String, block: suspend () -> T, onMissed: suspend () -> T): T {
     var res: T? = null
     var exception: Exception? = null

@@ -38,10 +38,6 @@ class TenantizationTest {
                 get() = request
             override val response: ApplicationResponse
                 get() = TODO("Not yet implemented")
-
-            override fun afterFinish(handler: (cause: Throwable?) -> Unit) {
-                TODO("Not yet implemented")
-            }
         }
 
         request = object : ApplicationRequest {

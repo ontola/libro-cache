@@ -1,12 +1,12 @@
 package io.ontola.cache.bulk
 
 import io.ktor.server.application.ApplicationCall
-import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.measured
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
-@OptIn(ExperimentalLettuceCoroutinesApi::class)
 internal suspend fun ApplicationCall.readFromStorage(
     requested: List<CacheRequest>,
 ): Map<String, CacheEntry> = measured("readFromStorage") {
@@ -14,7 +14,13 @@ internal suspend fun ApplicationCall.readFromStorage(
     val storage = application.storage
 
     requested
-        .map { req -> req.iri to storage.getCacheEntry(req.iri, lang) }
+        .parallelStream()
+        .map { req ->
+            runBlocking(Dispatchers.IO) {
+                req.iri to storage.getCacheEntry(req.iri, lang)
+            }
+        }
+        .toList()
         .mapNotNull { it.second }
         .associateBy { it.iri }
 }

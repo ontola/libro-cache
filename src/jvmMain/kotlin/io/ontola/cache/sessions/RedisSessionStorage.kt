@@ -1,32 +1,31 @@
 package io.ontola.cache.sessions
 
-import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.ktor.server.sessions.SessionStorage
 import io.ontola.cache.plugins.RedisConfig
 import io.ontola.cache.plugins.StorageAdapter
 import io.ontola.cache.util.KeyManager
+import mu.KotlinLogging
 
 private const val sessionPrefix = "session"
 
 class RedisSessionStorage(
     private val redis: StorageAdapter<String, String>,
     config: RedisConfig,
-) : SimplifiedSessionStorage() {
+) : SessionStorage {
+    private val logger = KotlinLogging.logger {}
     private val keyManager = KeyManager(config)
 
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    override suspend fun read(id: String): ByteArray? {
-        return redis.get(keyManager.toKey(sessionPrefix, id))?.toByteArray(Charsets.UTF_8)
+    override suspend fun read(id: String): String {
+        return redis.get(keyManager.toKey(sessionPrefix, id)) ?: throw NoSuchElementException()
     }
 
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    override suspend fun write(id: String, data: ByteArray?) {
-        data?.let {
-            redis.set(keyManager.toKey(sessionPrefix, id), it.decodeToString())
-        }
+    override suspend fun write(id: String, value: String) {
+        logger.trace { "write session $id" }
+        redis.set(keyManager.toKey(sessionPrefix, id), value)
     }
 
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
     override suspend fun invalidate(id: String) {
+        logger.trace { "invalidate session $id" }
         redis.del(keyManager.toKey(sessionPrefix, id))
     }
 }

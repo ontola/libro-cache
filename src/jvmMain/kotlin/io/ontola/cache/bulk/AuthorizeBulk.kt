@@ -31,20 +31,18 @@ import kotlin.time.Duration.Companion.seconds
 
 val logger = KotlinLogging.logger {}
 
-internal suspend fun ApplicationCall.authorizeBulk(
-    resources: List<String>,
-): Flow<SPIResourceResponseItem> = measured("authorizeBulk;i=${resources.size}") {
+private suspend fun ApplicationCall.executeBulkAuthorize(resources: List<String>): HttpResponse = measured("executeBulkAuthorize") {
     val bulkUri = URLBuilder(tenant.websiteIRI)
         .apply { appendPath("spi", "bulk") }
         .build()
         .encodedPath
 
-    val res: HttpResponse = application.cacheConfig.client.post(services.route(bulkUri)) {
+    application.cacheConfig.client.post(services.route(bulkUri)) {
         timeout {
             requestTimeoutMillis = 120.seconds.inWholeMilliseconds
         }
         contentType(ContentType.Application.Json)
-        initHeaders(this@authorizeBulk, language)
+        initHeaders(this@executeBulkAuthorize, language)
         setBody(
             SPIAuthorizeRequest(
                 resources = resources.map { r ->
@@ -56,6 +54,12 @@ internal suspend fun ApplicationCall.authorizeBulk(
             )
         )
     }
+}
+
+internal suspend fun ApplicationCall.authorizeBulk(
+    resources: List<String>,
+): Flow<SPIResourceResponseItem> = measured("authorizeBulk;i=${resources.size}") {
+    val res: HttpResponse = executeBulkAuthorize(resources)
 
     if (res.status != HttpStatusCode.OK) {
         val msg = "Unexpected bulk status ${res.status.value}, location: ${res.headers["Location"]}"

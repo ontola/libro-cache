@@ -21,19 +21,19 @@ import io.ktor.server.locations.KtorExperimentalLocationsAPI
 import io.ktor.server.locations.Locations
 import io.ktor.server.logging.toLogString
 import io.ktor.server.metrics.micrometer.MicrometerMetrics
-import io.ktor.server.plugins.CachingHeaders
-import io.ktor.server.plugins.CallId
-import io.ktor.server.plugins.CallLogging
-import io.ktor.server.plugins.Compression
-import io.ktor.server.plugins.DefaultHeaders
-import io.ktor.server.plugins.ForwardedHeaderSupport
-import io.ktor.server.plugins.HSTS
-import io.ktor.server.plugins.StatusPages
-import io.ktor.server.plugins.XForwardedHeaderSupport
-import io.ktor.server.plugins.callId
-import io.ktor.server.plugins.deflate
-import io.ktor.server.plugins.gzip
-import io.ktor.server.plugins.minimumSize
+import io.ktor.server.plugins.cachingheaders.CachingHeaders
+import io.ktor.server.plugins.callid.CallId
+import io.ktor.server.plugins.callid.callId
+import io.ktor.server.plugins.callloging.CallLogging
+import io.ktor.server.plugins.compression.Compression
+import io.ktor.server.plugins.compression.deflate
+import io.ktor.server.plugins.compression.gzip
+import io.ktor.server.plugins.compression.minimumSize
+import io.ktor.server.plugins.defaultheaders.DefaultHeaders
+import io.ktor.server.plugins.forwardedheaders.ForwardedHeaders
+import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
+import io.ktor.server.plugins.hsts.HSTS
+import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.header
 import io.ktor.server.request.path
@@ -231,7 +231,7 @@ fun Application.module(
     }
 
     install(CachingHeaders) {
-        options { outgoingContent ->
+        options { _, outgoingContent ->
             when (outgoingContent.contentType?.withoutParameters()) {
                 ContentType.Text.CSS,
                 ContentType.Application.JavaScript,
@@ -256,13 +256,13 @@ fun Application.module(
         }
     }
 
-    install(ForwardedHeaderSupport)
-    install(XForwardedHeaderSupport)
+    install(ForwardedHeaders)
+    install(XForwardedHeaders)
 
     install(Sessions) {
         cookie<SessionData>(
             name = "identity",
-            storage = RedisSessionStorage(persistentAdapter, cacheConfig.redis),
+            storage = RedisSessionStorage(persistentAdapter, this@module.cacheConfig.redis),
         ) {
             cookie.httpOnly = true
             cookie.secure = true
