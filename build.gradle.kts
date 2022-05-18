@@ -7,16 +7,21 @@ val kotlin_version: String by project
 val ktor_version: String by project
 val lettuce_version: String by project
 val logback_version: String by project
+val mockk_version: String by project
 val prometheus_version: String by project
 val serialization_version: String by project
+val skrapeit_version: String by project
 
 plugins {
     application
 
     kotlin("multiplatform") version "1.7.0"
     kotlin("plugin.serialization") version "1.7.0"
+    // https://github.com/Kotlin/dokka/releases
     id("org.jetbrains.dokka") version "1.7.0"
-    id("org.jlleitschuh.gradle.ktlint") version "10.2.1"
+    // https://github.com/JLLeitschuh/ktlint-gradle/releases
+    id("org.jlleitschuh.gradle.ktlint") version "10.3.0"
+    // https://github.com/johnrengelman/shadow/releases
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
@@ -114,9 +119,9 @@ kotlin {
                 implementation("io.ktor:ktor-server-tests:$ktor_version")
                 implementation("io.ktor:ktor-client-mock:$ktor_version")
 
-                implementation("io.mockk:mockk:1.12.1")
+                implementation("io.mockk:mockk:$mockk_version")
                 implementation("org.jetbrains.kotlin:kotlin-test")
-                implementation("it.skrape:skrapeit:1.1.7")
+                implementation("it.skrape:skrapeit:$skrapeit_version")
             }
         }
     }

@@ -6,6 +6,8 @@ import io.ktor.server.application.ApplicationCall
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.tenantization.getManifest
 import io.ontola.cache.tenantization.getTenants
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 class ManifestCheck : Check() {
     init {
@@ -15,7 +17,7 @@ class ManifestCheck : Check() {
     override suspend fun runTest(call: ApplicationCall): Exception? {
         val tenant = call.getTenants().sites.first().location
         try {
-            call.getManifest<Manifest>(tenant)
+            Json.decodeFromString<Manifest>(call.getManifest(tenant))
         } catch (e: ResponseException) {
             if (e.response.status == HttpStatusCode.Forbidden) {
                 return Exception("Backend token invalid")

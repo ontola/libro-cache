@@ -1,10 +1,10 @@
 package io.ontola.cache.tenantization
 
-import io.ktor.client.call.body
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
@@ -16,7 +16,7 @@ import io.ontola.cache.util.copy
 import io.ontola.cache.util.proxySafeHeaders
 import io.ontola.util.appendPath
 
-internal suspend inline fun <reified K> ApplicationCall.getManifest(websiteBase: Url): K {
+internal suspend inline fun ApplicationCall.getManifest(websiteBase: Url): String {
     val manifestUrl = websiteBase.appendPath("manifest.json")
     val manifestRequest = application.cacheConfig.client.get(services.route(manifestUrl.fullPath)) {
         expectSuccess = false
@@ -30,8 +30,8 @@ internal suspend inline fun <reified K> ApplicationCall.getManifest(websiteBase:
     }
 
     if (manifestRequest.status != HttpStatusCode.OK) {
-        throw ResponseException(manifestRequest, manifestRequest.body())
+        throw ResponseException(manifestRequest, manifestRequest.bodyAsText())
     }
 
-    return manifestRequest.body()
+    return manifestRequest.bodyAsText()
 }
