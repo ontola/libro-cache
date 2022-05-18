@@ -163,7 +163,7 @@ suspend fun ApplicationCall.respondRenderWithData(
                         }
                         .fold(mutableMapOf()) { acc, curr ->
                             // TODO merge values
-                            curr?.forEach { entry -> acc.merge(entry.key, entry.value) { new, old -> new } }
+                            curr?.forEach { entry -> acc.merge(entry.key, entry.value) { new, _ -> new } }
                             acc
                         }
                 }

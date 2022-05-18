@@ -12,7 +12,7 @@ fun Record.compact(websiteIRI: Url?): Record {
 
     val compactedFields = fields
         .mapKeys { (key) -> shortenId(key).value }
-        .mapValues { (k, value) ->
+        .mapValues { (_, value) ->
             value.map {
                 if (it is Value.GlobalId) {
                     shortenedGlobalId(it.value, websiteIRI)

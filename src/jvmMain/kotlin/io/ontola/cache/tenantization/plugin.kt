@@ -8,6 +8,7 @@ import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.plugin
+import io.ktor.server.locations.KtorExperimentalLocationsAPI
 import io.ktor.server.locations.url
 import io.ktor.server.request.path
 import io.ktor.server.request.uri
@@ -74,6 +75,7 @@ class TenantizationConfiguration {
     }
 }
 
+@OptIn(KtorExperimentalLocationsAPI::class)
 val Tenantization = createApplicationPlugin(name = "Tenantization", ::TenantizationConfiguration) {
     val logger = KotlinLogging.logger {}
     pluginConfig.complete(application.cacheConfig)
@@ -106,7 +108,6 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
             val websiteBase = deployment.manifest.ontola.websiteIRI
 
             val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
-            val currentIRI = Url("$baseOrigin${call.request.path()}")
             val manifest = deployment.manifest
 
             call.attributes.put(

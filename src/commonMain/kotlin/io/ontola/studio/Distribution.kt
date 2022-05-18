@@ -6,10 +6,8 @@ import io.ontola.empathy.web.Sitemap
 import io.ontola.empathy.web.sitemap
 import io.ontola.empathy.web.splitMultilingual
 import kotlinx.serialization.Serializable
-import kotlin.js.JsExport
 
 @Serializable
-@JsExport
 data class DistributionMeta(
     val version: String,
     val message: String,
@@ -21,7 +19,6 @@ data class DistributionMeta(
  * A distribution is a serveable version of a project.
  */
 @Serializable
-@JsExport
 data class Distribution(
     val meta: DistributionMeta,
     val data: DataSlice,
