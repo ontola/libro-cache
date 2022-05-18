@@ -13,6 +13,8 @@ import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.measured
+import io.ontola.cache.util.withAsyncSpan
+import io.opentelemetry.extension.annotations.WithSpan
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filter
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.toList
 val hexJson = ContentType.parse("application/hex+x-ndjson")
 val ndEmpJson = ContentType.parse("application/empathy+x-ndjson")
 
+@WithSpan
 suspend fun ApplicationCall.collectResources(resources: List<CacheRequest>): Flow<CacheEntry> {
     val result = readAndPartition(resources)
     response.header("Link-Cache", result.stats.toString())
@@ -63,8 +66,10 @@ fun Routing.mountBulkHandler() {
 
             call.collectResources(requested)
                 .also { entry ->
-                    call.respondOutputStream(ndEmpJson, HttpStatusCode.OK) {
-                        entriesToOutputStream(entry, this)
+                    withAsyncSpan("streamdata") {
+                        call.respondOutputStream(ndEmpJson, HttpStatusCode.OK) {
+                            entriesToOutputStream(entry, this)
+                        }
                     }
                 }
                 .filter { it.cacheControl != CacheControl.Private && it.status == HttpStatusCode.OK }

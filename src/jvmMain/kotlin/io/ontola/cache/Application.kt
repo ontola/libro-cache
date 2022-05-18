@@ -87,6 +87,7 @@ import io.ontola.cache.statuspages.RenderLanguage
 import io.ontola.cache.statuspages.errorPage
 import io.ontola.cache.tenantization.TenantData
 import io.ontola.cache.tenantization.Tenantization
+import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.configureClientLogging
 import io.ontola.cache.util.isHtmlAccept
@@ -95,6 +96,7 @@ import io.ontola.studio.Studio
 import io.ontola.studio.mountStudio
 import io.ontola.util.appendPath
 import io.ontola.util.disableCertValidation
+import io.opentelemetry.instrumentation.ktor.v2_0.KtorServerTracing
 import java.util.UUID
 import kotlin.collections.set
 import kotlin.time.Duration.Companion.days
@@ -123,9 +125,20 @@ fun Application.module(
     config.print()
     val adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
     val persistentAdapter = persistentStorage ?: RedisAdapter(RedisClient.create(config.persistentRedisURI).connect().coroutines())
+    val openTelemetry = initializeOpenTelemetry()
 
     install(MicrometerMetrics) {
         registry = Metrics.metricsRegistry
+    }
+
+    install(KtorServerTracing) {
+        setOpenTelemetry(openTelemetry)
+        setCapturedRequestHeaders(
+            listOf(CacheHttpHeaders.WebsiteIri)
+        )
+        setCapturedResponseHeaders(
+            listOf(CacheHttpHeaders.XAPIVersion)
+        )
     }
 
     install(CallId) {

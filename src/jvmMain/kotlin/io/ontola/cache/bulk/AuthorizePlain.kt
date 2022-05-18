@@ -13,10 +13,12 @@ import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.services
 import io.ontola.cache.util.measured
+import io.opentelemetry.extension.annotations.WithSpan
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 
+@WithSpan
 internal suspend fun ApplicationCall.authorizePlain(
     resources: List<String>,
 ): Flow<SPIResourceResponseItem> = measured("authorizePlain;i=${resources.size}") {

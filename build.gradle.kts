@@ -82,6 +82,7 @@ kotlin {
                 implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
                 implementation("io.ktor:ktor-server-caching-headers:$ktor_version")
                 implementation("io.ktor:ktor-server-cio:$ktor_version")
+//                implementation("io.ktor:ktor-server-netty:$ktor_version")
                 implementation("io.ktor:ktor-server-host-common:$ktor_version")
                 implementation("io.ktor:ktor-server-hsts:$ktor_version")
                 implementation("io.ktor:ktor-server-html-builder:$ktor_version")
@@ -110,6 +111,13 @@ kotlin {
                 implementation("io.lettuce:lettuce-core:$lettuce_version")
 
                 implementation("com.bugsnag:bugsnag:$bugsnag_version")
+
+                implementation("io.opentelemetry.javaagent:opentelemetry-javaagent:1.13.0")
+                implementation("io.opentelemetry:opentelemetry-extension-annotations:1.13.0")
+                implementation("io.opentelemetry:opentelemetry-extension-kotlin:1.13.0")
+                implementation("io.opentelemetry:opentelemetry-sdk:1.13.0")
+                implementation("io.opentelemetry:opentelemetry-exporter-otlp:1.13.0")
+                implementation("io.opentelemetry.instrumentation:opentelemetry-ktor-2.0:1.13.0-alpha")
             }
         }
         val jvmTest by getting {
@@ -151,6 +159,7 @@ application {
     if (devEnabledInDotfile || System.getenv("KTOR_ENV") == "development") {
         applicationDefaultJvmArgs += "-Dio.ktor.development=true"
     }
+    applicationDefaultJvmArgs += "-javaagent:build/libs/opentelemetry-javaagent-1.13.0.jar"
 }
 
 repositories {
@@ -192,3 +201,13 @@ tasks.named<JavaExec>("run") {
 }
 
 task("stage").dependsOn("shadowJar")
+
+tasks.create<Copy>("copyToLib") {
+    into("$buildDir/libs")
+    from(configurations.named("jvmRuntimeClasspath"))
+    include("*opentelemetry-javaagent*")
+}
+
+tasks.named("assemble") {
+    dependsOn("copyToLib")
+}

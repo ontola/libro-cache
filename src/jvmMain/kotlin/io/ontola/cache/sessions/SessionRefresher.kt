@@ -77,6 +77,7 @@ class SessionRefresher(private val configuration: CacheSessionConfiguration) {
         val refreshToken = session.credentials.refreshToken
         return try {
             val refreshResponse = refreshToken(userToken, refreshToken)
+            println("REFRESH ===========$userToken==to===${refreshResponse.accessToken}==================================")
 
             session.copy(
                 credentials = TokenPair(

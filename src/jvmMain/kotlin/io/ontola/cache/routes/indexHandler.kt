@@ -3,6 +3,7 @@ package io.ontola.cache.routes
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.head
+import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
@@ -30,6 +31,7 @@ import io.ontola.cache.csp.nonce
 import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.document.indexPage
 import io.ontola.cache.document.pageRenderContextFromCall
+import io.ontola.cache.initializeOpenTelemetry
 import io.ontola.cache.isHTML
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.deviceId
@@ -42,9 +44,12 @@ import io.ontola.cache.tenantization.tenant
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.measured
+import io.ontola.cache.util.withSpan
 import io.ontola.empathy.web.DataSlice
 import io.ontola.studio.StudioDeploymentKey
 import io.ontola.util.appendPath
+import io.opentelemetry.context.Context
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.SerializationException
@@ -69,11 +74,20 @@ suspend fun ApplicationCall.headRequest(
     client: HttpClient,
     uri: String = request.uri,
     websiteBase: Url = tenant.websiteIRI,
-): HeadResponse = measured("headRequest") {
+): HeadResponse = measured("headRequest") { span ->
+    span.setAttribute(SemanticAttributes.HTTP_METHOD, "POST")
+    span.setAttribute(SemanticAttributes.HTTP_URL, uri)
+
     val lang = language
     val headResponse = client.head(services.route(uri)) {
         expectSuccess = false
         initHeaders(this@headRequest, lang, websiteBase)
+        initializeOpenTelemetry().propagators.textMapPropagator.inject(Context.current(), request) { _, key, value ->
+            header(key, value)
+            if (key == "traceparent") {
+                header("trace-parent", value)
+            }
+        }
     }
 
     logger.debug { "Head response status ${headResponse.status}" }
@@ -150,25 +164,28 @@ suspend fun ApplicationCall.respondRenderWithData(
         measured("render") {
             respondHtml(status) {
                 if (ctx.data == null) {
-                    ctx.data = stream
-                        .toString(Charset.forName("UTF-8"))
-                        .split("\n")
-                        .filter { it.isNotBlank() }
-                        .map {
-                            try {
-                                Json.decodeFromString<DataSlice>(it)
-                            } catch (e: SerializationException) {
-                                null
+                    withSpan("render", "generateseed") {
+                        ctx.data = stream
+                            .toString(Charset.forName("UTF-8"))
+                            .split("\n")
+                            .filter { it.isNotBlank() }
+                            .map {
+                                try {
+                                    Json.decodeFromString<DataSlice>(it)
+                                } catch (e: SerializationException) {
+                                    null
+                                }
                             }
-                        }
-                        .fold(mutableMapOf()) { acc, curr ->
-                            // TODO merge values
-                            curr?.forEach { entry -> acc.merge(entry.key, entry.value) { new, _ -> new } }
-                            acc
-                        }
+                            .fold(mutableMapOf()) { acc, curr ->
+                                // TODO merge values
+                                curr?.forEach { entry -> acc.merge(entry.key, entry.value) { new, old -> new } }
+                                acc
+                            }
+                    }
                 }
-
-                indexPage(ctx)
+                withSpan("render", "html") {
+                    indexPage(ctx)
+                }
             }
         }
 
