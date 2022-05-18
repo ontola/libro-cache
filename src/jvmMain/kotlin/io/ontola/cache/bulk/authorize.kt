@@ -5,9 +5,7 @@ import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.server.application.ApplicationCall
 import io.ontola.cache.plugins.services
-import io.ontola.cache.tenantization.tenant
 import io.ontola.empathy.web.DataSlice
-import io.ontola.empathy.web.compact
 import io.ontola.empathy.web.merge
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -44,8 +42,7 @@ suspend fun ApplicationCall.authorize(toAuthorize: Flow<CacheRequest>): Flow<Cac
                 contents = scopeBlankNodes(entry.body)
                     ?.split("\n")
                     ?.map { Json.decodeFromString<DataSlice>(it) }
-                    ?.merge()
-                    ?.compact(tenant.websiteIRI),
+                    ?.merge(),
             )
         }
 }
