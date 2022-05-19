@@ -46,7 +46,11 @@ fun DataSlice.splitMultilingual(websiteIRI: Url): DataSlice {
 
             val translations = mutableListOf<Value.LangString>()
             val localised = ids.filterIsInstance<Value.LangString>().map { slug ->
-                val id = (v.id as Value.GlobalId).localised(websiteIRI, slug.lang, slug.value)
+                val id = when (v.id) {
+                    is Value.GlobalId -> v.id.localised(websiteIRI, slug.lang, slug.value)
+                    is Value.LocalId -> v.id.localised(websiteIRI, slug.lang, slug.value)
+                    else -> throw Error("Primitive as id")
+                }
                 translations.add(Value.LangString(id.toString(), slug.lang))
 
                 Record(
@@ -102,6 +106,10 @@ fun Value.GlobalId.localised(websiteIRI: Url, language: String, segmentName: Str
         }.joinToString("/")
     }
     return websiteIRI.appendPath(language).rebase(recordPath)
+}
+
+fun Value.LocalId.localised(websiteIRI: Url, language: String, segmentName: String? = null): Url {
+    return Url("$id-$language")
 }
 
 fun FieldSet.filterLanguage(lang: String, slice: DataSlice): FieldSet = mapValues { (_, v) ->
