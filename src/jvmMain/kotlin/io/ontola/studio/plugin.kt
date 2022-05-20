@@ -24,6 +24,7 @@ import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.plugins.StudioConfig
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
+import io.ontola.cache.plugins.setManifestLanguage
 import io.ontola.cache.util.measured
 import io.ontola.empathy.web.translations
 import io.ontola.util.filename
@@ -125,6 +126,7 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
         } else if (!record.translations().isNullOrEmpty()) {
             call.respondRedirect(record.translations()!!.first().value, permanent = false)
         } else {
+            record["_language"]?.firstOrNull()?.value?.let { call.setManifestLanguage(it) }
             val ctx = call.pageRenderContextFromCall(
                 data = distribution.data,
                 manifest = distribution.manifest,
