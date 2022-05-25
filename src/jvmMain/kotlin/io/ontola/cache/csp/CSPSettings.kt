@@ -11,39 +11,44 @@ object CSPSettings {
 
     private val defaultSrc = listOf(
         CSPEntry(CSPValue.Self),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.defaultSrc?.joinToString(" ") },
     )
 
     private val baseUri = listOf(
         CSPEntry(CSPValue.Self),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.baseUri?.joinToString(" ") },
     )
 
     private val reportUri = listOf(
         CSPEntry(cspReportEndpointPath),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.reportUri?.joinToString(" ") },
     )
 
     private val formAction = listOf(
         CSPEntry(CSPValue.Self),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.formAction?.joinToString(" ") },
     )
 
     private val manifestSrc = listOf(
         CSPEntry(CSPValue.Self),
         CSPEntry(CSPValue.ReportSample),
-        CSPEntry(CSPValue.ReportSample),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.manifestSrc?.joinToString(" ") },
     )
 
     private val childSrc = listOf(
         CSPEntry("https://youtube.com"),
         CSPEntry("https://www.youtube.com"),
         CSPEntry(CSPValue.ReportSample),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.childSrc?.joinToString(" ") },
     )
 
     private val connectSrc = listOf(
         CSPEntry(CSPValue.Self),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.connectSrc?.joinToString(" ") },
         CSPEntry("https://api.notubiz.nl"),
         CSPEntry("https://api.openraadsinformatie.nl"),
         CSPEntry("https://www.facebook.com"),
         CSPEntry("https://analytics.argu.co"),
-        CSPEntry("https://argu-logos.s3.eu-central-1.amazonaws.com"),
         CSPEntry("https://dptr8y9slmfgv.cloudfront.net"),
         CSPEntry("https://maxcdn.bootstrapcdn.com"),
         CSPEntry("https://fonts.gstatic.com"),
@@ -56,12 +61,14 @@ object CSPSettings {
 
     private val fontSrc = listOf(
         CSPEntry(CSPValue.Self),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.fontSrc?.joinToString(" ") },
         CSPEntry("https://maxcdn.bootstrapcdn.com"),
         CSPEntry("https://fonts.gstatic.com"),
         CSPEntry("https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/"),
     )
 
     private val frameSrc = listOf(
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.frameSrc?.joinToString(" ") },
         CSPEntry("https://youtube.com"),
         CSPEntry("https://www.youtube.com"),
         CSPEntry("https://*.typeform.com/"),
@@ -78,13 +85,14 @@ object CSPSettings {
         CSPEntry(CSPValue.Blob),
         CSPEntry(CSPValue.Data),
         CSPEntry("*"),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.imgSrc?.joinToString(" ") },
         CSPEntry("https://dptr8y9slmfgv.cloudfront.net"),
         CSPEntry { ctx -> if (ctx.manifest?.ontola?.tracking?.any { it.type.canCallUA() } == true) "https://www.google-analytics.com" else null },
         CSPEntry(CSPValue.ReportSample),
     )
 
     private val objectSrc = listOf(
-        CSPEntry("'none'"),
+        CSPEntry(CSPValue.None),
     )
 
     private val sandbox = listOf(
@@ -96,12 +104,14 @@ object CSPSettings {
         CSPEntry("allow-presentation"),
         CSPEntry("allow-same-origin"),
         CSPEntry("allow-scripts"),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.sandbox?.joinToString(" ") },
     )
 
     private val scriptSrc = listOf(
         CSPEntry(CSPValue.Self),
         CSPEntry(CSPValue.UnsafeEval),
         CSPEntry { ctx -> CSPValue.nonce(ctx.nonce) },
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.scriptSrc?.joinToString(" ") },
         CSPEntry("https://cdn.polyfill.io"),
         // Bugsnag CDN
         CSPEntry("https://d2wy8f7a9ursnm.cloudfront.net"),
@@ -110,7 +120,6 @@ object CSPSettings {
         CSPEntry("https://webforms.pipedrive.com/f/loader"),
         CSPEntry("https://cdn.eu-central-1.pipedriveassets.com/leadbooster-chat/assets/web-forms/loader.min.js"),
         CSPEntry("https://browser-update.org"),
-        CSPEntry("https://argu-logos.s3.eu-central-1.amazonaws.com"),
         CSPEntry("https://cdnjs.cloudflare.com"),
         CSPEntry("https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/"),
         CSPEntry { ctx ->
@@ -134,6 +143,7 @@ object CSPSettings {
         CSPEntry(CSPValue.Self),
         // Due to using inline css with background-image url()
         CSPEntry(CSPValue.UnsafeInline),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.styleSrc?.joinToString(" ") },
         CSPEntry("maxcdn.bootstrapcdn.com"),
         CSPEntry("fonts.googleapis.com"),
         CSPEntry { ctx -> if (ctx.development) CSPValue.Blob else null },
@@ -145,12 +155,14 @@ object CSPSettings {
         CSPEntry(CSPValue.Self),
         CSPEntry(CSPValue.Blob),
         CSPEntry(CSPValue.ReportSample),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.workerSrc?.joinToString(" ") },
     )
 
     private val mediaSrc = listOf(
         CSPEntry(CSPValue.Self),
         CSPEntry("https://dptr8y9slmfgv.cloudfront.net"),
         CSPEntry(CSPValue.ReportSample),
+        CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.mediaSrc?.joinToString(" ") },
     )
 
     fun CSPContext.toCSPHeader(): String = buildString {
