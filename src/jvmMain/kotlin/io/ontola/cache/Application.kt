@@ -362,6 +362,7 @@ fun Application.module(
             Regex("^/([\\w/]*/)?follows/"),
             Regex("^/oauth/token"),
             Regex("^/oauth/register"),
+            Regex("^/([\\w/]*/)?active_storage/disk"),
         )
     }
 
