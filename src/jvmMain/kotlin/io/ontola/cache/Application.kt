@@ -27,7 +27,6 @@ import io.ktor.server.plugins.CallLogging
 import io.ktor.server.plugins.Compression
 import io.ktor.server.plugins.DefaultHeaders
 import io.ktor.server.plugins.ForwardedHeaderSupport
-import io.ktor.server.plugins.HSTS
 import io.ktor.server.plugins.StatusPages
 import io.ktor.server.plugins.XForwardedHeaderSupport
 import io.ktor.server.plugins.callId
@@ -61,6 +60,7 @@ import io.ontola.cache.plugins.CacheConfiguration
 import io.ontola.cache.plugins.CacheSession
 import io.ontola.cache.plugins.CsrfProtection
 import io.ontola.cache.plugins.DeviceId
+import io.ontola.cache.plugins.HSTS
 import io.ontola.cache.plugins.LanguageNegotiation
 import io.ontola.cache.plugins.Logging
 import io.ontola.cache.plugins.Redirect
@@ -157,6 +157,10 @@ fun Application.module(
 
     install(HSTS) {
         includeSubDomains = true
+
+        withHost(config.studio.domain) {
+            includeSubDomains = false
+        }
     }
 
     install(StatusPages) {
