@@ -115,7 +115,7 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
                 application.cacheConfig.serializer.encodeToStream(distribution.manifest, this)
             }
         } else if (uri.filename() == "sitemap.txt") {
-            call.respondText(xmlFormatter.encodeToString(distribution.sitemap))
+            call.respondText(distribution.sitemap)
         } else if (uri.filename() == "sitemap.xml") {
             call.respondText(
                 text = xmlFormatter.encodeToString(distribution.xmlSitemap),
