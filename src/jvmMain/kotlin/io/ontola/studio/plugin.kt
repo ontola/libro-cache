@@ -31,6 +31,7 @@ import io.ontola.empathy.web.translations
 import io.ontola.util.filename
 import io.ontola.util.fullUrl
 import io.ontola.util.origin
+import io.ontola.util.withoutTrailingSlash
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.encodeToStream
@@ -102,7 +103,7 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
                 protocol = URLProtocol.createOrDefault(origin.scheme),
                 host = origin.host,
                 port = origin.port.onlyNonDefaultPort(),
-                pathSegments = call.request.path().split("/"),
+                pathSegments = call.request.path().split("/").filter { it.isNotBlank() },
             ).apply {
                 parameters.appendAll(call.request.queryParameters)
             }.build()
@@ -117,7 +118,7 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
         val distribution = pluginConfig.distributionRepo.get(publication.projectId, publication.distributionId)
             ?: return call.respond(HttpStatusCode.NotFound)
 
-        val record = distribution.data[uri.toString()]
+        val record = distribution.data[uri.withoutTrailingSlash]
 
         if (uri.filename() == "manifest.json") {
             call.respondOutputStream(ContentType.Application.Json) {

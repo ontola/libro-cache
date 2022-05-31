@@ -22,7 +22,7 @@ fun Url.filename(): String? = encodedPath.split("/").lastOrNull()
 
 fun Url.origin(): String = "${protocol.name}://$authority"
 
-fun Url.stem(): String = "${origin()}$encodedPath"
+fun Url.stem(): String = if (encodedPath === "") "${origin()}/" else "${origin()}$encodedPath"
 
 fun Url.withoutProto(): String = "${origin().drop(toString().indexOf(authority))}$encodedPath"
 

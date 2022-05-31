@@ -342,7 +342,6 @@ fun Application.module(
         staticTenants = mapOf(
             config.studio.domain to TenantData(
                 client = cacheConfig.client,
-                isBlackListed = false,
                 websiteIRI = config.studio.origin,
                 websiteOrigin = config.studio.origin,
                 manifest = Manifest.forWebsite(config.studio.origin).copy(

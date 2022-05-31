@@ -23,6 +23,8 @@ import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.UrlSerializer
 import io.ontola.cache.util.measuredHit
 import io.ontola.studio.StudioDeploymentKey
+import io.ontola.util.fullUrl
+import io.ontola.util.origin
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.decodeFromString
 import mu.KotlinLogging
@@ -84,32 +86,20 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
     }
 
     fun interceptDeployment(call: ApplicationCall, cacheConfig: CacheConfig, deployment: PageRenderContext) {
-        try {
-            val websiteBase = deployment.manifest.ontola.websiteIRI
+        val websiteBase = deployment.manifest.ontola.websiteIRI
 
-            val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
-            val manifest = deployment.manifest
+        val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
+        val manifest = deployment.manifest
 
-            call.attributes.put(
-                TenantizationKey,
-                TenantData(
-                    client = cacheConfig.client,
-                    isBlackListed = false,
-                    websiteIRI = manifest.ontola.websiteIRI,
-                    websiteOrigin = baseOrigin,
-                    manifest = manifest,
-                )
+        call.attributes.put(
+            TenantizationKey,
+            TenantData(
+                client = cacheConfig.client,
+                websiteIRI = manifest.ontola.websiteIRI,
+                websiteOrigin = baseOrigin,
+                manifest = manifest,
             )
-        } catch (e: ResponseException) {
-            when (val status = e.response.status) {
-                HttpStatusCode.NotFound -> throw TenantNotFoundException()
-                HttpStatusCode.BadGateway -> throw BadGatewayException()
-                else -> {
-                    logger.debug { "Unexpected status $status while getting tenant ($e)" }
-                    throw e
-                }
-            }
-        }
+        )
     }
 
     suspend fun intercept(call: ApplicationCall, cacheConfig: CacheConfig) {
@@ -124,13 +114,24 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
                 TenantizationKey,
                 TenantData(
                     client = cacheConfig.client,
-                    isBlackListed = false,
                     websiteIRI = manifest.ontola.websiteIRI,
                     websiteOrigin = baseOrigin,
                     manifest = manifest,
                 )
             )
         } catch (e: ResponseException) {
+            val origin = call.fullUrl().origin().let { Url(it) }
+
+            call.attributes.put(
+                TenantizationKey,
+                TenantData(
+                    client = cacheConfig.client,
+                    websiteIRI = origin,
+                    websiteOrigin = origin,
+                    manifest = Manifest.forWebsite(origin),
+                )
+            )
+
             when (val status = e.response.status) {
                 HttpStatusCode.NotFound -> throw TenantNotFoundException()
                 HttpStatusCode.BadGateway -> throw BadGatewayException()
