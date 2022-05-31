@@ -8,6 +8,7 @@ val BLACKLIST_PATTERNS = listOf(
     "<",
     "#",
     "menus/footer",
+    "_:",
 )
 
 @Serializable
