@@ -28,7 +28,6 @@ class ProjectRepo(val storage: Storage) {
             name = id,
             iri = request.manifest.ontola.websiteIRI,
             websiteIRI = request.manifest.ontola.websiteIRI,
-            resources = request.resources,
             data = request.data.normaliseAbsolutePaths(),
             manifest = request.manifest,
         )
@@ -39,7 +38,6 @@ class ProjectRepo(val storage: Storage) {
                 "name" to id,
                 "iri" to project.iri.toString(),
                 "websiteIRI" to project.websiteIRI.toString(),
-                "resources" to Json.encodeToString(project.resources),
                 "data" to Json.encodeToString(project.data),
                 "manifest" to Json.encodeToString(project.manifest),
             )
@@ -53,7 +51,6 @@ class ProjectRepo(val storage: Storage) {
         val project = get(projectId) ?: throw NotFoundException()
 
         val sanitised = project.copy(
-            resources = request.resources,
             data = request.data.normaliseAbsolutePaths(),
             manifest = request.manifest,
         )
@@ -63,7 +60,6 @@ class ProjectRepo(val storage: Storage) {
             entries = mapOf(
                 "iri" to sanitised.iri.toString(),
                 "websiteIRI" to sanitised.websiteIRI.toString(),
-                "resources" to Json.encodeToString(sanitised.resources),
                 "data" to Json.encodeToString(sanitised.data),
                 "manifest" to Json.encodeToString(sanitised.manifest),
             )
@@ -77,7 +73,6 @@ class ProjectRepo(val storage: Storage) {
         val name = storage.getHashValue(*projectKey(projectId), hashKey = "name") ?: return null
         val iri = storage.getHashValue(*projectKey(projectId), hashKey = "iri") ?: return null
         val websiteIRI = storage.getHashValue(*projectKey(projectId), hashKey = "websiteIRI") ?: return null
-        val resources = storage.getHashValue(*projectKey(projectId), hashKey = "resources") ?: return null
         val hextuples = storage.getHashValue(*projectKey(projectId), hashKey = "hextuples")
         val data = storage.getHashValue(*projectKey(projectId), hashKey = "data")
         val manifest = storage.getHashValue(*projectKey(projectId), hashKey = "manifest") ?: return null
@@ -93,7 +88,6 @@ class ProjectRepo(val storage: Storage) {
             name = name,
             iri = Url(iri),
             websiteIRI = Url(websiteIRI),
-            resources = Json.decodeFromString(resources),
             data = dataWithFallback,
             manifest = Json.decodeFromString(manifest),
         )

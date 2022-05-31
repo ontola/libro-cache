@@ -36,7 +36,6 @@ data class Project(
     val name: String,
     val iri: Url,
     val websiteIRI: Url,
-    val resources: List<SubResource>,
     val data: DataSlice,
     val manifest: Manifest = Manifest.forWebsite(websiteIRI)
 )

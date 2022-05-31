@@ -9,6 +9,5 @@ data class ProjectRequest(
     val data: DataSlice,
     val manifest: Manifest,
     val pages: List<String>,
-    val resources: List<SubResource>,
     val sitemap: String,
 )
