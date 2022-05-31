@@ -54,6 +54,7 @@ import io.ontola.cache.dataproxy.DataProxyPlugin
 import io.ontola.cache.dataproxy.ProxyClient
 import io.ontola.cache.dataproxy.ProxyRule
 import io.ontola.cache.health.mountHealth
+import io.ontola.cache.plugins.Blacklist
 import io.ontola.cache.plugins.CSRFVerificationException
 import io.ontola.cache.plugins.CacheConfig
 import io.ontola.cache.plugins.CacheConfiguration
@@ -310,9 +311,7 @@ fun Application.module(
             .build()
     }
 
-    install(Studio)
-
-    install(Tenantization) {
+    install(Blacklist) {
         blacklist = listOf(
             cspReportEndpointPath,
             "/favicon.ico",
@@ -331,7 +330,15 @@ fun Application.module(
             "/__webpack_hmr",
             "/.well-known/openid-configuration",
         )
+    }
 
+    install(Studio) {
+        blacklist = listOf(
+            "/f_assets/",
+        )
+    }
+
+    install(Tenantization) {
         staticTenants = mapOf(
             config.studio.domain to TenantData(
                 client = cacheConfig.client,

@@ -8,7 +8,7 @@ import io.ktor.server.response.header
 import io.ktor.util.AttributeKey
 import io.ontola.cache.csp.CSPSettings.toCSPHeader
 import io.ontola.cache.plugins.CacheSession
-import io.ontola.cache.tenantization.blacklisted
+import io.ontola.cache.plugins.blacklisted
 import io.ontola.cache.tenantization.tenant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

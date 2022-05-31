@@ -22,6 +22,7 @@ import io.ontola.cache.document.PageConfiguration
 import io.ontola.cache.document.PageRenderContext
 import io.ontola.cache.document.pageRenderContextFromCall
 import io.ontola.cache.plugins.StudioConfig
+import io.ontola.cache.plugins.blacklisted
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.persistentStorage
 import io.ontola.cache.plugins.setManifestLanguage
@@ -51,6 +52,11 @@ private val logger = KotlinLogging.logger {}
 val StudioDeploymentKey = AttributeKey<PageRenderContext>("StudioDeploymentKey")
 
 class StudioConfiguration {
+    /**
+     * List of path prefixes which should not be intercepted.
+     */
+    var blacklist: List<String> = emptyList()
+
     lateinit var studioConfig: StudioConfig
     lateinit var distributionRepo: DistributionRepo
     lateinit var publicationRepo: PublicationRepo
@@ -86,6 +92,9 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
     }
 
     suspend fun intercept(call: ApplicationCall) {
+        if (call.blacklisted)
+            return
+
         lateinit var uri: Url
         val publication = call.measured("studioLookup") {
             val origin = call.request.origin
