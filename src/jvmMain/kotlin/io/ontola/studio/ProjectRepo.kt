@@ -3,6 +3,7 @@ package io.ontola.studio
 import io.ktor.http.Url
 import io.ktor.server.plugins.NotFoundException
 import io.ontola.cache.plugins.Storage
+import io.ontola.empathy.web.normaliseAbsolutePaths
 import io.ontola.empathy.web.toSlice
 import io.ontola.rdf.hextuples.Hextuple
 import kotlinx.coroutines.FlowPreview
@@ -28,7 +29,7 @@ class ProjectRepo(val storage: Storage) {
             iri = request.manifest.ontola.websiteIRI,
             websiteIRI = request.manifest.ontola.websiteIRI,
             resources = request.resources,
-            data = request.data,
+            data = request.data.normaliseAbsolutePaths(),
             manifest = request.manifest,
         )
 
@@ -53,7 +54,7 @@ class ProjectRepo(val storage: Storage) {
 
         val sanitised = project.copy(
             resources = request.resources,
-            data = request.data,
+            data = request.data.normaliseAbsolutePaths(),
             manifest = request.manifest,
         )
 

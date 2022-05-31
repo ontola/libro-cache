@@ -135,3 +135,29 @@ fun DataSlice?.isTranslatedObject(id: Value.GlobalId): Boolean = this
     ?.get("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
     ?.contains(Value.GlobalId("https://ns.ontola.io/libro/TranslatedObject"))
     ?: false
+
+fun DataSlice.normaliseAbsolutePaths(): DataSlice {
+    fun normaliseId(id: String) = if (id.startsWith("_"))
+        Value.LocalId(id)
+    else if (id.startsWith("#")) {
+        Value.GlobalId("/$id")
+    } else
+        Value.GlobalId(id)
+
+    return this.map { (key, value) ->
+        val id = normaliseId(key)
+        val fields = value.fields.mapValues { (_, values) ->
+            values.map { v ->
+                if (v is Value.GlobalId)
+                    normaliseId(v.value)
+                else
+                    v
+            }
+        }.toMutableMap()
+
+        id.value to value.copy(
+            id = id,
+            fields = fields,
+        )
+    }.toMap()
+}
