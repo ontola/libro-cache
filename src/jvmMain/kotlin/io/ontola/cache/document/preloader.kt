@@ -147,7 +147,6 @@ val preloaderCss = CssBuilder().apply {
     }
 
     body {
-        height = 100.pct
         margin(0.px)
     }
 
