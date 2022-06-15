@@ -18,6 +18,8 @@ data class TenantFinderResponse(
     val headerBackground: String? = null,
     @SerialName("header_text")
     val headerText: String? = null,
+    @SerialName("language")
+    val language: String? = null,
     @SerialName("secondary_color")
     val secondaryColor: String? = "#d96833",
     @SerialName("primary_color")
