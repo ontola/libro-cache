@@ -426,7 +426,7 @@ class SeedTest {
     @Test
     fun testToSliceWithLocalIds() {
         val data = listOf(
-            Hextuple("https://example.com/a", "http://example.com/creator", "abc", DataType.LocalId(), "", supplantGraph),
+            Hextuple("https://example.com/a", "http://example.com/creator", "_:abc", DataType.LocalId(), "", supplantGraph),
             Hextuple("_:abc", "http://example.com/name", "BlankName", DataType.Literal("http://www.w3.org/2001/XMLSchema#string"), "", supplantGraph),
         )
         val result = data.toSlice()

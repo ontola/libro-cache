@@ -55,6 +55,8 @@ kotlin {
                 implementation("io.ktor:ktor-client-serialization:$ktor_version")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
                 implementation("io.ktor:ktor-client-logging:$ktor_version")
+
+                implementation("com.benasher44:uuid:0.4.1")
             }
         }
         val commonTest by getting {
