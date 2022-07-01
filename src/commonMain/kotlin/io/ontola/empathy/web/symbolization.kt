@@ -5,7 +5,7 @@ import io.ontola.util.absolutize
 
 fun shortenedGlobalIdString(v: String, websiteIRI: Url?): String = symbolMap[v] ?: websiteIRI.absolutize(v)
 
-fun shortenedGlobalId(v: String, websiteIRI: Url?): Value.GlobalId = Value.GlobalId(shortenedGlobalIdString(v, websiteIRI))
+fun shortenedGlobalId(v: String, websiteIRI: Url?): Value.Id.Global = Value.Id.Global(shortenedGlobalIdString(v, websiteIRI))
 
 val symbolMap = mapOf(
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property" to "Property",
@@ -13,9 +13,16 @@ val symbolMap = mapOf(
     "http://www.w3.org/2000/01/rdf-schema#Class" to "Class",
     "http://schema.org/name" to "name",
     "https://ns.ontola.io/form#Field" to "Field",
+    "https://ns.ontola.io/core#Widget" to "Widget",
+    "https://ns.ontola.io/core#widgetResource" to "widgetResource",
+    "http://schema.org/Action" to "Action",
+    "http://schema.org/EntryPoint" to "EntryPoint",
     "http://schema.org/Thing" to "Thing",
+    "http://schema.org/WebPage" to "WebPage",
+    "http://schema.org/WebSite" to "WebSite",
     "http://schema.org/CreativeWork" to "CreativeWork",
     "http://www.w3.org/2000/01/rdf-schema#comment" to "rdfscomment",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq" to "Seq",
     "http://schema.org/rangeIncludes" to "rangeIncludes",
     "http://schema.org/domainIncludes" to "domainIncludes",
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#_0" to "_0",

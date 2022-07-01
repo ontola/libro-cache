@@ -25,7 +25,7 @@ fun DataSlice.compact(websiteIRI: Url?): DataSlice {
 
     return this.map { (key, value) ->
         val id = if (key.startsWith("_"))
-            Value.LocalId(key)
+            Value.Id.Local(key)
         else
             shortenedGlobalId(key, websiteIRI)
 
@@ -47,8 +47,8 @@ fun DataSlice.splitMultilingual(websiteIRI: Url): DataSlice {
             val translations = mutableListOf<Value.LangString>()
             val localised = ids.filterIsInstance<Value.LangString>().map { slug ->
                 val id = when (v.id) {
-                    is Value.GlobalId -> v.id.localised(websiteIRI, slug.lang, slug.value)
-                    is Value.LocalId -> v.id.localised(slug.lang)
+                    is Value.Id.Global -> v.id.localised(websiteIRI, slug.lang, slug.value)
+                    is Value.Id.Local -> v.id.localised(slug.lang)
                     else -> throw Error("Primitive as id")
                 }
                 translations.add(Value.LangString(id.toString(), slug.lang))
@@ -84,7 +84,7 @@ fun DataSlice.splitMultilingual(websiteIRI: Url): DataSlice {
 
                     values.map { value ->
                         if (localisedRecords.contains(value)) {
-                            localisedRecords[value]!!.translation(lang).let { Value.GlobalId(it.value) }
+                            localisedRecords[value]!!.translation(lang).let { Value.Id.Global(it.value) }
                         } else {
                             value
                         }
@@ -95,7 +95,7 @@ fun DataSlice.splitMultilingual(websiteIRI: Url): DataSlice {
         .associateBy { r -> r.id.value }
 }
 
-fun Value.GlobalId.localised(websiteIRI: Url, language: String, segmentName: String? = null): Url {
+fun Value.Id.Global.localised(websiteIRI: Url, language: String, segmentName: String? = null): Url {
     val recordPath = websiteIRI.absolutize(value).let {
         val parts = it.split('/')
         if (segmentName == null || parts.isEmpty())
@@ -108,13 +108,13 @@ fun Value.GlobalId.localised(websiteIRI: Url, language: String, segmentName: Str
     return websiteIRI.appendPath(language).rebase(recordPath)
 }
 
-fun Value.LocalId.localised(language: String): Url {
+fun Value.Id.Local.localised(language: String): Url {
     return Url("$id-$language")
 }
 
 fun FieldSet.filterLanguage(lang: String, slice: DataSlice): FieldSet = mapValues { (_, v) ->
     v.filter {
-        if (it is Value.GlobalId && slice.isTranslatedObject(it)) {
+        if (it is Value.Id.Global && slice.isTranslatedObject(it)) {
             slice[it.value]?.get("https://ns.ontola.io/libro/language")?.first()?.value == lang
         } else if (it !is Value.LangString) {
             true
@@ -122,7 +122,7 @@ fun FieldSet.filterLanguage(lang: String, slice: DataSlice): FieldSet = mapValue
             it.lang == lang
         }
     }.map {
-        if (it is Value.GlobalId && slice.isTranslatedObject(it)) {
+        if (it is Value.Id.Global && slice.isTranslatedObject(it)) {
             slice[it.value]?.get("https://ns.ontola.io/libro/value")?.first() ?: it
         } else {
             it
@@ -130,25 +130,25 @@ fun FieldSet.filterLanguage(lang: String, slice: DataSlice): FieldSet = mapValue
     }
 }.toMutableMap()
 
-fun DataSlice?.isTranslatedObject(id: Value.GlobalId): Boolean = this
+fun DataSlice?.isTranslatedObject(id: Value.Id.Global): Boolean = this
     ?.get(id.value)
     ?.get("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-    ?.contains(Value.GlobalId("https://ns.ontola.io/libro/TranslatedObject"))
+    ?.contains(Value.Id.Global("https://ns.ontola.io/libro/TranslatedObject"))
     ?: false
 
 fun DataSlice.normaliseAbsolutePaths(): DataSlice {
     fun normaliseId(id: String) = if (id.startsWith("_"))
-        Value.LocalId(id)
+        Value.Id.Local(id)
     else if (id.startsWith("#")) {
-        Value.GlobalId("/$id")
+        Value.Id.Global("/$id")
     } else
-        Value.GlobalId(id)
+        Value.Id.Global(id)
 
     return this.map { (key, value) ->
         val id = normaliseId(key)
         val fields = value.fields.mapValues { (_, values) ->
             values.map { v ->
-                if (v is Value.GlobalId)
+                if (v is Value.Id.Global)
                     normaliseId(v.value)
                 else
                     v

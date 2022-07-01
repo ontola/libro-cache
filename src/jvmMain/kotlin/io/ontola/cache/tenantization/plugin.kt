@@ -9,6 +9,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.plugin
 import io.ktor.server.locations.url
+import io.ktor.server.plugins.origin
 import io.ktor.server.request.uri
 import io.ktor.util.AttributeKey
 import io.ontola.apex.webmanifest.Manifest
@@ -22,9 +23,11 @@ import io.ontola.cache.plugins.setManifestLanguage
 import io.ontola.cache.plugins.storage
 import io.ontola.cache.util.UrlSerializer
 import io.ontola.cache.util.measuredHit
+import io.ontola.cache.util.origin
 import io.ontola.studio.StudioDeploymentKey
 import io.ontola.util.fullUrl
 import io.ontola.util.origin
+import io.ontola.util.rebase
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.decodeFromString
 import mu.KotlinLogging
@@ -148,7 +151,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
             val deployment = call.attributes[StudioDeploymentKey]
             interceptDeployment(call, this@createApplicationPlugin.application.cacheConfig, deployment)
         } else if (!call.blacklisted) {
-            val url = Url(call.url(call.request.uri))
+            val url = Url(call.request.origin()).rebase(call.request.uri)
             val staticTenant = pluginConfig.staticTenant(url)
             if (staticTenant != null)
                 call.attributes.put(TenantizationKey, staticTenant)

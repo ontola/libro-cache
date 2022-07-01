@@ -44,12 +44,12 @@ object RecordSerializer : KSerializer<Record> {
     override fun deserialize(decoder: Decoder): Record {
         val entries = decoder.decodeSerializableValue(JsonObject.serializer()).entries
 
-        lateinit var id: Value
+        lateinit var id: Value.Id
         val fields = mutableMapOf<String, List<Value>>()
 
         for ((key, value) in entries) {
             if (key == "_id") {
-                id = value.jsonObject.toValue()
+                id = value.jsonObject.toId()
             } else if (value is JsonObject) {
                 fields[key] = listOf(value.toValue())
             } else if (value is JsonArray) {

@@ -5,8 +5,8 @@ import io.ktor.http.Url
 fun Record.compact(websiteIRI: Url?): Record {
     websiteIRI ?: return this
 
-    fun shortenId(id: String): Value = if (id.startsWith("_"))
-        Value.LocalId(id)
+    fun shortenId(id: String): Value.Id = if (id.startsWith("_"))
+        Value.Id.Local(id)
     else
         shortenedGlobalId(id, websiteIRI)
 
@@ -14,7 +14,7 @@ fun Record.compact(websiteIRI: Url?): Record {
         .mapKeys { (key) -> shortenId(key).value }
         .mapValues { (_, value) ->
             value.map {
-                if (it is Value.GlobalId) {
+                if (it is Value.Id.Global) {
                     shortenedGlobalId(it.value, websiteIRI)
                 } else {
                     it

@@ -419,8 +419,8 @@ class SeedTest {
         val result = data.toSlice()
 
         assertEquals(
-            Value.GlobalId("https://argu.co/info#CoverImage"),
-            result["https://argu.co/info"]?.get("https://example.com/ns#coverPhoto")?.first()!! as Value.GlobalId,
+            Value.Id.Global("https://argu.co/info#CoverImage"),
+            result["https://argu.co/info"]?.get("https://example.com/ns#coverPhoto")?.first()!! as Value.Id.Global,
         )
     }
     @Test
@@ -432,8 +432,8 @@ class SeedTest {
         val result = data.toSlice()
 
         assertEquals(
-            Value.LocalId("_:abc"),
-            result["https://example.com/a"]?.get("http://example.com/creator")?.first()!! as Value.LocalId,
+            Value.Id.Local("_:abc"),
+            result["https://example.com/a"]?.get("http://example.com/creator")?.first()!! as Value.Id.Local,
         )
         assertEquals(
             Value.Str("BlankName"),
@@ -447,12 +447,12 @@ class SeedTest {
 
         assertTrue(result.isNotEmpty())
         assertEquals(
-            Value.GlobalId("https://argu.co/info#CoverImage"),
-            result["https://argu.co/info"]?.get("https://ns.ontola.io/core#coverPhoto")?.first()!! as Value.GlobalId,
+            Value.Id.Global("https://argu.co/info#CoverImage"),
+            result["https://argu.co/info"]?.get("https://ns.ontola.io/core#coverPhoto")?.first()!! as Value.Id.Global,
         )
         assertEquals(
-            Value.LocalId("_:abc"),
-            result["_:abc"]?.id as Value.LocalId,
+            Value.Id.Local("_:abc"),
+            result["_:abc"]?.id as Value.Id.Local,
         )
     }
 
@@ -465,12 +465,12 @@ class SeedTest {
         val seed = data.toSlice()
 
         assertEquals(
-            Value.GlobalId("https://argu.co/info#CoverImage"),
-            seed["https://argu.co/info"]?.get("coverPhoto")?.first()!! as Value.GlobalId,
+            Value.Id.Global("https://argu.co/info#CoverImage"),
+            seed["https://argu.co/info"]?.get("coverPhoto")?.first()!! as Value.Id.Global,
         )
         assertEquals(
-            Value.GlobalId("https://example.com/a"),
-            seed["_:abc"]?.get("name")?.first()!! as Value.GlobalId,
+            Value.Id.Global("https://example.com/a"),
+            seed["_:abc"]?.get("name")?.first()!! as Value.Id.Global,
         )
     }
 }

@@ -1,5 +1,6 @@
 package io.ontola.empathy.web
 
+import com.benasher44.uuid.uuid4
 import io.ktor.http.Url
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -11,20 +12,23 @@ sealed class Value(
     val value: String = "",
 ) {
     @Serializable
-    @SerialName("id")
-    data class GlobalId(
-        @SerialName("v")
-        val id: String,
-    ) : Value(id) {
-        constructor(url: Url) : this(url.toString())
-    }
+    sealed class Id(@Transient open val id: String = "") : Value(id) {
+        @Serializable
+        @SerialName("id")
+        data class Global(
+            @SerialName("v")
+            override val id: String,
+        ) : Id(id) {
+            constructor(url: Url) : this(url.toString())
+        }
 
-    @Serializable
-    @SerialName("lid")
-    data class LocalId(
-        @SerialName("v")
-        val id: String,
-    ) : Value(id)
+        @Serializable
+        @SerialName("lid")
+        data class Local(
+            @SerialName("v")
+            override val id: String = "_:${uuid4()}",
+        ) : Id(id)
+    }
 
     @Serializable
     @SerialName("b")
@@ -41,7 +45,9 @@ sealed class Value(
     data class Int(
         @SerialName("v")
         val lexical: String,
-    ) : Value(lexical)
+    ) : Value(lexical) {
+        constructor(v: kotlin.Int) : this(v.toString(10))
+    }
 
     /**
      * 64-bit signed integer.

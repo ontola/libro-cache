@@ -5,6 +5,7 @@ import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.server.application.ApplicationCall
 import io.ontola.cache.plugins.services
+import io.ontola.cache.tenantization.tenant
 import io.ontola.empathy.web.DataSlice
 import io.ontola.empathy.web.merge
 import kotlinx.coroutines.FlowPreview
@@ -18,7 +19,7 @@ import kotlinx.serialization.json.Json
 import java.util.UUID
 
 @OptIn(FlowPreview::class)
-suspend fun ApplicationCall.authorize(toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
+suspend fun ApplicationCall.authorizeApex(toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
     return toAuthorize
         .toList()
         .groupBy { services.resolve(Url(it.iri).fullPath) }
@@ -45,6 +46,14 @@ suspend fun ApplicationCall.authorize(toAuthorize: Flow<CacheRequest>): Flow<Cac
                     ?.merge(),
             )
         }
+}
+
+suspend fun ApplicationCall.authorize(toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
+    return if (tenant.websiteIRI == Url("https://localhost")) {
+        authorizeLocal(toAuthorize)
+    } else {
+        authorizeApex(toAuthorize)
+    }
 }
 
 fun scopeBlankNodes(hex: String?): String? {

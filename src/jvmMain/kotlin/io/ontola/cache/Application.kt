@@ -339,7 +339,18 @@ fun Application.module(
     }
 
     install(Tenantization) {
+        val localDomain = "localhost"
+        val localOrigin = Url("https://$localDomain")
+
         staticTenants = mapOf(
+            localDomain to TenantData(
+                client = cacheConfig.client,
+                websiteIRI = localOrigin,
+                websiteOrigin = localOrigin,
+                manifest = Manifest.forWebsite(localOrigin).copy(
+                    name = "Local",
+                ),
+            ),
             config.studio.domain to TenantData(
                 client = cacheConfig.client,
                 websiteIRI = config.studio.origin,
@@ -347,7 +358,7 @@ fun Application.module(
                 manifest = Manifest.forWebsite(config.studio.origin).copy(
                     name = "Studio",
                 ),
-            )
+            ),
         )
     }
 

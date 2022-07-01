@@ -12,11 +12,11 @@ private val json = Json {
 }
 
 class RecordSerializerTest {
-    private val homeId = Value.GlobalId("https://example.com/")
-    private val name = Value.GlobalId("http://schema.org/name")
+    private val homeId = Value.Id.Global("https://example.com/")
+    private val name = Value.Id.Global("http://schema.org/name")
     private val homeNameNl = Value.LangString("Example thuis", "nl")
     private val homeNameEn = Value.LangString("Example home", "en")
-    private val dateCreated = Value.GlobalId("http://schema.org/dateCreated")
+    private val dateCreated = Value.Id.Global("http://schema.org/dateCreated")
     private val homeCreated = Value.Primitive("2020-01-01T00:00:00Z", "http://www.w3.org/2001/XMLSchema#date")
     private val homeSerialized = """
         {
@@ -92,7 +92,7 @@ class RecordSerializerTest {
     @Test
     fun testLocalIdSerialization() {
         val record = Record(
-            Value.LocalId("_:abc"),
+            Value.Id.Local("_:abc"),
             mutableMapOf()
         )
 

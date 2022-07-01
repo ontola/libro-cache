@@ -9,7 +9,7 @@ class DataSliceTest {
     @Test
     fun `localised rebases root website`() {
         val site = Url("https://example.com/")
-        val page = Value.GlobalId("https://example.com/about")
+        val page = Value.Id.Global("https://example.com/about")
         val lang = "en"
 
         val actual = page.localised(site, lang)
@@ -20,7 +20,7 @@ class DataSliceTest {
     @Test
     fun `localised rebases nested website`() {
         val site = Url("https://example.com/info")
-        val page = Value.GlobalId("https://example.com/info/about")
+        val page = Value.Id.Global("https://example.com/info/about")
         val lang = "en"
 
         val actual = page.localised(site, lang)
@@ -31,7 +31,7 @@ class DataSliceTest {
     @Test
     fun `localised replaced path name`() {
         val site = Url("https://example.com/info")
-        val page = Value.GlobalId("https://example.com/info/about")
+        val page = Value.Id.Global("https://example.com/info/about")
         val lang = "nl"
 
         val actual = page.localised(site, lang, "over")
@@ -102,7 +102,7 @@ class DataSliceTest {
                         Value.LangString("", "nl"),
                         Value.LangString("", "en"),
                     ),
-                    "about" to listOf(Value.GlobalId(about))
+                    "about" to listOf(Value.Id.Global(about))
                 )
             ),
             about.toString() to Record(
@@ -112,7 +112,7 @@ class DataSliceTest {
                         Value.LangString("over", "nl"),
                         Value.LangString("about", "en"),
                     ),
-                    "home" to listOf(Value.GlobalId(website))
+                    "home" to listOf(Value.Id.Global(website))
                 )
             )
         )
@@ -121,19 +121,19 @@ class DataSliceTest {
 
         val enHome = output[homeEn.toString()]
         assertNotNull(enHome)
-        assertEquals(Value.GlobalId(aboutEn), enHome["about"]!!.first())
+        assertEquals(Value.Id.Global(aboutEn), enHome["about"]!!.first())
 
         val nlHome = output[homeNl.toString()]
         assertNotNull(nlHome)
-        assertEquals(Value.GlobalId(aboutNl), nlHome["about"]!!.first())
+        assertEquals(Value.Id.Global(aboutNl), nlHome["about"]!!.first())
 
         val enDoc = output[aboutEn.toString()]
         assertNotNull(enDoc)
-        assertEquals(Value.GlobalId(homeEn), enDoc["home"]!!.first())
+        assertEquals(Value.Id.Global(homeEn), enDoc["home"]!!.first())
 
         val nlDoc = output[aboutNl.toString()]
         assertNotNull(nlDoc)
-        assertEquals(Value.GlobalId(homeNl), nlDoc["home"]!!.first())
+        assertEquals(Value.Id.Global(homeNl), nlDoc["home"]!!.first())
     }
 
     @Test
@@ -156,37 +156,37 @@ class DataSliceTest {
                         Value.LangString("about", "en"),
                     ),
                     "http://schema.org/text" to listOf(
-                        Value.GlobalId(aboutEnText),
-                        Value.GlobalId(aboutNlText),
+                        Value.Id.Global(aboutEnText),
+                        Value.Id.Global(aboutNlText),
                     ).shuffled()
                 )
             ),
             aboutEnText.toString() to Record(
                 aboutEnText,
                 mutableMapOf(
-                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" to listOf(Value.GlobalId("https://ns.ontola.io/libro/TranslatedObject")),
+                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" to listOf(Value.Id.Global("https://ns.ontola.io/libro/TranslatedObject")),
                     "https://ns.ontola.io/libro/language" to listOf(Value.Str("en")),
-                    "https://ns.ontola.io/libro/value" to listOf(Value.GlobalId(aboutEnTextValue)),
+                    "https://ns.ontola.io/libro/value" to listOf(Value.Id.Global(aboutEnTextValue)),
                 )
             ),
             aboutNlText.toString() to Record(
                 aboutNlText,
                 mutableMapOf(
-                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" to listOf(Value.GlobalId("https://ns.ontola.io/libro/TranslatedObject")),
+                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" to listOf(Value.Id.Global("https://ns.ontola.io/libro/TranslatedObject")),
                     "https://ns.ontola.io/libro/language" to listOf(Value.Str("nl")),
-                    "https://ns.ontola.io/libro/value" to listOf(Value.GlobalId(aboutNlTextValue.toString())),
+                    "https://ns.ontola.io/libro/value" to listOf(Value.Id.Global(aboutNlTextValue.toString())),
                 )
             ),
             aboutEnTextValue.toString() to Record(
                 aboutNlText,
                 mutableMapOf(
-                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" to listOf(Value.GlobalId("https://ns.ontola.io/elements/Document")),
+                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" to listOf(Value.Id.Global("https://ns.ontola.io/elements/Document")),
                 )
             ),
             aboutNlTextValue.toString() to Record(
                 aboutNlText,
                 mutableMapOf(
-                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" to listOf(Value.GlobalId("https://ns.ontola.io/elements/Document")),
+                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" to listOf(Value.Id.Global("https://ns.ontola.io/elements/Document")),
                 )
             ),
         )

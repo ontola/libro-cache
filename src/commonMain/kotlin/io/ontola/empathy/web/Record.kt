@@ -9,7 +9,7 @@ typealias FieldSet = MutableMap<String, List<Value>>
 @Serializable(with = RecordSerializer::class)
 data class Record(
     @SerialName("_id")
-    val id: Value,
+    val id: Value.Id,
     val fields: FieldSet = mutableMapOf(),
 ) {
     val entries

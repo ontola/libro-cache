@@ -23,15 +23,15 @@ fun Hextuple.toValue(websiteIRI: Url?, localIdMap: MutableMap<String, String>): 
     }
 }
 
-fun String.unwrapIdempotentNaming(localIdMap: MutableMap<String, String>): Value.LocalId =
+fun String.unwrapIdempotentNaming(localIdMap: MutableMap<String, String>): Value.Id.Local =
     if (this.startsWith("_:"))
-        Value.LocalId(this)
+        Value.Id.Local(this)
     else if (this.startsWith("_"))
-        Value.LocalId("_:" + localIdMap.getOrPut(this.substring(1)) { uuid4().toString() })
+        Value.Id.Local("_:" + localIdMap.getOrPut(this.substring(1)) { uuid4().toString() })
     else if (this.contains(".<"))
-        Value.LocalId("_:" + localIdMap.getOrPut(this) { uuid4().toString() })
+        Value.Id.Local("_:" + localIdMap.getOrPut(this) { uuid4().toString() })
     else
-        Value.LocalId(this)
+        Value.Id.Local(this)
 
 fun List<Hextuple?>.toSlice(websiteIRI: Url? = null): DataSlice = buildMap {
     val localIds = mutableMapOf<String, String>()

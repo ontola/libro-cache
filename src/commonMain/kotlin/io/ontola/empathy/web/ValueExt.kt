@@ -7,11 +7,11 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 
 fun Value.toJsonElementMap(): JsonObject = when (this) {
-    is Value.GlobalId -> buildJsonObject {
+    is Value.Id.Global -> buildJsonObject {
         put("type", JsonPrimitive("id"))
         put("v", JsonPrimitive(this@toJsonElementMap.value))
     }
-    is Value.LocalId -> buildJsonObject {
+    is Value.Id.Local -> buildJsonObject {
         put("type", JsonPrimitive("lid"))
         put("v", JsonPrimitive(this@toJsonElementMap.value))
     }
@@ -52,7 +52,7 @@ fun JsonObject.toValue(): Value {
 
     return when (val type = (this["type"] as JsonPrimitive).content) {
         "id" -> shortenedGlobalId(value, null)
-        "lid" -> Value.LocalId(value)
+        "lid" -> Value.Id.Local(value)
         "s" -> Value.Str(value)
         "b" -> Value.Bool(value)
         "i" -> Value.Int(value)
@@ -64,4 +64,14 @@ fun JsonObject.toValue(): Value {
     }
 }
 
-fun Url.toValue(): Value.GlobalId = Value.GlobalId(this.toString())
+fun JsonObject.toId(): Value.Id {
+    val value = (this["v"] as JsonPrimitive).contentOrNull ?: throw Exception("No value for `v` key in Value")
+
+    return when (val type = (this["type"] as JsonPrimitive).content) {
+        "id" -> shortenedGlobalId(value, null)
+        "lid" -> Value.Id.Local(value)
+        else -> throw Exception("Unknown value type $type")
+    }
+}
+
+fun Url.toValue(): Value.Id.Global = Value.Id.Global(this.toString())

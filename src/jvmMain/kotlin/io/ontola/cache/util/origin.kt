@@ -8,6 +8,10 @@ internal fun ApplicationRequest.origin(): String {
         ?.let { header -> headers[header]!! }
         ?: throw Exception("No header usable for authority present")
 
+    if (authority == "localhost" && call.application.developmentMode) {
+        return "http://$authority"
+    }
+
     val proto = headers["X-Forwarded-Proto"]?.split(',')?.firstOrNull()
         ?: headers["origin"]?.split(":")?.firstOrNull()
         ?: throw Exception("No Forwarded host nor authority scheme")

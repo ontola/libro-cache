@@ -5,17 +5,25 @@ import io.ontola.apex.webmanifest.TrackerType
 private fun TrackerType.canCallUA(): Boolean = this == TrackerType.GUA || this == TrackerType.GTM
 
 object CSPSettings {
+    private val self = arrayOf(
+        CSPEntry(CSPValue.Self),
+        CSPEntry { ctx -> if (ctx.development) "https://localhost" else null },
+        CSPEntry { ctx -> if (ctx.development) "http://localhost:3001" else null },
+    )
+
     private val oneOffs = listOf(
         CSPDirectives.UpgradeInsecureRequests,
     )
 
     private val defaultSrc = listOf(
-        CSPEntry(CSPValue.Self),
+        *self,
         CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.defaultSrc?.joinToString(" ") },
+        CSPEntry { ctx -> if (ctx.development) "https://localhost" else null },
+        CSPEntry { ctx -> if (ctx.development) "http://localhost:3001" else null },
     )
 
     private val baseUri = listOf(
-        CSPEntry(CSPValue.Self),
+        *self,
         CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.baseUri?.joinToString(" ") },
     )
 
@@ -25,12 +33,12 @@ object CSPSettings {
     )
 
     private val formAction = listOf(
-        CSPEntry(CSPValue.Self),
+        *self,
         CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.formAction?.joinToString(" ") },
     )
 
     private val manifestSrc = listOf(
-        CSPEntry(CSPValue.Self),
+        *self,
         CSPEntry(CSPValue.ReportSample),
         CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.manifestSrc?.joinToString(" ") },
     )
@@ -43,7 +51,7 @@ object CSPSettings {
     )
 
     private val connectSrc = listOf(
-        CSPEntry(CSPValue.Self),
+        *self,
         CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.connectSrc?.joinToString(" ") },
         CSPEntry("https://api.notubiz.nl"),
         CSPEntry("https://api.openraadsinformatie.nl"),
@@ -60,7 +68,7 @@ object CSPSettings {
     )
 
     private val fontSrc = listOf(
-        CSPEntry(CSPValue.Self),
+        *self,
         CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.fontSrc?.joinToString(" ") },
         CSPEntry("https://maxcdn.bootstrapcdn.com"),
         CSPEntry("https://fonts.gstatic.com"),
@@ -81,7 +89,7 @@ object CSPSettings {
     )
 
     private val imgSrc = listOf(
-        CSPEntry(CSPValue.Self),
+        *self,
         CSPEntry(CSPValue.Blob),
         CSPEntry(CSPValue.Data),
         CSPEntry("*"),
@@ -108,7 +116,7 @@ object CSPSettings {
     )
 
     private val scriptSrc = listOf(
-        CSPEntry(CSPValue.Self),
+        *self,
         CSPEntry(CSPValue.UnsafeEval),
         CSPEntry { ctx -> CSPValue.nonce(ctx.nonce) },
         CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.scriptSrc?.joinToString(" ") },
@@ -140,7 +148,7 @@ object CSPSettings {
     )
 
     private val styleSrc = listOf(
-        CSPEntry(CSPValue.Self),
+        *self,
         // Due to using inline css with background-image url()
         CSPEntry(CSPValue.UnsafeInline),
         CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.styleSrc?.joinToString(" ") },
@@ -152,14 +160,14 @@ object CSPSettings {
     )
 
     private val workerSrc = listOf(
-        CSPEntry(CSPValue.Self),
+        *self,
         CSPEntry(CSPValue.Blob),
         CSPEntry(CSPValue.ReportSample),
         CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.workerSrc?.joinToString(" ") },
     )
 
     private val mediaSrc = listOf(
-        CSPEntry(CSPValue.Self),
+        *self,
         CSPEntry("https://dptr8y9slmfgv.cloudfront.net"),
         CSPEntry(CSPValue.ReportSample),
         CSPEntry { ctx -> ctx.manifest?.ontola?.csp?.mediaSrc?.joinToString(" ") },
