@@ -13,9 +13,9 @@ val serialization_version: String by project
 plugins {
     application
 
-    kotlin("multiplatform") version "1.6.10"
-    kotlin("plugin.serialization") version "1.6.10"
-    id("org.jetbrains.dokka") version "1.6.10"
+    kotlin("multiplatform") version "1.7.0"
+    kotlin("plugin.serialization") version "1.7.0"
+    id("org.jetbrains.dokka") version "1.7.0"
     id("org.jlleitschuh.gradle.ktlint") version "10.2.1"
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
@@ -55,6 +55,8 @@ kotlin {
                 implementation("io.ktor:ktor-client-serialization:$ktor_version")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
                 implementation("io.ktor:ktor-client-logging:$ktor_version")
+
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-css:$kotlin_css_version")
 
                 implementation("com.benasher44:uuid:0.4.1")
             }
@@ -98,8 +100,6 @@ kotlin {
 
                 implementation("io.ktor:ktor-client-cio:$ktor_version")
                 implementation("io.ktor:ktor-client-gson:$ktor_version")
-
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-css:$kotlin_css_version")
 
                 implementation("commons-codec:commons-codec:1.15")
                 implementation("org.apache.commons:commons-text:1.9")
