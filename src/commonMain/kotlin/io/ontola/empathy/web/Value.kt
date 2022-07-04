@@ -53,6 +53,9 @@ sealed class Value(
         val lexical: String,
     ) : Value(lexical)
 
+    /**
+     * UTF-8 encoded string.
+     */
     @Serializable
     @SerialName("s")
     data class Str(
@@ -60,6 +63,9 @@ sealed class Value(
         val lexical: String,
     ) : Value(lexical)
 
+    /**
+     * DateTime formatted as ISO8601 long format.
+     */
     @Serializable
     @SerialName("dt")
     data class DateTime(

@@ -87,7 +87,7 @@ data class TestClientBuilder(
                     "/_public/spi/find_tenant" -> handleFindTenantRequest(request)
                     "/spi/bulk" -> handleBulkRequest(request, config.resources, config.newToken)
                     "/oauth/token" -> handleTokenRequest(request, config)
-                    "/oauth/revoke" -> handleTokenRevocation(request, config)
+                    "/oauth/revoke" -> handleTokenRevocation(request)
                     in websitePaths -> handleManifestRequest(request, config)
                     else -> error("Unhandled ${request.url.fullUrl}")
                 }
@@ -196,7 +196,7 @@ private fun MockRequestHandleScope.handleManifestRequest(request: HttpRequestDat
     )
 }
 
-private suspend fun MockRequestHandleScope.handleTokenRevocation(request: HttpRequestData, config: ClientState): HttpResponseData {
+private suspend fun MockRequestHandleScope.handleTokenRevocation(request: HttpRequestData): HttpResponseData {
     Json.decodeFromString<LogoutRequest>(request.body.toByteArray().toString(Charset.defaultCharset()))
 
     return respond("", HttpStatusCode.OK)

@@ -19,8 +19,6 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import java.time.Instant
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 interface StorageAdapter<K : Any, V : Any> {
@@ -212,7 +210,6 @@ class Storage(
         val prefixed = keyManager.toKey(*key)
         adapter.set(prefixed, value)
         expiration?.let {
-            val expiresAt = Instant.now().plusMillis(Duration.seconds(expiration).inWholeMilliseconds).toEpochMilli()
             adapter.expire(prefixed, it)
         }
     }

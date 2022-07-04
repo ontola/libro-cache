@@ -8,7 +8,6 @@ import io.ontola.empathy.web.DataSlice
 import io.ontola.util.UrlSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
-import kotlin.js.JsExport
 
 // Keep in sync with /libro/app/modules/Studio/async/lib/types.ts
 @Serializable
@@ -31,7 +30,6 @@ data class SubResource(
 )
 
 @Serializable
-@JsExport
 data class Project(
     val name: String,
     val iri: Url,
