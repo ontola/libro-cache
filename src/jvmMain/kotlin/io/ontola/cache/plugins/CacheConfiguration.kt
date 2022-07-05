@@ -206,6 +206,9 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
         null
     } else {
         Bugsnag(serverReportingKey).apply {
+            setAppVersion(this@CacheConfig.serverVersion)
+            setAppType("libro-server")
+            setReleaseStage(this@CacheConfig.env)
             addCallback {
                 when (val exception = it.exception!!) {
                     is CSPReportException -> {
