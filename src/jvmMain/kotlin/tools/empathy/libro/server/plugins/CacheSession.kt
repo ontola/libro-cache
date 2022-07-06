@@ -18,7 +18,6 @@ class CacheSessionConfiguration {
     lateinit var libroConfig: LibroConfig
     lateinit var oidcClientId: String
     lateinit var oidcClientSecret: String
-    lateinit var oAuthToken: String
     lateinit var oidcUrl: Url
 
     fun complete(libroConfig: LibroConfig) {
@@ -27,7 +26,6 @@ class CacheSessionConfiguration {
         if (!this::client.isInitialized) client = libroConfig.client
         if (!this::oidcClientId.isInitialized) oidcClientId = libroConfig.sessions.clientId
         if (!this::oidcClientSecret.isInitialized) oidcClientSecret = libroConfig.sessions.clientSecret
-        if (!this::oAuthToken.isInitialized) oAuthToken = libroConfig.sessions.oAuthToken
         if (!this::oidcUrl.isInitialized) oidcUrl = libroConfig.sessions.oidcUrl
     }
 }

@@ -165,7 +165,6 @@ class SessionManager(
 
     private suspend fun guestToken(): OIDCTokenResponse {
         logger.trace { "Requesting guest token" }
-        val serviceToken = configuration.oAuthToken
         val path = call.tenant.websiteIRI.appendPath("oauth", "token").fullPath
         val response = call.application.libroConfig.client.post(configuration.oidcUrl.appendPath(path)) {
             expectSuccess = false
@@ -173,7 +172,6 @@ class SessionManager(
             headers {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
-                header(HttpHeaders.Authorization, "Bearer $serviceToken")
 
                 header(LibroHttpHeaders.WebsiteIri, call.tenant.websiteIRI)
 

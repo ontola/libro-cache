@@ -29,7 +29,6 @@ class EnvironmentCheck : Check() {
             checkValue("clientId", config.sessions.clientId)
             checkValue("clientSecret", config.sessions.clientSecret)
             checkValue("jwtEncryptionToken", config.sessions.jwtEncryptionToken)
-            checkValue("oAuthToken", config.sessions.oAuthToken)
             checkValue("sessionSecret", config.sessions.sessionSecret)
         }
 

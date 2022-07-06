@@ -20,10 +20,6 @@ data class SessionsConfig(
      */
     val clientSecret: String,
     /**
-     * TODO: Refactor away
-     */
-    val oAuthToken: String,
-    /**
      * The url of the OIDC identity provider
      */
     val oidcUrl: Url,
@@ -35,7 +31,6 @@ data class SessionsConfig(
             clientId = "0",
             clientSecret = "",
             oidcUrl = Url("https://oidcserver.test"),
-            oAuthToken = "",
         )
     }
 }

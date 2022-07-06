@@ -298,7 +298,6 @@ data class LibroConfig constructor(
                     jwtEncryptionToken = libroSession.property("jwtEncryptionToken").getString(),
                     clientId = oidcConfig.property("clientId").getString(),
                     clientSecret = oidcConfig.property("clientSecret").getString(),
-                    oAuthToken = oidcConfig.property("oAuthToken").getString(),
                     oidcUrl = Url(oidcConfig.property("url").getString()),
                 )
             }

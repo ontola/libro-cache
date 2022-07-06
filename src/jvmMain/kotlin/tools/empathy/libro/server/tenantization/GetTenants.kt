@@ -5,7 +5,6 @@ package tools.empathy.libro.server.tenantization
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpHeaders
@@ -37,7 +36,6 @@ internal suspend fun ApplicationCall.getTenantsRequest(): HttpResponse = applica
     .client
     .get(services.route("/_public/spi/tenants")) {
         headers {
-            header(HttpHeaders.Authorization, "Bearer ${application.libroConfig.sessions.oAuthToken}")
             proxySafeHeaders(request)
             copy(HttpHeaders.XForwardedFor, request)
             copy("X-Real-Ip", request)
