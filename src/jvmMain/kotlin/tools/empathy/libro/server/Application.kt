@@ -336,6 +336,13 @@ fun Application.module(
             "/libro/docs/",
             "/__webpack_hmr",
             "/.well-known/openid-configuration",
+            "/oauth/authorize",
+            "/oauth/discovery/keys",
+            "/oauth/introspect",
+            "/oauth/register",
+            "/oauth/revoke",
+            "/oauth/token",
+            "/oauth/userinfo",
         )
     }
 
@@ -370,8 +377,9 @@ fun Application.module(
             Regex("^/link-lib/bulk"),
             Regex("^/_studio/"),
             Regex("^/([\\w/]*/)?follows/"),
-            Regex("^/oauth/token"),
             Regex("^/oauth/register"),
+            Regex("^/oauth/revoke"),
+            Regex("^/oauth/token"),
             Regex("^/([\\w/]*/)?active_storage/disk"),
         )
     }
@@ -397,7 +405,9 @@ fun Application.module(
 
             ProxyRule(Regex("^/.well-known/openid-configuration$")),
             ProxyRule(Regex("^/.well-known/webfinger(\\?.*)?")),
+            ProxyRule(Regex("^/oauth/authorize(\\?.*)?")),
             ProxyRule(Regex("^/oauth/discovery/keys")),
+            ProxyRule(Regex("^/oauth/introspect")),
             ProxyRule(Regex("^/oauth/userinfo")),
 
             ProxyRule(Regex("/media_objects/\\w+/content"), client = ProxyClient.RedirectingBackend),
