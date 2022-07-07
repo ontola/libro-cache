@@ -1,5 +1,6 @@
 package tools.empathy.libro
 
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.server.application.ApplicationCall
 import io.ontola.cache.health.BackendCheck
 import io.ontola.cache.health.BulkCheck
@@ -9,6 +10,7 @@ import io.ontola.cache.health.HeadRequestCheck
 import io.ontola.cache.health.ManifestCheck
 import io.ontola.cache.health.RedisCheck
 import io.ontola.cache.health.humanStatus
+import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.tenantization.TenantsResponse
 import io.ontola.cache.tenantization.getTenants
 import io.ontola.empathy.web.DataSlice
@@ -37,8 +39,13 @@ import tools.empathy.vocabularies.Ontola
 import tools.empathy.vocabularies.Schema
 
 suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
-    val tenants = this@landingPage.getTenants()
+    val tenants = try {
+        this@landingPage.getTenants()
+    } catch (e: ServerResponseException) {
+        null
+    }
 
+    val defaultServicePort = application.cacheConfig.services.config("base").propertyOrNull("defaultServicePort")
     val homePage = add(
         WebPage(
             id = Value.Id.Global("https://localhost/home"),
@@ -48,7 +55,7 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
                 Seq(
                     Value.Id.Global("https://localhost/home/widgets"),
                     listOf(
-                        tenantWidgets(tenants),
+                        if (tenants == null) noBackendWidget(defaultServicePort?.getString()) else tenantWidget(tenants),
                         studioWidget(),
                         healthWidget(this@landingPage),
                     )
@@ -61,7 +68,7 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
         WebSite(
             id = Value.Id.Global("https://localhost"),
             name = "Libro",
-            text = "Tenants found: ${tenants.sites.joinToString { it.location.toString() }}",
+            text = "Backend ${if (tenants == null) "not " else ""}found",
             homepage = homePage,
         )
     )
@@ -151,7 +158,34 @@ private suspend fun DataSlice.healthWidget(call: ApplicationCall): Value.Id {
     )
 }
 
-private fun DataSlice.tenantWidgets(tenants: TenantsResponse): Value.Id {
+private fun DataSlice.noBackendWidget(defaultServicePort: String?): Value.Id {
+    val info = record {
+        type(Schema.CreativeWork)
+        field(Schema.name) { s("No backend found") }
+        field(Schema.text) {
+            val portHelper = if (defaultServicePort == null) "" else " (`$defaultServicePort`)"
+
+            s("""
+                No data service detected. Check whether the `DEFAULT_SERVICE_PORT`$portHelper is correctly set and the server is running on that port.
+                
+                See the [linked_rails framework](https://github.com/ontola/linked_rails) to build a Libro compatible service. 
+            """.trimIndent())
+        }
+    }
+
+    return add(
+        Widget(
+            id = Value.Id.Global("https://localhost/home/widgets/tenants"),
+            order = 1,
+            topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/container"),
+            widgetSize = 2,
+            view = Value.Id.Global("https://argu.nl/enums/widgets/view#preview_view"),
+            widgetResource = info,
+        )
+    )
+}
+
+private fun DataSlice.tenantWidget(tenants: TenantsResponse): Value.Id {
     val tenantEntities = tenants.sites.map {
         record {
             type(Schema.Thing.id)

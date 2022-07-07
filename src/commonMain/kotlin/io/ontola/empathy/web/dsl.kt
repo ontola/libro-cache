@@ -1,5 +1,7 @@
 package io.ontola.empathy.web
 
+import tools.empathy.model.LangMap
+
 val localIds = (1..1_000_000)
 val takenIds = mutableListOf<Int>()
 
@@ -11,6 +13,12 @@ fun nextId(): Int {
     takenIds.add(id)
 
     return id
+}
+
+fun dataSliceNonSuspend(init: DataSlice.() -> Unit): DataSlice {
+    val slice = mutableMapOf<String, Record>()
+    slice.init()
+    return slice.toMap()
 }
 
 suspend fun dataSlice(init: suspend DataSlice.() -> Unit): DataSlice {
@@ -29,6 +37,8 @@ fun DataSlice.record(id: Value.Id = Value.Id.Local("_:${nextId()}"), init: Recor
 }
 
 fun Record.type(value: String) = field("type") { id(value) }
+
+fun Record.type(value: Value.Id) = field("type") { id(value) }
 
 fun Record.field(field: String, init: MutableList<Value>.() -> Unit) {
     val values = mutableListOf<Value>()
@@ -49,7 +59,7 @@ private fun <T : Any?> MutableList<Value>.addIfNotNull(item: T?, convert: (item:
 
 fun MutableList<Value>.s(value: String?) = addIfNotNull(value) { Value.Str(it) }
 
-fun MutableList<Value>.ls(value: String, lang: String) = add(Value.LangString(value, lang))
+fun MutableList<Value>.ls(values: LangMap) = values.forEach { (_, value) -> add(value) }
 
 fun MutableList<Value>.int(value: String?) = addIfNotNull(value) { Value.Int(it) }
 
