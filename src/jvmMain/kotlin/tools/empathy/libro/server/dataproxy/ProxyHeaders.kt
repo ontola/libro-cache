@@ -40,6 +40,8 @@ internal fun HttpRequestBuilder.proxyHeaders(
         copy(HttpHeaders.Origin, request)
         copy(HttpHeaders.Referrer, request)
         copy(HttpHeaders.UserAgent, request)
+        copy(HttpHeaders.AccessControlRequestHeaders, request)
+        copy(HttpHeaders.AccessControlRequestMethod, request)
         header(LibroHttpHeaders.XDeviceId, call.deviceId)
         copy(LibroHttpHeaders.RequestReferrer, request)
 

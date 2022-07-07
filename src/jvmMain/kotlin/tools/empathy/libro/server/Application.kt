@@ -444,6 +444,7 @@ fun Application.module(
             HttpMethod.Put,
             HttpMethod.Patch,
             HttpMethod.Delete,
+            HttpMethod.Options,
         )
         transforms[Regex("^/([\\w/]*/)?login$")] = loginTransform
 
