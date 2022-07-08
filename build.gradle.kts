@@ -188,4 +188,8 @@ tasks.named<JavaExec>("run") {
     classpath(tasks.named<Jar>("jvmJar"))
 }
 
+configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+    disabledRules.set(setOf("trailing-comma"))
+}
+
 task("stage").dependsOn("shadowJar")

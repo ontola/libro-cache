@@ -1,4 +1,5 @@
 @file:UseSerializers(UrlSerializer::class)
+
 package io.ontola.cache.tenantization
 
 import io.ktor.client.call.body
@@ -6,6 +7,7 @@ import io.ktor.client.plugins.ResponseException
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
@@ -30,8 +32,10 @@ data class TenantsResponse(
     val sites: List<TenantDescription>,
 )
 
-internal suspend fun ApplicationCall.getTenants(): TenantsResponse {
-    val request = application.cacheConfig.client.get(services.route("/_public/spi/tenants")) {
+internal suspend fun ApplicationCall.getTenantsRequest(): HttpResponse = application
+    .cacheConfig
+    .client
+    .get(services.route("/_public/spi/tenants")) {
         headers {
             header(HttpHeaders.Authorization, "Bearer ${application.cacheConfig.sessions.oAuthToken}")
             proxySafeHeaders(request)
@@ -39,10 +43,12 @@ internal suspend fun ApplicationCall.getTenants(): TenantsResponse {
             copy("X-Real-Ip", request)
         }
     }
+internal suspend fun ApplicationCall.getTenants(): TenantsResponse {
+    val response = getTenantsRequest()
 
-    if (request.status != HttpStatusCode.OK) {
-        throw ResponseException(request, request.body())
+    if (response.status != HttpStatusCode.OK) {
+        throw ResponseException(response, response.body())
     }
 
-    return request.body()
+    return response.body()
 }

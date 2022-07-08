@@ -25,6 +25,7 @@ import kotlinx.html.title
 import kotlinx.html.unsafe
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import tools.empathy.vocabularies.ActivityStreams.rel
 
 fun HEAD.renderHead(
     url: Url,
@@ -109,6 +110,11 @@ private fun HEAD.preloader(nonce: String) {
 
 private fun HEAD.appIcons(manifest: Manifest) {
     manifest.icons?.forEach { icon ->
+        if (icon.purpose?.contains("favicon") == true)
+            link(rel = "icon", href = icon.src, type = icon.type) {
+                attributes["sizes"] = icon.sizes
+            }
+
         when {
             icon.src.contains("favicon") -> {
                 link(rel = "icon", type = icon.type, href = icon.src) {

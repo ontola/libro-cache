@@ -1,9 +1,6 @@
 package tools.empathy.vocabularies
 
 import io.ontola.empathy.web.Value
-import io.ontola.empathy.web.dataSlice
-import io.ontola.empathy.web.dataSliceNonSuspend
-import tools.empathy.model.add
 
 object Schema : Vocab {
     override val vocab = "http://schema.org/"
@@ -26,6 +23,7 @@ object Schema : Vocab {
     val VideoObject by Term()
     val WebPage by Term()
     val WebSite by Term()
+
     val actionStatus by Term()
     val birthDate by Term()
     val blogPosts by Term()
@@ -43,6 +41,7 @@ object Schema : Vocab {
     val dateReceived by Term()
     val dateSent by Term()
     val downloadUrl by Term()
+    val encodingFormat by Term()
     val httpMethod by Term()
     val item by Term()
     val language = "${vocab}language"

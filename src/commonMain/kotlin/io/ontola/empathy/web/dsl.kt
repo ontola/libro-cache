@@ -57,6 +57,10 @@ private fun <T : Any?> MutableList<Value>.addIfNotNull(item: T?, convert: (item:
     add(convert(item))
 }
 
+fun MutableList<Value>.dt(value: String?) = addIfNotNull(value) { Value.DateTime(it) }
+
+fun MutableList<Value>.dt(value: Value.DateTime?) = addIfNotNull(value) { it }
+
 fun MutableList<Value>.s(value: String?) = addIfNotNull(value) { Value.Str(it) }
 
 fun MutableList<Value>.ls(values: LangMap) = values.forEach { (_, value) -> add(value) }

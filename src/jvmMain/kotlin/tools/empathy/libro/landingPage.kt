@@ -10,9 +10,12 @@ import io.ontola.cache.health.HeadRequestCheck
 import io.ontola.cache.health.ManifestCheck
 import io.ontola.cache.health.RedisCheck
 import io.ontola.cache.health.humanStatus
+import io.ontola.cache.plugins.Versions
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.tenantization.TenantsResponse
+import io.ontola.cache.tenantization.getApiVersion
 import io.ontola.cache.tenantization.getTenants
+import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.empathy.web.DataSlice
 import io.ontola.empathy.web.Value
 import io.ontola.empathy.web.dataSlice
@@ -24,6 +27,7 @@ import io.ontola.empathy.web.type
 import tools.empathy.model.Action
 import tools.empathy.model.CollectionDisplay
 import tools.empathy.model.EntryPoint
+import tools.empathy.model.ImageObject
 import tools.empathy.model.Seq
 import tools.empathy.model.SortDirection
 import tools.empathy.model.WebPage
@@ -34,9 +38,13 @@ import tools.empathy.model.addAll
 import tools.empathy.model.addColumn
 import tools.empathy.model.addSorting
 import tools.empathy.model.buildCollection
+import tools.empathy.model.menu.MenuItem
+import tools.empathy.model.menu.add
 import tools.empathy.vocabularies.Libro
 import tools.empathy.vocabularies.Ontola
 import tools.empathy.vocabularies.Schema
+
+const val MdLineBreak = "  "
 
 suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
     val tenants = try {
@@ -46,11 +54,34 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
     }
 
     val defaultServicePort = application.cacheConfig.services.config("base").propertyOrNull("defaultServicePort")
+    val logo = add(
+        ImageObject(
+            Value.Id.Local(),
+            description = "Libro logo",
+            imgUrl64x64 = Value.Id.Global("/f_assets/images/libro-logo-t-4.svg"),
+            imgUrl256x256 = Value.Id.Global("/f_assets/images/libro-logo-t.svg"),
+            imgUrl1500x2000 = Value.Id.Global("/f_assets/images/libro-logo-t.svg"),
+        ),
+    )
+    val cover = add(
+        ImageObject(
+            Value.Id.Local(),
+            description = "Libro cover",
+            imgUrl1500x2000 = Value.Id.Global("/f_assets/images/libro-cover.webp"),
+        ),
+    )
+
     val homePage = add(
         WebPage(
             id = Value.Id.Global("https://localhost/home"),
-            name = "Homepage",
-            text = "Welcome to Libro",
+            name = "Welcome to Libro",
+            text = """
+                API version: ${getApiVersion() ?: "Not detected"}$MdLineBreak
+                Server version: ${Versions.ServerVersion}$MdLineBreak
+                Client version: ${request.headers[CacheHttpHeaders.XClientVersion]}
+            """.trimIndent(),
+            image = logo,
+            coverPhoto = cover,
             widgets = add(
                 Seq(
                     Value.Id.Global("https://localhost/home/widgets"),
@@ -58,9 +89,37 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
                         if (tenants == null) noBackendWidget(defaultServicePort?.getString()) else tenantWidget(tenants),
                         studioWidget(),
                         healthWidget(this@landingPage),
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    val navigationsMenu = add(
+        MenuItem(
+            id = Value.Id.Global("/menus/navigations"),
+            name = "Navigations",
+            menuItems = add(
+                Seq(
+                    Value.Id.Global("/menus/navigations/menu_items"),
+                    listOf(
+                        add(
+                            MenuItem(
+                                id = Value.Id.Local(),
+                                name = "Libro",
+                                encodingFormat = "image/svg+xml",
+                                image = Value.Id.Global("/f_assets/images/libro-logo-t-4.svg"),
+                                customImage = Value.Id.Global("/f_assets/images/libro-logo-t-4.svg"),
+                                isPartOf = Value.Id.Global("/"),
+                                edge = Value.Id.Global("/"),
+                                href = Value.Id.Global("/"),
+                                targetType = Value.Id.Global("https://argu.nl/enums/custom_menu_items/target_type#edge"),
+                                order = 0,
+                            )
+                        )
                     )
                 )
-            ),
+            )
         )
     )
 
@@ -70,7 +129,8 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
             name = "Libro",
             text = "Backend ${if (tenants == null) "not " else ""}found",
             homepage = homePage,
-        )
+            navigationsMenu = navigationsMenu,
+        ),
     )
 }
 
@@ -84,7 +144,7 @@ private fun DataSlice.studioWidget(): Value.Id {
             text = "Open the studio",
             target = entryPoint,
             actionStatus = Value.Id.Global("http://schema.org/PotentialActionStatus"),
-        )
+        ),
     )
 
     add(
@@ -94,7 +154,7 @@ private fun DataSlice.studioWidget(): Value.Id {
             isPartOf = action,
             httpMethod = "GET",
             url = Value.Id.Global("/d/studio"),
-        )
+        ),
     )
 
     return add(
@@ -105,7 +165,7 @@ private fun DataSlice.studioWidget(): Value.Id {
             widgetSize = 1,
             view = Value.Id.Global("https://argu.nl/enums/widgets/view#preview_view"),
             widgetResource = entryPoint,
-        )
+        ),
     )
 }
 
@@ -154,7 +214,7 @@ private suspend fun DataSlice.healthWidget(call: ApplicationCall): Value.Id {
             widgetSize = 3,
             view = Value.Id.Global("https://argu.nl/enums/widgets/view#preview_view"),
             widgetResource = collection.id,
-        )
+        ),
     )
 }
 
@@ -165,11 +225,13 @@ private fun DataSlice.noBackendWidget(defaultServicePort: String?): Value.Id {
         field(Schema.text) {
             val portHelper = if (defaultServicePort == null) "" else " (`$defaultServicePort`)"
 
-            s("""
+            s(
+                """
                 No data service detected. Check whether the `DEFAULT_SERVICE_PORT`$portHelper is correctly set and the server is running on that port.
                 
                 See the [linked_rails framework](https://github.com/ontola/linked_rails) to build a Libro compatible service. 
-            """.trimIndent())
+                """.trimIndent(),
+            )
         }
     }
 
@@ -181,7 +243,7 @@ private fun DataSlice.noBackendWidget(defaultServicePort: String?): Value.Id {
             widgetSize = 2,
             view = Value.Id.Global("https://argu.nl/enums/widgets/view#preview_view"),
             widgetResource = info,
-        )
+        ),
     )
 }
 
@@ -217,6 +279,6 @@ private fun DataSlice.tenantWidget(tenants: TenantsResponse): Value.Id {
             widgetSize = 2,
             view = Value.Id.Global("https://argu.nl/enums/widgets/view#preview_view"),
             widgetResource = collection.id,
-        )
+        ),
     )
 }

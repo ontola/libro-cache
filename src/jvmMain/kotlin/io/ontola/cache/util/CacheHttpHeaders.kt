@@ -11,6 +11,8 @@ object CacheHttpHeaders {
     const val XDeviceId = "X-Device-Id"
     const val XCsrfToken = "X-CSRF-Token"
     const val XAPIVersion = "X-API-Version"
+    const val XClientVersion = "X-Client-Version"
+    const val XServerVersion = "X-Server-Version"
 
     /**
      * Used in forms to refer to the resource which sprung the request.

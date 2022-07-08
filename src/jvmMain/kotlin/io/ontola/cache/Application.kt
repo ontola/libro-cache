@@ -17,7 +17,6 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
 import io.ktor.server.html.respondHtml
-import io.ktor.server.locations.KtorExperimentalLocationsAPI
 import io.ktor.server.locations.Locations
 import io.ktor.server.logging.toLogString
 import io.ktor.server.metrics.micrometer.MicrometerMetrics
@@ -45,6 +44,7 @@ import io.ktor.server.websocket.WebSockets
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
+import io.ontola.apex.webmanifest.Icon
 import io.ontola.apex.webmanifest.Manifest
 import io.ontola.cache.assets.Assets
 import io.ontola.cache.csp.CSP
@@ -88,6 +88,7 @@ import io.ontola.cache.statuspages.RenderLanguage
 import io.ontola.cache.statuspages.errorPage
 import io.ontola.cache.tenantization.TenantData
 import io.ontola.cache.tenantization.Tenantization
+import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.configureClientLogging
 import io.ontola.cache.util.isHtmlAccept
@@ -110,8 +111,9 @@ fun ApplicationRequest.isHTML(): Boolean {
     return accept.isHtmlAccept() || contentType.contains("text/html")
 }
 
-@OptIn(ExperimentalLettuceCoroutinesApi::class, ExperimentalTime::class, KtorExperimentalLocationsAPI::class)
-@Suppress("unused") // Referenced in application.conf
+@OptIn(ExperimentalLettuceCoroutinesApi::class, ExperimentalTime::class)
+// Referenced in application.conf
+@Suppress("unused")
 @JvmOverloads
 fun Application.module(
     testing: Boolean = false,
@@ -254,10 +256,10 @@ fun Application.module(
         header("X-Frame-Options", "DENY")
         header("Service-Worker-allowed", "/")
         Versions.ServerVersion?.let {
-            header("X-Server-Version", it)
+            header(CacheHttpHeaders.XServerVersion, it)
         }
         Versions.ClientVersion?.let {
-            header("X-Client-Version", it)
+            header(CacheHttpHeaders.XClientVersion, it)
         }
     }
 
@@ -274,7 +276,7 @@ fun Application.module(
             cookie.extensions["SameSite"] = "Lax"
             if (!testing && !config.isDev) {
                 transform(
-                    signedTransformer(signingSecret = config.sessions.sessionSecret)
+                    signedTransformer(signingSecret = config.sessions.sessionSecret),
                 )
             }
         }
@@ -284,7 +286,7 @@ fun Application.module(
             cookie.extensions["SameSite"] = "Lax"
             cookie.maxAge = 365.days
             transform(
-                signedTransformer(signingSecret = config.sessions.sessionSecret)
+                signedTransformer(signingSecret = config.sessions.sessionSecret),
             )
         }
     }
@@ -347,9 +349,22 @@ fun Application.module(
                 client = cacheConfig.client,
                 websiteIRI = localOrigin,
                 websiteOrigin = localOrigin,
-                manifest = Manifest.forWebsite(localOrigin).copy(
-                    name = "Local",
-                ),
+                manifest = Manifest.forWebsite(localOrigin).let {
+                    it.copy(
+                        name = "Local",
+                        icons = arrayOf(
+                            Icon(
+                                src = "/f_assets/images/libro-logo-t-4.svg",
+                                sizes = "32x32 64x64 72x72 96x96 128x128",
+                                purpose = "favicon",
+                                type = "image/svg",
+                            ),
+                        ),
+                        ontola = it.ontola.copy(
+                            primaryColor = "#002233",
+                        ),
+                    )
+                },
             ),
             config.studio.domain to TenantData(
                 client = cacheConfig.client,
