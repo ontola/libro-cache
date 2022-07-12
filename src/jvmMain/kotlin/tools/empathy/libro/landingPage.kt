@@ -95,6 +95,8 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
         ),
     )
 
+    val modulesPage = modulesPage()
+
     val navigationsMenu = add(
         MenuItem(
             id = Value.Id.Global("/menus/navigations"),
@@ -116,7 +118,29 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
                                 targetType = Value.Id.Global("https://argu.nl/enums/custom_menu_items/target_type#edge"),
                                 order = 0,
                             )
-                        )
+                        ),
+                        add(
+                            MenuItem(
+                                id = Value.Id.Local(),
+                                name = "Home",
+                                isPartOf = Value.Id.Global("/"),
+                                edge = homePage,
+                                href = homePage,
+                                targetType = Value.Id.Global("https://argu.nl/enums/custom_menu_items/target_type#edge"),
+                                order = 1,
+                            )
+                        ),
+                        add(
+                            MenuItem(
+                                id = Value.Id.Local(),
+                                name = "Modules",
+                                isPartOf = Value.Id.Global("/"),
+                                edge = modulesPage,
+                                href = modulesPage,
+                                targetType = Value.Id.Global("https://argu.nl/enums/custom_menu_items/target_type#edge"),
+                                order = 2,
+                            )
+                        ),
                     )
                 )
             )
@@ -130,6 +154,24 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
             text = "Backend ${if (tenants == null) "not " else ""}found",
             homepage = homePage,
             navigationsMenu = navigationsMenu,
+        ),
+    )
+}
+
+private fun DataSlice.modulesPage(): Value.Id {
+    return add(
+        WebPage(
+            id = Value.Id.Global("https://localhost/modules"),
+            name = "Modules",
+            text = "",
+            widgets = add(
+                Seq(
+                    Value.Id.Global("https://localhost/modules/widgets"),
+                    listOf(
+                        *libroWidgets(),
+                    ),
+                ),
+            ),
         ),
     )
 }
@@ -280,5 +322,38 @@ private fun DataSlice.tenantWidget(tenants: TenantsResponse): Value.Id {
             view = Value.Id.Global("https://argu.nl/enums/widgets/view#preview_view"),
             widgetResource = collection.id,
         ),
+    )
+}
+
+private fun DataSlice.libroWidgets(): Array<Value.Id> {
+    val modules = record {
+        type(Libro.Boostrap.ModulesList)
+    }
+
+    val topologies = record {
+        type(Libro.Boostrap.TopologiesList)
+    }
+
+    return arrayOf(
+        add(
+            Widget(
+                id = Value.Id.Global("https://localhost/home/widgets/bootstrap/modules"),
+                order = 1,
+                topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/grid"),
+                widgetSize = 2,
+                view = Value.Id.Global("https://argu.nl/enums/widgets/view#preview_view"),
+                widgetResource = modules,
+            ),
+        ),
+        add(
+            Widget(
+                id = Value.Id.Global("https://localhost/home/widgets/bootstrap/topologies"),
+                order = 3,
+                topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/card"),
+                widgetSize = 1,
+                view = Value.Id.Global("https://argu.nl/enums/widgets/view#preview_view"),
+                widgetResource = topologies,
+            ),
+        )
     )
 }

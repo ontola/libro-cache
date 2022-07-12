@@ -27,4 +27,34 @@ val LibroData = dataSliceNonSuspend {
             },
         ),
     )
+
+    add(
+        RdfProperty(
+            Libro.Module.topologiesCount,
+            langMap {
+                en = "Topologies"
+                nl = "Topologieën"
+            },
+        ),
+    )
+
+    add(
+        RdfProperty(
+            Libro.Module.type,
+            langMap {
+                en = "Module type"
+                nl = "Type module"
+            },
+        ),
+    )
+
+    add(
+        RdfProperty(
+            Libro.Module.viewsCount,
+            langMap {
+                en = "View registrations"
+                nl = "View registrations"
+            },
+        ),
+    )
 }

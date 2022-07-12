@@ -5,6 +5,7 @@ object Libro : Vocab {
 
     /** The result of the health check */
     val result by Term()
+
     /** The message of the health check */
     val message by Term()
     val target by Term()
@@ -34,6 +35,21 @@ object Libro : Vocab {
             val pop by Term("acions/navigation/pop")
             val push by Term("acions/navigation/push")
         }
+    }
+
+    object Boostrap : Vocab {
+        override val vocab = Libro.vocab
+
+        val TopologiesList by Term("bootstrap/TopologiesList")
+        val ModulesList by Term("bootstrap/ModulesList")
+    }
+
+    object Module : Vocab {
+        override val vocab = Libro.vocab
+
+        val topologiesCount by Term("module/topologiesCount")
+        val type by Term("module/type")
+        val viewsCount by Term("module/viewsCount")
     }
 
     object Targets : Vocab {
