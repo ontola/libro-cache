@@ -15,8 +15,8 @@ val skrapeit_version: String by project
 plugins {
     application
 
-    kotlin("multiplatform") version "1.7.0"
-    kotlin("plugin.serialization") version "1.7.0"
+    kotlin("multiplatform") version "1.7.20-dev-2773"
+    kotlin("plugin.serialization") version "1.7.20-dev-2773"
     // https://github.com/Kotlin/dokka/releases
     id("org.jetbrains.dokka") version "1.7.0"
     // https://github.com/JLLeitschuh/ktlint-gradle/releases
@@ -157,7 +157,8 @@ application {
 
 repositories {
     mavenLocal()
-    maven("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
+    maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev/")
+//    maven("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
     mavenCentral()
     maven("https://jitpack.io")
 }

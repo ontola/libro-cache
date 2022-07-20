@@ -1,4 +1,5 @@
 @file:UseSerializers(UrlSerializer::class)
+
 package io.ontola.cache.plugins
 
 import io.ktor.server.application.ApplicationCall
