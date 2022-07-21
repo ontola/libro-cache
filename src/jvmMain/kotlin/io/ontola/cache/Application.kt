@@ -306,7 +306,6 @@ fun Application.module(
     }
 
     install(CacheSession) {
-        legacyStorageAdapter = adapter
         val jwtToken = Algorithm.HMAC512(config.sessions.jwtEncryptionToken)
         jwtValidator = JWT.require(jwtToken)
             .withClaim("application_id", config.sessions.clientId)

@@ -38,14 +38,6 @@ data class SessionsConfig(
      */
     val oAuthToken: String,
     /**
-     * Name of the legacy koa cookie that holds the session id
-     */
-    val cookieNameLegacy: String = "koa:sess",
-    /**
-     * Name of the legacy koa cookie that holds the session signature
-     */
-    val signatureNameLegacy: String = "koa:sess.sig",
-    /**
      * The url of the OIDC identity provider
      */
     val oidcUrl: Url,

@@ -10,8 +10,6 @@ import io.ktor.util.AttributeKey
 import io.ontola.cache.sessions.SessionManager
 
 class CacheSessionConfiguration {
-    @Deprecated("Until sessions are migrated")
-    lateinit var legacyStorageAdapter: StorageAdapter<String, String>
     lateinit var client: HttpClient
     lateinit var sessionSecret: String
     lateinit var jwtValidator: JWTVerifier

@@ -163,21 +163,6 @@ class SessionManager(
         )
     }
 
-    @Deprecated("Until sessions are migrated")
-    private suspend fun legacyOrFresh(): SessionData? {
-        return getLegacySessionOrNull(call, configuration)?.let {
-            if (it.userToken == null || it.refreshToken == null) return null
-
-            SessionData(
-                credentials = TokenPair(
-                    accessToken = it.userToken,
-                    refreshToken = it.refreshToken,
-                ),
-                deviceId = call.deviceId,
-            )
-        }
-    }
-
     private suspend fun guestToken(): OIDCTokenResponse {
         logger.trace { "Requesting guest token" }
         val serviceToken = configuration.oAuthToken
