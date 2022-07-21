@@ -5,7 +5,7 @@ import io.ontola.empathy.web.Record
 import io.ontola.empathy.web.Value
 import io.ontola.empathy.web.shortenedGlobalIdString
 
-fun findValue(data: Record?, predicates: Array<String>, preferredLang: String, websiteIRI: Url?): String? {
+internal fun findValue(data: Record?, predicates: Array<String>, preferredLang: String, websiteIRI: Url?): String? {
     if (data == null) return null
 
     return predicates

@@ -2,6 +2,9 @@ package io.ontola.libro.metadata
 
 import io.ontola.apex.webmanifest.Icon
 
+/**
+ * Converts a [MetaData] object to HTML headers used by search engines and social media.
+ */
 fun getMetaTags(data: MetaData): List<TagProps> = buildList {
     val title = arrayOf(data.name, data.appName)
         .filterNotNull()
@@ -106,7 +109,7 @@ fun getMetaTags(data: MetaData): List<TagProps> = buildList {
     }
 }
 
-fun findLargestIcon(icons: Array<Icon>): String? = appIconSizePriority
+internal fun findLargestIcon(icons: Array<Icon>): String? = appIconSizePriority
     .firstNotNullOfOrNull { size ->
         icons.find { icon -> icon.sizes == size }
     }

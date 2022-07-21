@@ -7,30 +7,6 @@ import io.ontola.empathy.web.Record
 import io.ontola.empathy.web.Value
 import io.ontola.util.absolutize
 
-fun merge(a: Record?, b: Record?): Record? {
-    val mergedFields = HashMap<String, List<Value>>().apply {
-        if (a == null && b == null)
-            return null
-
-        if (a != null)
-            for ((key, value) in a.entries) {
-                this[key] = value
-            }
-
-        if (b != null)
-            for ((key, value) in b.entries) {
-                val existing = this[key]
-                if (existing == null) {
-                    this[key] = value
-                } else {
-                    this[key] = existing + value
-                }
-            }
-    }
-
-    return Record(a?.id ?: b!!.id, mergedFields)
-}
-
 fun metaDataFromData(
     url: Url,
     manifest: Manifest,
@@ -72,4 +48,28 @@ fun metaDataFromData(
         coverURL,
         imageURL,
     )
+}
+
+private fun merge(a: Record?, b: Record?): Record? {
+    val mergedFields = HashMap<String, List<Value>>().apply {
+        if (a == null && b == null)
+            return null
+
+        if (a != null)
+            for ((key, value) in a.entries) {
+                this[key] = value
+            }
+
+        if (b != null)
+            for ((key, value) in b.entries) {
+                val existing = this[key]
+                if (existing == null) {
+                    this[key] = value
+                } else {
+                    this[key] = existing + value
+                }
+            }
+    }
+
+    return Record(a?.id ?: b!!.id, mergedFields)
 }

@@ -147,6 +147,9 @@ private val JsonInHtmlEscaper = AggregateTranslator(
     ),
 )
 
+/**
+ * The seed block contains initial data for Libro to load into the store.
+ */
 fun BODY.seedBlock(nonce: String, data: DataSlice, serializer: Json) {
     script(type = "application/empathy+json") {
         this.nonce = nonce
@@ -173,7 +176,9 @@ fun BODY.seedBlock(nonce: String, data: DataSlice, serializer: Json) {
     }
 }
 
-@OptIn(ExperimentalSerializationApi::class)
+/**
+ * The web manifest block injects the current [Web Manifest](https://web.dev/add-manifest/) into the document.
+ */
 fun BODY.manifestBlock(nonce: String, manifest: Manifest, serializer: Json) {
     script(type = "application/javascript") {
         attributes["id"] = "manifest"

@@ -1,6 +1,6 @@
 package io.ontola.libro.metadata
 
-val appIconSizePriority = arrayOf(
+internal val appIconSizePriority = arrayOf(
     "256x256",
     "192x192",
     "180x180",

@@ -7,7 +7,6 @@ import io.ontola.apex.webmanifest.TrackerType
 import io.ontola.apex.webmanifest.Tracking
 import io.ontola.empathy.web.DataSlice
 import io.ontola.empathy.web.Value
-import io.ontola.empathy.web.alternates
 import io.ontola.empathy.web.canonical
 import io.ontola.empathy.web.translations
 import io.ontola.libro.metadata.getMetaTags
@@ -25,7 +24,6 @@ import kotlinx.html.title
 import kotlinx.html.unsafe
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import tools.empathy.vocabularies.ActivityStreams.rel
 
 fun HEAD.renderHead(
     url: Url,
@@ -59,6 +57,12 @@ fun HEAD.renderHead(
     appIcons(manifest)
 }
 
+/**
+ * Adds [alternate](https://developers.google.com/search/docs/advanced/crawling/localized-versions#html) links when
+ * the [data] contains multiple languages of the same record.
+ *
+ * Currently only used for the Studio.
+ */
 private fun HEAD.alternates(
     url: Url,
     data: DataSlice,
@@ -75,6 +79,9 @@ private fun HEAD.alternates(
         }
 }
 
+/**
+ * Calculates and injects relevant HTML social tags into the document.
+ */
 private fun HEAD.contentMetaTags(
     url: Url,
     manifest: Manifest,

@@ -21,7 +21,7 @@ val inlineCode = Regex("`(.+?)`", RegexOption.MULTILINE)
 val multiNewlines = Regex("\n{2,}")
 val newlineNormalize = Regex("[\r\n]")
 
-// Modified from https://github.com/stiang/remove-markdown/blob/master/index.js
+// Ported & modified from https://github.com/stiang/remove-markdown/blob/master/index.js
 fun stripMarkdown(value: String?): String {
     if (value == null) {
         return ""
