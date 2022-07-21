@@ -23,7 +23,7 @@ import io.ontola.cache.sessions.LogoutRequest
 import io.ontola.cache.sessions.OIDCRequest
 import io.ontola.cache.sessions.OIDCTokenResponse
 import io.ontola.cache.tenantization.TenantFinderResponse
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.util.fullUrl
 import io.ontola.util.withoutProto
 import kotlinx.datetime.Clock
@@ -99,15 +99,15 @@ data class TestClientBuilder(
 @OptIn(ExperimentalStdlibApi::class)
 fun MockRequestHandleScope.handleHeadRequest(request: HttpRequestData, headResponses: MutableMap<Url, HeadResponse>): HttpResponseData {
     val path = request.url.fullPath
-    val websiteIRI = Url(request.headers[CacheHttpHeaders.WebsiteIri] ?: return respond("", HttpStatusCode.NotFound))
+    val websiteIRI = Url(request.headers[LibroHttpHeaders.WebsiteIri] ?: return respond("", HttpStatusCode.NotFound))
     val response = headResponses[Url("$websiteIRI$path")] ?: return respond("", HttpStatusCode.NotFound)
 
     val test = buildMap {
         response.newAuthorization?.let {
-            put(CacheHttpHeaders.NewAuthorization, listOf(it))
+            put(LibroHttpHeaders.NewAuthorization, listOf(it))
         }
         response.newRefreshToken?.let {
-            put(CacheHttpHeaders.NewRefreshToken, listOf(it))
+            put(LibroHttpHeaders.NewRefreshToken, listOf(it))
         }
         response.accessControlAllowCredentials?.let {
             put(HttpHeaders.AccessControlAllowCredentials, listOf(it))
@@ -125,7 +125,7 @@ fun MockRequestHandleScope.handleHeadRequest(request: HttpRequestData, headRespo
             put(HttpHeaders.Location, listOf(it))
         }
         response.includeResources?.let {
-            put(CacheHttpHeaders.IncludeResources, listOf(it.joinToString(",")))
+            put(LibroHttpHeaders.IncludeResources, listOf(it.joinToString(",")))
         }
     }
 
@@ -171,8 +171,8 @@ private suspend fun MockRequestHandleScope.handleBulkRequest(
         jsonContentTypeHeaders
     } else {
         headersOf(
-            CacheHttpHeaders.NewAuthorization to listOf(newToken.first),
-            CacheHttpHeaders.NewRefreshToken to listOf(newToken.second),
+            LibroHttpHeaders.NewAuthorization to listOf(newToken.first),
+            LibroHttpHeaders.NewRefreshToken to listOf(newToken.second),
             *jsonContentTypeHeaders.entries().map { it.key to it.value }.toTypedArray(),
         )
     }
@@ -185,7 +185,7 @@ private suspend fun MockRequestHandleScope.handleBulkRequest(
 }
 
 private fun MockRequestHandleScope.handleManifestRequest(request: HttpRequestData, config: ClientState): HttpResponseData {
-    val origin = request.headers[CacheHttpHeaders.WebsiteIri]
+    val origin = request.headers[LibroHttpHeaders.WebsiteIri]
     val path = request.url.encodedPath.removeSuffix("/manifest.json")
     val manifest = config.manifests[Url("$origin$path")] ?: return respond("", HttpStatusCode.NotFound)
 

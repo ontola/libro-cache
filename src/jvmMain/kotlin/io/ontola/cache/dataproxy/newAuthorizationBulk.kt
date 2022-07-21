@@ -3,7 +3,7 @@ package io.ontola.cache.dataproxy
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpHeaders
 import io.ontola.cache.util.Actions
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.cache.util.hasAction
 import io.ontola.cache.util.setActionParam
 import io.ontola.cache.util.setParameter
@@ -39,8 +39,8 @@ private fun responseAction(response: HttpResponse): String? {
 }
 
 internal fun newAuthorizationBulk(response: HttpResponse): BulkControls? {
-    val newAuthorization = response.headers[CacheHttpHeaders.NewAuthorization] ?: return null
-    val refreshToken = response.headers[CacheHttpHeaders.NewRefreshToken]
+    val newAuthorization = response.headers[LibroHttpHeaders.NewAuthorization] ?: return null
+    val refreshToken = response.headers[LibroHttpHeaders.NewRefreshToken]
         ?: throw Exception("Received New-Authorization header without New-Refresh-Header")
 
     return BulkControls(

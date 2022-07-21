@@ -8,7 +8,7 @@ import io.ktor.server.request.path
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ontola.cache.sessions.SessionData
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import org.apache.commons.codec.binary.Base64
 import java.security.SecureRandom
 
@@ -45,7 +45,7 @@ val CsrfProtection = createApplicationPlugin(
     onCall { call ->
         if (pluginConfig.isBlacklisted(call.request.httpMethod, call.request.path())) {
             val csrfToken = call.sessions.get<SessionData>()?.csrfToken
-            val requestToken = call.request.header(CacheHttpHeaders.XCsrfToken)
+            val requestToken = call.request.header(LibroHttpHeaders.XCsrfToken)
             val isInvalid = csrfToken == null ||
                 Base64().decode(csrfToken).size != csrfTokenSize ||
                 csrfToken != requestToken

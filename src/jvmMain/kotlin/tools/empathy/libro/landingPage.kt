@@ -15,7 +15,7 @@ import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.tenantization.TenantsResponse
 import io.ontola.cache.tenantization.getApiVersion
 import io.ontola.cache.tenantization.getTenants
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.empathy.web.DataSlice
 import io.ontola.empathy.web.Value
 import io.ontola.empathy.web.dataSlice
@@ -78,7 +78,7 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
             text = """
                 API version: ${getApiVersion() ?: "Not detected"}$MdLineBreak
                 Server version: ${Versions.ServerVersion}$MdLineBreak
-                Client version: ${request.headers[CacheHttpHeaders.XClientVersion]}
+                Client version: ${request.headers[LibroHttpHeaders.XClientVersion]}
             """.trimIndent(),
             image = logo,
             coverPhoto = cover,

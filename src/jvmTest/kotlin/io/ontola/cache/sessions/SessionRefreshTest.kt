@@ -8,7 +8,7 @@ import io.ktor.http.Url
 import io.ktor.http.formUrlEncode
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.setBody
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -31,7 +31,7 @@ class SessionRefreshTest {
                 addHeader(HttpHeaders.XForwardedProto, "https")
                 addHeader(HttpHeaders.Accept, "application/hex+x-ndjson")
                 addHeader(HttpHeaders.ContentType, "application/x-www-form-urlencoded")
-                addHeader(CacheHttpHeaders.XCsrfToken, csrfToken)
+                addHeader(LibroHttpHeaders.XCsrfToken, csrfToken)
 
                 setBody(
                     listOf(

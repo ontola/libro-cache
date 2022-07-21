@@ -14,7 +14,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.header
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.tenantization.getTenants
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 
 class BulkCheck : Check() {
     init {
@@ -30,7 +30,7 @@ class BulkCheck : Check() {
                 header(HttpHeaders.Accept, "application/hex+x-ndjson")
                 header(HttpHeaders.ContentType, "application/x-www-form-urlencoded")
                 header(HttpHeaders.Cookie, call.request.header(HttpHeaders.Cookie))
-                header(CacheHttpHeaders.WebsiteIri, tenant)
+                header(LibroHttpHeaders.WebsiteIri, tenant)
                 header(HttpHeaders.XForwardedHost, tenant.authority)
                 header(HttpHeaders.XForwardedProto, "https")
                 header("X-Forwarded-Ssl", "on")

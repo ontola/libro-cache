@@ -7,7 +7,7 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.testing.handleRequest
 import io.ontola.cache.sessions.SessionData
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import kotlinx.coroutines.runBlocking
 import withCacheTestApplication
 import java.net.URLEncoder
@@ -27,7 +27,7 @@ class CSRFProtectionTest {
                 addHeader("authority", "mysite.local")
                 addHeader(HttpHeaders.Accept, "text/html")
                 addHeader(HttpHeaders.XForwardedProto, "https")
-                addHeader(CacheHttpHeaders.WebsiteIri, tenant.toString())
+                addHeader(LibroHttpHeaders.WebsiteIri, tenant.toString())
             }.apply {
                 val session = sessions.get<SessionData>()
                 val csrfToken = session?.csrfToken

@@ -8,7 +8,7 @@ import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
 import io.ontola.cache.plugins.sessionManager
 import io.ontola.cache.tenantization.tenant
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.cache.util.copy
 import io.ontola.cache.util.proxySafeHeaders
 
@@ -26,7 +26,7 @@ fun HttpRequestBuilder.initHeaders(
             header(HttpHeaders.Authorization, it)
         }
 
-        header(CacheHttpHeaders.WebsiteIri, websiteBase)
+        header(LibroHttpHeaders.WebsiteIri, websiteBase)
 
         proxySafeHeaders(originalReq, lang)
         copy(HttpHeaders.Host, originalReq)

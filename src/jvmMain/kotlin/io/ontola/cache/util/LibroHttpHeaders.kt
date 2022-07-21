@@ -2,7 +2,7 @@ package io.ontola.cache.util
 
 const val VaryHeader = "Accept,Accept-Encoding,Authorization,Content-Type"
 
-object CacheHttpHeaders {
+object LibroHttpHeaders {
     const val ExecAction = "Exec-Action"
     const val IncludeResources = "Include-Resources"
     const val NewAuthorization = "New-Authorization"

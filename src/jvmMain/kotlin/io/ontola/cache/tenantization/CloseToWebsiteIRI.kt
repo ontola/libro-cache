@@ -3,7 +3,7 @@ package io.ontola.cache.tenantization
 import io.ktor.http.Url
 import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.path
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.cache.util.origin
 import io.ontola.util.origin
 import mu.KLogger
@@ -21,7 +21,7 @@ internal fun ApplicationRequest.closeToWebsiteIRI(logger: KLogger): String {
         .take(2)
         .joinToString("/")
 
-    return headers[CacheHttpHeaders.WebsiteIri]
+    return headers[LibroHttpHeaders.WebsiteIri]
         ?.let { websiteIRI ->
             if (Url(websiteIRI).origin() != authoritativeOrigin) {
                 logger.warn("Website-Iri does not correspond with authority headers (website-iri: '$websiteIRI', authority: '$authoritativeOrigin')")

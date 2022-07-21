@@ -21,7 +21,7 @@ import io.ontola.cache.plugins.services
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.TokenPair
 import io.ontola.cache.tenantization.tenant
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.cache.util.measured
 import io.ontola.util.appendPath
 import kotlinx.coroutines.flow.Flow
@@ -64,12 +64,12 @@ internal suspend fun ApplicationCall.authorizeBulk(
         throw RuntimeException(msg)
     }
 
-    res.headers[CacheHttpHeaders.XAPIVersion]?.let {
-        response.header(CacheHttpHeaders.XAPIVersion, it)
+    res.headers[LibroHttpHeaders.XAPIVersion]?.let {
+        response.header(LibroHttpHeaders.XAPIVersion, it)
     }
 
-    val newAuthorization = res.headers[CacheHttpHeaders.NewAuthorization]
-    val newRefreshToken = res.headers[CacheHttpHeaders.NewRefreshToken]
+    val newAuthorization = res.headers[LibroHttpHeaders.NewAuthorization]
+    val newRefreshToken = res.headers[LibroHttpHeaders.NewRefreshToken]
 
     if (newAuthorization != null && newRefreshToken != null) {
         val existing = sessions.get<SessionData>() ?: SessionData()

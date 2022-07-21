@@ -39,7 +39,7 @@ import io.ontola.cache.plugins.services
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.TokenPair
 import io.ontola.cache.tenantization.tenant
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.measured
 import io.ontola.empathy.web.DataSlice
@@ -80,14 +80,14 @@ suspend fun ApplicationCall.headRequest(
 
     HeadResponse(
         headResponse.status,
-        newAuthorization = headResponse.headers[CacheHttpHeaders.NewAuthorization],
-        newRefreshToken = headResponse.headers[CacheHttpHeaders.NewRefreshToken],
+        newAuthorization = headResponse.headers[LibroHttpHeaders.NewAuthorization],
+        newRefreshToken = headResponse.headers[LibroHttpHeaders.NewRefreshToken],
         accessControlAllowCredentials = headResponse.headers[HttpHeaders.AccessControlAllowCredentials],
         accessControlAllowHeaders = headResponse.headers[HttpHeaders.AccessControlAllowHeaders],
         accessControlAllowMethods = headResponse.headers[HttpHeaders.AccessControlAllowMethods],
         accessControlAllowOrigin = headResponse.headers[HttpHeaders.AccessControlAllowOrigin],
         location = headResponse.headers[HttpHeaders.Location],
-        includeResources = headResponse.headers[CacheHttpHeaders.IncludeResources]?.ifBlank { null }?.split(','),
+        includeResources = headResponse.headers[LibroHttpHeaders.IncludeResources]?.ifBlank { null }?.split(','),
     )
 }
 

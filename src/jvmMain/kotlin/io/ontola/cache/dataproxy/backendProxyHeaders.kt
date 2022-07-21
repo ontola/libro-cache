@@ -5,7 +5,7 @@ import io.ktor.http.ContentDisposition
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.util.filter
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import java.util.Locale
 
@@ -29,7 +29,7 @@ fun trustedProxyHeaders(
         )
 
         it.action?.let { action ->
-            set(CacheHttpHeaders.ExecAction, action)
+            set(LibroHttpHeaders.ExecAction, action)
         }
     }
 

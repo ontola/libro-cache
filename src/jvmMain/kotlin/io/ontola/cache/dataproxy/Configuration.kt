@@ -7,7 +7,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.server.request.ApplicationRequest
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.cache.util.configureClientLogging
 import io.ontola.util.disableCertValidation
 import kotlin.time.Duration.Companion.days
@@ -63,8 +63,8 @@ class Configuration {
     var developmentMode: Boolean = false
 
     val unsafeList = listOf(
-        CacheHttpHeaders.NewAuthorization.lowercase(),
-        CacheHttpHeaders.NewRefreshToken.lowercase(),
+        LibroHttpHeaders.NewAuthorization.lowercase(),
+        LibroHttpHeaders.NewRefreshToken.lowercase(),
         HttpHeaders.ContentLength.lowercase(),
         HttpHeaders.ContentType.lowercase(),
         HttpHeaders.SetCookie.lowercase(),

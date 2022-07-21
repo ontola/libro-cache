@@ -7,7 +7,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.server.testing.handleRequest
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -25,8 +25,8 @@ class LogoutTest {
             handleRequest(HttpMethod.Post, "/logout") {
                 addHeader(HttpHeaders.Origin, websiteIRI.toString())
                 addHeader(HttpHeaders.XForwardedProto, "https")
-                addHeader(CacheHttpHeaders.WebsiteIri, websiteIRI.toString())
-                addHeader(CacheHttpHeaders.XCsrfToken, csrfToken)
+                addHeader(LibroHttpHeaders.WebsiteIri, websiteIRI.toString())
+                addHeader(LibroHttpHeaders.XCsrfToken, csrfToken)
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
             }

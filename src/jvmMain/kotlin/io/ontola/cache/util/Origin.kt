@@ -2,6 +2,10 @@ package io.ontola.cache.util
 
 import io.ktor.server.request.ApplicationRequest
 
+/**
+ * Get the origin for the current request.
+ * Uses security headers to verify other information when present.
+ */
 internal fun ApplicationRequest.origin(): String {
     val authority = listOf("X-Forwarded-Host", "origin", "host", "authority")
         .find { header -> headers[header] != null }

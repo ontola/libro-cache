@@ -5,6 +5,9 @@ import io.ktor.http.HttpHeaders
 import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.header
 
+/**
+ * Copy headers considered safe to proxy from [sourceRequest] to [HeadersBuilder].
+ */
 fun HeadersBuilder.proxySafeHeaders(sourceRequest: ApplicationRequest, defaultLang: String? = null) {
     copy(HttpHeaders.AcceptLanguage, sourceRequest, defaultLang)
     copy(HttpHeaders.XForwardedHost, sourceRequest, sourceRequest.header(HttpHeaders.Host))

@@ -88,7 +88,7 @@ import io.ontola.cache.statuspages.RenderLanguage
 import io.ontola.cache.statuspages.errorPage
 import io.ontola.cache.tenantization.TenantData
 import io.ontola.cache.tenantization.Tenantization
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.cache.util.configureCallLogging
 import io.ontola.cache.util.configureClientLogging
 import io.ontola.cache.util.isHtmlAccept
@@ -256,10 +256,10 @@ fun Application.module(
         header("X-Frame-Options", "DENY")
         header("Service-Worker-allowed", "/")
         Versions.ServerVersion?.let {
-            header(CacheHttpHeaders.XServerVersion, it)
+            header(LibroHttpHeaders.XServerVersion, it)
         }
         Versions.ClientVersion?.let {
-            header(CacheHttpHeaders.XClientVersion, it)
+            header(LibroHttpHeaders.XClientVersion, it)
         }
     }
 

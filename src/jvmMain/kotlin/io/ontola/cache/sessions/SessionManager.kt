@@ -26,7 +26,7 @@ import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.plugins.logger
 import io.ontola.cache.plugins.setPreferredLanguage
 import io.ontola.cache.tenantization.tenant
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.cache.util.copy
 import io.ontola.cache.util.proxySafeHeaders
 import io.ontola.util.appendPath
@@ -175,10 +175,10 @@ class SessionManager(
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
                 header(HttpHeaders.Authorization, "Bearer $serviceToken")
 
-                header(CacheHttpHeaders.WebsiteIri, call.tenant.websiteIRI)
+                header(LibroHttpHeaders.WebsiteIri, call.tenant.websiteIRI)
 
                 proxySafeHeaders(call.request)
-                header(CacheHttpHeaders.XDeviceId, call.deviceId)
+                header(LibroHttpHeaders.XDeviceId, call.deviceId)
                 copy("X-Real-Ip", call.request)
                 copy("X-Requested-With", call.request)
             }

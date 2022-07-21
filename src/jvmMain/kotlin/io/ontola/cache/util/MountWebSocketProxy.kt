@@ -23,6 +23,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
+fun Route.mountWebSocketProxy() {
+    webSocket(path = "/{prefix?}/cable", protocol = "actioncable-v1-json") {
+        handleWebsocket()
+    }
+    webSocket(path = "/cable", protocol = "actioncable-v1-json") {
+        handleWebsocket()
+    }
+}
+
 private suspend fun DefaultWebSocketServerSession.handleWebsocket() {
     if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
         return
@@ -72,14 +81,5 @@ private suspend fun DefaultWebSocketServerSession.handleWebsocket() {
         }
 
         joinAll(serverJob, clientJob)
-    }
-}
-
-fun Route.mountWebSocketProxy() {
-    webSocket(path = "/{prefix?}/cable", protocol = "actioncable-v1-json") {
-        handleWebsocket()
-    }
-    webSocket(path = "/cable", protocol = "actioncable-v1-json") {
-        handleWebsocket()
     }
 }

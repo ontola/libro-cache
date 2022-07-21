@@ -8,7 +8,7 @@ import io.mockk.Called
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,8 +37,8 @@ class UntrustedProxyHeadersTest {
         every { response.status } returns HttpStatusCode.OK
         every { response.headers } answers {
             Headers.build {
-                append(CacheHttpHeaders.NewAuthorization, "auth")
-                append(CacheHttpHeaders.NewRefreshToken, "refresh")
+                append(LibroHttpHeaders.NewAuthorization, "auth")
+                append(LibroHttpHeaders.NewRefreshToken, "refresh")
             }
         }
         val setAuthorization = mockk<(String, String) -> Unit>()
@@ -70,14 +70,14 @@ class UntrustedProxyHeadersTest {
             config = Configuration(),
             isDownloadRequest = false,
             proxiedHeaders = Headers.build {
-                append(CacheHttpHeaders.ExecAction, "action")
+                append(LibroHttpHeaders.ExecAction, "action")
                 append(HttpHeaders.SetCookie, "chocolate")
             },
             setAuthorization = setAuthorization,
             response = response,
         )
 
-        assertEquals(headers[CacheHttpHeaders.ExecAction], "action")
+        assertEquals(headers[LibroHttpHeaders.ExecAction], "action")
         assertNull(headers[HttpHeaders.SetCookie])
     }
 }

@@ -8,7 +8,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ontola.cache.plugins.deviceId
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.tenantization.tenant
-import io.ontola.cache.util.CacheHttpHeaders
+import io.ontola.cache.util.LibroHttpHeaders
 import io.ontola.cache.util.copy
 import io.ontola.cache.util.proxySafeHeaders
 
@@ -29,7 +29,7 @@ internal fun HttpRequestBuilder.proxyHeaders(
             }
         }
         if (useWebsiteIRI) {
-            header(CacheHttpHeaders.WebsiteIri, call.tenant.websiteIRI)
+            header(LibroHttpHeaders.WebsiteIri, call.tenant.websiteIRI)
         }
         proxySafeHeaders(request)
         copy(HttpHeaders.Accept, request)
@@ -40,8 +40,8 @@ internal fun HttpRequestBuilder.proxyHeaders(
         copy(HttpHeaders.Origin, request)
         copy(HttpHeaders.Referrer, request)
         copy(HttpHeaders.UserAgent, request)
-        header(CacheHttpHeaders.XDeviceId, call.deviceId)
-        copy(CacheHttpHeaders.RequestReferrer, request)
+        header(LibroHttpHeaders.XDeviceId, call.deviceId)
+        copy(LibroHttpHeaders.RequestReferrer, request)
 
         copy("Client-Ip", request)
         copy("X-Client-Ip", request)
