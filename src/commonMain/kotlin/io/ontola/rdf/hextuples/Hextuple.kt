@@ -1,6 +1,5 @@
 package io.ontola.rdf.hextuples
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -26,21 +25,9 @@ data class Hextuple(
         language,
         graph,
     )
-
-    companion object {
-        fun fromArray(data: Array<String>) = Hextuple(
-            data[HexPosition.Subject.ordinal],
-            data[HexPosition.Predicate.ordinal],
-            data[HexPosition.Value.ordinal],
-            DataType.fromValue(data[HexPosition.DataType.ordinal]),
-            data[HexPosition.Language.ordinal],
-            data[HexPosition.Graph.ordinal],
-        )
-    }
 }
 
 object HextupleSerializer : KSerializer<Hextuple> {
-    @OptIn(ExperimentalSerializationApi::class)
     val serializer = ListSerializer(String.serializer())
     override val descriptor: SerialDescriptor = serializer.descriptor
 

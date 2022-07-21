@@ -4,10 +4,7 @@ import io.ktor.http.Url
 import io.ktor.server.plugins.NotFoundException
 import io.ontola.cache.plugins.Storage
 import io.ontola.empathy.web.normaliseAbsolutePaths
-import io.ontola.empathy.web.toSlice
-import io.ontola.rdf.hextuples.Hextuple
 import kotlinx.coroutines.FlowPreview
-import kotlinx.css.data
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -73,22 +70,14 @@ class ProjectRepo(val storage: Storage) {
         val name = storage.getHashValue(*projectKey(projectId), hashKey = "name") ?: return null
         val iri = storage.getHashValue(*projectKey(projectId), hashKey = "iri") ?: return null
         val websiteIRI = storage.getHashValue(*projectKey(projectId), hashKey = "websiteIRI") ?: return null
-        val hextuples = storage.getHashValue(*projectKey(projectId), hashKey = "hextuples")
-        val data = storage.getHashValue(*projectKey(projectId), hashKey = "data")
+        val data = storage.getHashValue(*projectKey(projectId), hashKey = "data") ?: return null
         val manifest = storage.getHashValue(*projectKey(projectId), hashKey = "manifest") ?: return null
-
-        if (hextuples == null && data == null) {
-            return null
-        }
-
-        val dataWithFallback = data?.let { Json.decodeFromString(it) }
-            ?: Json.decodeFromString<List<Hextuple>>(hextuples!!).toSlice(Url(websiteIRI))
 
         return Project(
             name = name,
             iri = Url(iri),
             websiteIRI = Url(websiteIRI),
-            data = dataWithFallback,
+            data = Json.decodeFromString(data),
             manifest = Json.decodeFromString(manifest),
         )
     }

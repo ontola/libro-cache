@@ -7,6 +7,7 @@ fun shortenedGlobalIdString(v: String, websiteIRI: Url?): String = symbolMap[v] 
 
 fun shortenedGlobalId(v: String, websiteIRI: Url?): Value.Id.Global = Value.Id.Global(shortenedGlobalIdString(v, websiteIRI))
 
+/** A list of symbols with heavy use in Libro to shorten data transfer. */
 val symbolMap = mapOf(
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property" to "Property",
     "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" to "isDefinedBy",
