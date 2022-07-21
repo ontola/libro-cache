@@ -107,7 +107,7 @@ data class MapsConfig(
     val tokenEndpoint = "https://api.mapbox.com/tokens/v2/$username?access_token=$key"
 }
 
-data class AssetsConfig(
+data class BundlesConfig(
     val es6ManifestLocation: String = "./assets/manifest.module.json",
     val es5ManifestLocation: String = "./assets/manifest.legacy.json",
     val publicFolder: String,
@@ -127,7 +127,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
     val testing: Boolean,
     val env: String = if (testing) "testing" else System.getenv("KTOR_ENV") ?: "production",
     val port: Int,
-    val assets: AssetsConfig,
+    val bundles: BundlesConfig,
     /**
      * Configuration relating to session management.
      */
@@ -238,7 +238,7 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
             val (persistentRedisURI, streamRedisURI, redisConfig) = redisConfig(cacheConfig, testing)
 
             return CacheConfig(
-                assets = assetsConfig(cacheConfig, testing),
+                bundles = bundlesConfig(cacheConfig, testing),
                 port = config.config("ktor").config("deployment").property("port").getString().toInt(),
                 testing = testing,
                 sessions = sessionsConfig(cacheConfig, testing),
@@ -268,21 +268,21 @@ data class CacheConfig @OptIn(ExperimentalTime::class) constructor(
             cacheConfig.property("defaultLanguage").getString()
         }
 
-        private fun assetsConfig(
+        private fun bundlesConfig(
             cacheConfig: ApplicationConfig,
             testing: Boolean,
-        ): AssetsConfig {
-            val assetsConfig = cacheConfig.config("assets")
+        ): BundlesConfig {
+            val bundlesConfig = cacheConfig.config("bundle")
 
             return if (testing) {
-                AssetsConfig(
+                BundlesConfig(
                     publicFolder = "f_assets",
                     defaultBundle = "main",
                 )
             } else {
-                AssetsConfig(
-                    publicFolder = assetsConfig.property("publicFolder").getString(),
-                    defaultBundle = assetsConfig.property("defaultBundle").getString(),
+                BundlesConfig(
+                    publicFolder = bundlesConfig.property("publicFolder").getString(),
+                    defaultBundle = bundlesConfig.property("defaultBundle").getString(),
                 )
             }
         }

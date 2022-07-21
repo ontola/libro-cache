@@ -46,7 +46,7 @@ import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
 import io.ontola.apex.webmanifest.Icon
 import io.ontola.apex.webmanifest.Manifest
-import io.ontola.cache.assets.Assets
+import io.ontola.cache.bundle.Bundle
 import io.ontola.cache.csp.CSP
 import io.ontola.cache.csp.cspReportEndpointPath
 import io.ontola.cache.csp.mountCSP
@@ -207,7 +207,7 @@ fun Application.module(
 
     install(IgnoreTrailingSlash)
 
-    install(Assets)
+    install(Bundle)
 
     install(ServiceRegistry) {
         if (testing) {

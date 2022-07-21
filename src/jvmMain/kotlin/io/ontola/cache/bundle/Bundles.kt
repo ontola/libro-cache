@@ -1,16 +1,16 @@
-package io.ontola.cache.assets
+package io.ontola.cache.bundle
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AssetsManifests(
-    val es5: ResourcesManifest,
-    val es6: ResourcesManifest,
+data class Bundles(
+    val es5: BundleManifest,
+    val es6: BundleManifest,
 )
 
 @Serializable
-data class ResourcesManifest(
+data class BundleManifest(
     val publicFolder: String? = null,
     val defaultBundle: String? = null,
     @SerialName("./sw.js")

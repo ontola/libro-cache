@@ -1,7 +1,7 @@
 package io.ontola.cache.document
 
 import io.ontola.apex.webmanifest.Manifest
-import io.ontola.cache.assets.AssetsManifests
+import io.ontola.cache.bundle.Bundles
 import io.ontola.color.Color
 import io.ontola.color.isLight
 import io.ontola.empathy.web.DataSlice
@@ -38,7 +38,7 @@ data class BugsnagOpts(
 @Serializable
 data class PageConfiguration(
     val appElement: String,
-    val assets: AssetsManifests,
+    val bundles: Bundles,
     val env: String? = null,
     val bugsnagOpts: BugsnagOpts? = null,
     val facebookAppId: String? = null,
@@ -190,19 +190,19 @@ fun BODY.manifestBlock(nonce: String, manifest: Manifest, serializer: Json) {
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-fun BODY.assetsBlock(nonce: String, config: PageConfiguration) {
+fun BODY.bundlesBlock(nonce: String, config: PageConfiguration) {
     script(type = "module") {
         async = true
         this.nonce = nonce
         attributes["crossorigin"] = "anonymous"
-        src = config.assets.es6.mainJs
+        src = config.bundles.es6.mainJs
     }
     script(type = "application/javascript") {
         async = true
         this.nonce = nonce
         attributes["nomodule"] = "true"
         attributes["crossorigin"] = "anonymous"
-        src = config.assets.es5.mainJs
+        src = config.bundles.es5.mainJs
     }
 }
 
@@ -225,7 +225,7 @@ fun HTML.indexPage(ctx: PageRenderContext) {
         preloadBlock(nonce, config, manifest)
         serviceWorkerBlock(nonce, manifest)
         seedBlock(nonce, data, ctx.serializer)
-        assetsBlock(nonce, config)
+        bundlesBlock(nonce, config)
 //            deferredBodyStyles(nonceStr)
         manifestBlock(nonce, manifest, ctx.serializer)
 //            browserUpdateBlock()

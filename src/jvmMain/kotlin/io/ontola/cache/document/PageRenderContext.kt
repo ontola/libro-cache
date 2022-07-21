@@ -3,7 +3,7 @@ package io.ontola.cache.document
 import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
 import io.ontola.apex.webmanifest.Manifest
-import io.ontola.cache.assets.assets
+import io.ontola.cache.bundle.bundles
 import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.language
 import io.ontola.cache.plugins.sessionManager
@@ -40,7 +40,7 @@ fun ApplicationCall.pageRenderContextFromCall(
         manifest = manifest ?: tenant.manifest,
         configuration = PageConfiguration(
             appElement = "root",
-            assets = assets,
+            bundles = bundles,
             tileServerUrl = application.cacheConfig.maps?.mapboxTileURL,
             bugsnagOpts = application.cacheConfig.clientReportingKey?.let {
                 BugsnagOpts(

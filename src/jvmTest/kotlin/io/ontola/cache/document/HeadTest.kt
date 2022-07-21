@@ -2,7 +2,7 @@ package io.ontola.cache.document
 
 import io.ktor.http.Url
 import io.ontola.apex.webmanifest.Manifest
-import io.ontola.cache.assets.loadAssetsManifests
+import io.ontola.cache.bundle.loadBundleManifests
 import io.ontola.cache.plugins.generateCSRFToken
 import io.ontola.empathy.web.DataSlice
 import io.ontola.empathy.web.Record
@@ -20,7 +20,7 @@ class HeadTest {
         withCacheTestApplication { ctx ->
             val config = PageConfiguration(
                 appElement = "root",
-                assets = loadAssetsManifests(ctx.config),
+                bundles = loadBundleManifests(ctx.config),
             )
             val csrf = generateCSRFToken()
             val href = Url("https://mysite.local")
@@ -68,7 +68,7 @@ class HeadTest {
         withCacheTestApplication { ctx ->
             val config = PageConfiguration(
                 appElement = "root",
-                assets = loadAssetsManifests(ctx.config),
+                bundles = loadBundleManifests(ctx.config),
             )
             val csrf = generateCSRFToken()
             val href = Url("https://mysite.local/site")

@@ -168,7 +168,7 @@ private fun HEAD.stylesheets(config: PageConfiguration, nonce: String) {
     val openSans = "https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap"
     val fontAwesome = "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
 
-    link(rel = "stylesheet", type = "text/css", href = config.assets.es6.mainCss) {
+    link(rel = "stylesheet", type = "text/css", href = config.bundles.es6.mainCss) {
         attributes["crossorigin"] = "anonymous"
     }
 
