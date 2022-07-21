@@ -12,17 +12,19 @@ import io.ontola.cache.plugins.cacheConfig
 import io.ontola.cache.plugins.services
 import io.ontola.cache.util.copy
 
-fun Headers.proto(): String = get("X-Forwarded-Proto")?.split(',')?.firstOrNull()
+internal fun Headers.proto(): String = get("X-Forwarded-Proto")?.split(',')?.firstOrNull()
     ?: get("scheme")
     ?: get("origin")?.let { Url(it).protocol.name }
     ?: "http"
 
-@OptIn(InternalAPI::class)
-internal suspend fun ApplicationCall.getTenant(resourceIri: String): TenantFinderResponse {
+/**
+ * Queries the `find_tenant` SPI endpoint for a given [recordId].
+ */
+internal suspend fun ApplicationCall.getTenant(recordId: String): TenantFinderResponse {
     return application.cacheConfig.client.get {
         url.apply {
             takeFrom(services.route("/_public/spi/find_tenant"))
-            parameters["iri"] = resourceIri
+            parameters["iri"] = recordId
         }
         headers {
             copy("X-Request-Id", request)

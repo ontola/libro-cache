@@ -10,6 +10,9 @@ import mu.KLogger
 
 private fun Boolean.toInt(): Int = if (this) 1 else 0
 
+/**
+ * Returns the origin with the first path segment when present.
+ */
 internal fun ApplicationRequest.closeToWebsiteIRI(logger: KLogger): String {
     val authoritativeOrigin = origin()
     val requestPath = path()

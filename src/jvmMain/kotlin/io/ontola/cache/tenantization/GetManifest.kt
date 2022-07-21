@@ -16,6 +16,9 @@ import io.ontola.cache.util.copy
 import io.ontola.cache.util.proxySafeHeaders
 import io.ontola.util.appendPath
 
+/**
+ * Retrieves the [io.ontola.apex.webmanifest.Manifest] from the connected backend.
+ */
 internal suspend inline fun <reified K> ApplicationCall.getManifest(websiteBase: Url): K {
     val manifestUrl = websiteBase.appendPath("manifest.json")
     val manifestRequest = application.cacheConfig.client.get(services.route(manifestUrl.fullPath)) {

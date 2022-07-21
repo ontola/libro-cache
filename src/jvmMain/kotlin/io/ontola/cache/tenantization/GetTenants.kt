@@ -43,6 +43,10 @@ internal suspend fun ApplicationCall.getTenantsRequest(): HttpResponse = applica
             copy("X-Real-Ip", request)
         }
     }
+
+/**
+ * Queries the `tenants` SPI endpoint for all the known tenants.
+ */
 internal suspend fun ApplicationCall.getTenants(): TenantsResponse {
     val response = getTenantsRequest()
 

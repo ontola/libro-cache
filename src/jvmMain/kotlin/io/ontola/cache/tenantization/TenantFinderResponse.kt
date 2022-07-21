@@ -4,6 +4,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
+/**
+ * Response of the `find_tenant` SPI endpoint.
+ */
 @Serializable
 data class TenantFinderResponse(
     val uuid: String? = null,

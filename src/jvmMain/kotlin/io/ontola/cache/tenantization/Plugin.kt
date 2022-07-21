@@ -8,8 +8,6 @@ import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.plugin
-import io.ktor.server.locations.url
-import io.ktor.server.plugins.origin
 import io.ktor.server.request.uri
 import io.ktor.util.AttributeKey
 import io.ontola.apex.webmanifest.Manifest
