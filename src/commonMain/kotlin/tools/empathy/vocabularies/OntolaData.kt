@@ -1,9 +1,9 @@
 package tools.empathy.vocabularies
 
-import io.ontola.empathy.web.dataSliceNonSuspend
 import tools.empathy.model.RdfProperty
 import tools.empathy.model.add
 import tools.empathy.model.langMap
+import tools.empathy.serialization.dataSliceNonSuspend
 
 val OntolaData = dataSliceNonSuspend {
     add(

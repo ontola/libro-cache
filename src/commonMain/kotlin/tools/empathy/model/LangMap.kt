@@ -1,6 +1,6 @@
 package tools.empathy.model
 
-import io.ontola.empathy.web.Value
+import tools.empathy.serialization.Value
 
 /**
  * A map of language values.

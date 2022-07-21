@@ -128,6 +128,14 @@ java {
     }
 }
 
+tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
+    dokkaSourceSets {
+        all {
+            includes.from("Module.md")
+        }
+    }
+}
+
 tasks {
     shadowJar {
         manifest {
@@ -136,7 +144,7 @@ tasks {
     }
 }
 
-group = "io.ontola"
+group = "tools.empathy.libro"
 version = "2.0.0"
 
 application {

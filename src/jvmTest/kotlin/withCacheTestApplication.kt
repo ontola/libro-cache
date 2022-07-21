@@ -11,14 +11,14 @@ import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.setBody
 import io.ktor.server.testing.withApplication
 import io.ktor.util.logging.KtorSimpleLogger
-import io.ontola.apex.webmanifest.Manifest
-import io.ontola.cache.module
-import io.ontola.cache.plugins.CacheConfig
-import io.ontola.cache.plugins.StorageAdapter
-import io.ontola.cache.sessions.SessionData
-import io.ontola.cache.sessions.TokenPair
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import tools.empathy.libro.server.module
+import tools.empathy.libro.server.plugins.CacheConfig
+import tools.empathy.libro.server.plugins.StorageAdapter
+import tools.empathy.libro.server.sessions.SessionData
+import tools.empathy.libro.server.sessions.TokenPair
+import tools.empathy.libro.webmanifest.Manifest
 import kotlin.test.assertEquals
 
 data class TestContext(

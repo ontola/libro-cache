@@ -4,13 +4,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import io.ontola.apex.webmanifest.Manifest
-import io.ontola.cache.bulk.CacheControl
-import io.ontola.cache.bulk.CacheEntry
-import io.ontola.cache.plugins.CacheConfig
-import io.ontola.cache.plugins.StorageAdapter
-import io.ontola.cache.tenantization.CachedLookupKeys
-import io.ontola.cache.util.KeyManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
@@ -18,6 +11,13 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
+import tools.empathy.libro.server.bulk.CacheControl
+import tools.empathy.libro.server.bulk.CacheEntry
+import tools.empathy.libro.server.plugins.CacheConfig
+import tools.empathy.libro.server.plugins.StorageAdapter
+import tools.empathy.libro.server.tenantization.CachedLookupKeys
+import tools.empathy.libro.server.util.KeyManager
+import tools.empathy.libro.webmanifest.Manifest
 
 data class TestStorageAdapterBuilder(
     val cacheConfig: CacheConfig,

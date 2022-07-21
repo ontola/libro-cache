@@ -1,19 +1,17 @@
 package tools.empathy.model
 
-import io.ontola.empathy.web.DataSlice
-import io.ontola.empathy.web.Entity
-import io.ontola.empathy.web.Value
-import io.ontola.empathy.web.field
-import io.ontola.empathy.web.id
-import io.ontola.empathy.web.int
-import io.ontola.empathy.web.record
-import io.ontola.empathy.web.s
-import io.ontola.empathy.web.type
+import tools.empathy.serialization.DataSlice
+import tools.empathy.serialization.Entity
+import tools.empathy.serialization.Value
+import tools.empathy.serialization.field
+import tools.empathy.serialization.id
+import tools.empathy.serialization.int
+import tools.empathy.serialization.record
+import tools.empathy.serialization.s
+import tools.empathy.serialization.type
 import tools.empathy.vocabularies.ActivityStreams
-import tools.empathy.vocabularies.ActivityStreams.id
 import tools.empathy.vocabularies.LinkLib
 import tools.empathy.vocabularies.Ontola
-import tools.empathy.vocabularies.Ontola.sortDirection
 import tools.empathy.vocabularies.Schema
 
 sealed class CollectionDisplay(override val id: Value.Id) : Entity {

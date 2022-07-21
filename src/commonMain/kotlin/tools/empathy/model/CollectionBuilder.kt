@@ -1,10 +1,9 @@
 package tools.empathy.model
 
-import io.ontola.empathy.web.DataSlice
-import io.ontola.empathy.web.Value
 import tools.empathy.model.collection.PaginatedView
 import tools.empathy.model.collection.add
-import tools.empathy.vocabularies.ActivityStreams.totalItems
+import tools.empathy.serialization.DataSlice
+import tools.empathy.serialization.Value
 
 class CollectionBuilder {
     lateinit var id: Value.Id

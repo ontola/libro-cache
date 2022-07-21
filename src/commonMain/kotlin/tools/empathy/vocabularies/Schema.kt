@@ -1,6 +1,6 @@
 package tools.empathy.vocabularies
 
-import io.ontola.empathy.web.Value
+import tools.empathy.serialization.Value
 
 object Schema : Vocab {
     override val vocab = "http://schema.org/"

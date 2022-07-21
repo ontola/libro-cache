@@ -1,6 +1,6 @@
 package tools.empathy.vocabularies
 
-import io.ontola.empathy.web.Value
+import tools.empathy.serialization.Value
 import kotlin.reflect.KProperty
 
 class Term(val term: String? = null) {

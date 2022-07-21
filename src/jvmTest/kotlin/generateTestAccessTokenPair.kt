@@ -1,10 +1,10 @@
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import io.ontola.cache.plugins.SessionsConfig
-import io.ontola.cache.sessions.UserType
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
+import tools.empathy.libro.server.plugins.SessionsConfig
+import tools.empathy.libro.server.sessions.UserType
 import java.util.Date
 import kotlin.time.Duration.Companion.hours
 

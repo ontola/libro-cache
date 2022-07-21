@@ -1,6 +1,6 @@
 package tools.empathy.vocabularies
 
-import io.ontola.empathy.web.Value
+import tools.empathy.serialization.Value
 
 object Ontola : Vocab {
     override val vocab: String = "https://ns.ontola.io/core#"
