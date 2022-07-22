@@ -13,7 +13,7 @@ import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.AttributeKey
 import kotlinx.serialization.decodeFromString
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.plugins.sessionManager
 import tools.empathy.libro.server.sessions.SessionData
 
@@ -23,7 +23,7 @@ fun Routing.mountTestingRoutes() {
             return@post
         }
 
-        val newSession = call.application.cacheConfig.serializer.decodeFromString<SessionData>(call.receive<String>())
+        val newSession = call.application.libroConfig.serializer.decodeFromString<SessionData>(call.receive<String>())
         call.sessions.set(newSession)
         call.respond(HttpStatusCode.OK)
     }

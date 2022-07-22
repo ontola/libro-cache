@@ -23,10 +23,10 @@ import mu.KotlinLogging
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.core.XmlVersion
 import nl.adaptivity.xmlutil.serialization.XML
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.document.PageRenderContext
 import tools.empathy.libro.server.document.pageRenderContextFromCall
 import tools.empathy.libro.server.plugins.blacklisted
-import tools.empathy.libro.server.plugins.cacheConfig
 import tools.empathy.libro.server.plugins.setManifestLanguage
 import tools.empathy.libro.server.util.measured
 import tools.empathy.libro.webmanifest.Manifest
@@ -71,8 +71,9 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
     }
 
     suspend fun intercept(call: ApplicationCall) {
-        if (call.blacklisted)
+        if (call.blacklisted) {
             return
+        }
 
         lateinit var uri: Url
         val publication = call.measured("studioLookup") {
@@ -100,7 +101,7 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
 
         if (uri.filename() == "manifest.json") {
             call.respondOutputStream(ContentType.Application.Json) {
-                application.cacheConfig.serializer.encodeToStream(distribution.manifest, this)
+                application.libroConfig.serializer.encodeToStream(distribution.manifest, this)
             }
         } else if (uri.filename() == "sitemap.txt") {
             call.respondText(distribution.sitemap)

@@ -15,8 +15,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
 import mu.KotlinLogging
 import tools.empathy.libro.server.Metrics
-import tools.empathy.libro.server.plugins.CacheConfig
-import tools.empathy.libro.server.plugins.RedisConfig
+import tools.empathy.libro.server.configuration.LibroConfig
+import tools.empathy.libro.server.configuration.RedisConfig
 import tools.empathy.libro.server.util.KeyManager
 import java.net.InetAddress
 import kotlin.concurrent.thread
@@ -67,7 +67,7 @@ fun Application.module(testing: Boolean = false) {
 
     thread {
         logger.info("Invalidator started")
-        val config = CacheConfig.fromEnvironment(environment.config, testing)
+        val config = LibroConfig.fromEnvironment(environment.config, testing)
 
         val streamRedis = RedisClient.create(config.streamRedisURI)
         val streamRedisConn = streamRedis.connect().coroutines()

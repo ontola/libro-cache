@@ -1,7 +1,7 @@
 package tools.empathy.libro.server.sessions
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import tools.empathy.libro.server.plugins.RedisConfig
+import tools.empathy.libro.server.configuration.RedisConfig
 import tools.empathy.libro.server.plugins.StorageAdapter
 import tools.empathy.libro.server.util.KeyManager
 

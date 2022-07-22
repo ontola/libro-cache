@@ -9,6 +9,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.runBlocking
+import tools.empathy.libro.server.configuration.LibroConfig
 import tools.empathy.libro.server.util.KeyManager
 import withCacheTestApplication
 import kotlin.test.Test
@@ -25,7 +26,7 @@ class StorageTest {
         val expiry: CapturingSlot<Long> = slot(),
     ) {
         private val adapter = mockk<StorageAdapter<String, String>>()
-        private val config = CacheConfig.fromEnvironment(environment.config, true)
+        private val config = LibroConfig.fromEnvironment(environment.config, true)
         private val manager = KeyManager(config.redis)
 
         val storage = Storage(adapter, manager, 0L)

@@ -17,7 +17,7 @@ import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.plugins.persistentStorage
 import tools.empathy.libro.server.plugins.sessionManager
 import tools.empathy.url.UrlSerializer
@@ -42,7 +42,7 @@ fun Routing.mountStudio() {
     }
 
     post("/_studio/projects") {
-        val studioConfig = application.cacheConfig.studio
+        val studioConfig = application.libroConfig.studio
         if (!studioConfig.skipAuth && !call.sessionManager.isStaff)
             return@post call.respond(HttpStatusCode.Forbidden)
 
@@ -57,13 +57,13 @@ fun Routing.mountStudio() {
 
             call.respond(body)
         } catch (e: Exception) {
-            application.cacheConfig.notify(e)
+            application.libroConfig.notify(e)
             call.respond(HttpStatusCode.InternalServerError)
         }
     }
 
     get("/_studio/projects") {
-        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
+        if (!application.libroConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val projects = projectRepo
@@ -74,7 +74,7 @@ fun Routing.mountStudio() {
     }
 
     put("/_studio/projects/{projectId}") {
-        val studioConfig = application.cacheConfig.studio
+        val studioConfig = application.libroConfig.studio
         if (!studioConfig.skipAuth && !call.sessionManager.isStaff)
             return@put call.respond(HttpStatusCode.Forbidden)
 
@@ -89,13 +89,13 @@ fun Routing.mountStudio() {
 
             call.respond(body)
         } catch (e: Exception) {
-            application.cacheConfig.notify(e)
+            application.libroConfig.notify(e)
             call.respond(HttpStatusCode.InternalServerError)
         }
     }
 
     get("/_studio/projects/{projectId}") {
-        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
+        if (!application.libroConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val id = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
@@ -105,7 +105,7 @@ fun Routing.mountStudio() {
     }
 
     get("/_studio/projects/{projectId}/distributions/{distributionId}") {
-        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
+        if (!application.libroConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val projectId = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
@@ -117,7 +117,7 @@ fun Routing.mountStudio() {
     }
 
     get("/_studio/projects/{projectId}/distributions/{distributionId}/meta") {
-        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
+        if (!application.libroConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val projectId = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
@@ -128,7 +128,7 @@ fun Routing.mountStudio() {
     }
 
     get("/_studio/projects/{projectId}/distributions") {
-        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
+        if (!application.libroConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val id = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
@@ -138,7 +138,7 @@ fun Routing.mountStudio() {
     }
 
     post("/_studio/projects/{projectId}/distributions") {
-        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
+        if (!application.libroConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@post call.respond(HttpStatusCode.Forbidden)
 
         val id = call.parameters["projectId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
@@ -151,7 +151,7 @@ fun Routing.mountStudio() {
     }
 
     post<String>("/_studio/projects/{projectId}/distributions/{distId}/publication") { startRoute ->
-        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
+        if (!application.libroConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@post call.respond(HttpStatusCode.Forbidden)
 
         val projectId = call.parameters["projectId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
@@ -169,7 +169,7 @@ fun Routing.mountStudio() {
     }
 
     post<String>("/_studio/projects/{projectId}/distributions/{distId}/publication/unmount") { startRoute ->
-        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
+        if (!application.libroConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@post call.respond(HttpStatusCode.Forbidden)
 
         val projectId = call.parameters["projectId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
@@ -189,7 +189,7 @@ fun Routing.mountStudio() {
     }
 
     get("/_studio/projects/{projectId}/publications") {
-        if (!application.cacheConfig.studio.skipAuth && !call.sessionManager.isStaff)
+        if (!application.libroConfig.studio.skipAuth && !call.sessionManager.isStaff)
             return@get call.respond(HttpStatusCode.Forbidden)
 
         val projectId = call.parameters["projectId"] ?: return@get call.respond(HttpStatusCode.BadRequest)

@@ -1,7 +1,7 @@
 package tools.empathy.libro.server.health
 
 import io.ktor.server.application.ApplicationCall
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 
 class EnvironmentCheck : Check() {
     init {
@@ -9,7 +9,7 @@ class EnvironmentCheck : Check() {
     }
 
     override suspend fun runTest(call: ApplicationCall): Exception? {
-        val config = call.application.cacheConfig
+        val config = call.application.libroConfig
         val env = config.env
         val failed = buildList {
             fun checkValue(k: String, v: String?) {

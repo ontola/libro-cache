@@ -45,6 +45,9 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
 import tools.empathy.libro.server.bundle.Bundle
+import tools.empathy.libro.server.configuration.LibroConfig
+import tools.empathy.libro.server.configuration.LibroConfiguration
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.csp.CSP
 import tools.empathy.libro.server.csp.cspReportEndpointPath
 import tools.empathy.libro.server.csp.mountCSP
@@ -54,8 +57,6 @@ import tools.empathy.libro.server.dataproxy.ProxyRule
 import tools.empathy.libro.server.health.mountHealth
 import tools.empathy.libro.server.plugins.Blacklist
 import tools.empathy.libro.server.plugins.CSRFVerificationException
-import tools.empathy.libro.server.plugins.CacheConfig
-import tools.empathy.libro.server.plugins.CacheConfiguration
 import tools.empathy.libro.server.plugins.CacheSession
 import tools.empathy.libro.server.plugins.CsrfProtection
 import tools.empathy.libro.server.plugins.DevelopmentSupport
@@ -70,7 +71,6 @@ import tools.empathy.libro.server.plugins.SessionLanguage
 import tools.empathy.libro.server.plugins.StorageAdapter
 import tools.empathy.libro.server.plugins.StoragePlugin
 import tools.empathy.libro.server.plugins.Versions
-import tools.empathy.libro.server.plugins.cacheConfig
 import tools.empathy.libro.server.plugins.language
 import tools.empathy.libro.server.plugins.managementTenant
 import tools.empathy.libro.server.plugins.requestTimings
@@ -123,7 +123,7 @@ fun Application.module(
     client: HttpClient? = null,
 ) {
     Versions.print()
-    val config = CacheConfig.fromEnvironment(environment.config, testing, client)
+    val config = LibroConfig.fromEnvironment(environment.config, testing, client)
     config.print()
     val adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
     val persistentAdapter =
@@ -203,7 +203,7 @@ fun Application.module(
         }
     }
 
-    install(CacheConfiguration) {
+    install(LibroConfiguration) {
         this.config = config
     }
 
@@ -274,7 +274,7 @@ fun Application.module(
     install(Sessions) {
         cookie<SessionData>(
             name = "identity",
-            storage = RedisSessionStorage(persistentAdapter, cacheConfig.redis),
+            storage = RedisSessionStorage(persistentAdapter, libroConfig.redis),
         ) {
             cookie.httpOnly = true
             cookie.secure = true
@@ -346,12 +346,12 @@ fun Application.module(
     }
 
     install(Tenantization) {
-        val management = managementTenant(cacheConfig.management.origin, cacheConfig.client)
+        val management = managementTenant(libroConfig.management.origin, libroConfig.client)
 
         staticTenants = mapOf(
             management.websiteOrigin.host to management,
             config.studio.domain to TenantData(
-                client = cacheConfig.client,
+                client = libroConfig.client,
                 websiteIRI = config.studio.origin,
                 websiteOrigin = config.studio.origin,
                 manifest = Manifest.forWebsite(config.studio.origin).copy(
@@ -447,12 +447,12 @@ fun Application.module(
         )
         transforms[Regex("^/([\\w/]*/)?login$")] = loginTransform
 
-        developmentMode = testing || this@module.cacheConfig.isDev
+        developmentMode = testing || this@module.libroConfig.isDev
 
         binaryClient = HttpClient(CIO) {
             followRedirects = true
             expectSuccess = false
-            developmentMode = testing || this@module.cacheConfig.isDev
+            developmentMode = testing || this@module.libroConfig.isDev
             install(io.ktor.client.plugins.logging.Logging) {
                 configureClientLogging()
             }

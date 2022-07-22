@@ -15,8 +15,8 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import tools.empathy.libro.server.plugins.MapsConfig
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.MapsConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import kotlin.time.Duration.Companion.hours
 
 @Serializable
@@ -37,7 +37,7 @@ fun Routing.mountMaps() {
             return@get
         }
 
-        val mapsConfig = call.application.cacheConfig.maps ?: error("Maps service credentials not configured")
+        val mapsConfig = call.application.libroConfig.maps ?: error("Maps service credentials not configured")
 
         val token = call.createMapsToken(mapsConfig)
 
@@ -46,7 +46,7 @@ fun Routing.mountMaps() {
 }
 
 private suspend fun ApplicationCall.createMapsToken(mapsConfig: MapsConfig): AccessTokenResponse {
-    val config = application.cacheConfig
+    val config = application.libroConfig
     val expiresAt = Clock.System.now().plus(1.hours).toString()
 
     val response = config.client.post(mapsConfig.tokenEndpoint) {

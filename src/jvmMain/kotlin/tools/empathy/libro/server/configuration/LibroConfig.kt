@@ -1,129 +1,19 @@
-package tools.empathy.libro.server.plugins
+package tools.empathy.libro.server.configuration
 
 import com.bugsnag.Bugsnag
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
-import io.ktor.server.application.ApplicationCallPipeline
-import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.config.ApplicationConfig
-import io.ktor.util.AttributeKey
 import io.ktor.utils.io.printStack
 import io.lettuce.core.RedisURI
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import tools.empathy.libro.server.createClient
 import tools.empathy.libro.server.csp.CSPReportException
+import tools.empathy.libro.server.plugins.Versions
 import kotlin.time.Duration.Companion.minutes
 
-data class SessionsConfig(
-    /**
-     * The secret used for verifying session signatures.
-     */
-    val sessionSecret: String,
-    /**
-     * Token used to encrypt the session JWTs
-     */
-    val jwtEncryptionToken: String,
-    /**
-     * The id to identify this client.
-     */
-    val clientId: String,
-    /**
-     * The secret to identify this client.
-     */
-    val clientSecret: String,
-    /**
-     * TODO: Refactor away
-     */
-    val oAuthToken: String,
-    /**
-     * The url of the OIDC identity provider
-     */
-    val oidcUrl: Url,
-) {
-    companion object {
-        fun forTesting(): SessionsConfig = SessionsConfig(
-            sessionSecret = "secret",
-            jwtEncryptionToken = "jwtEncryptionToken",
-            clientId = "0",
-            clientSecret = "",
-            oidcUrl = Url("https://oidcserver.test"),
-            oAuthToken = "",
-        )
-    }
-}
-
-data class RedisConfig(
-    /**
-     * The redis uri where the cache writes resources to.
-     */
-    val uri: RedisURI,
-
-    /**
-     * Root prefix to prepend to all keys.
-     */
-    val rootPrefix: String? = null,
-
-    /**
-     * Cache-specific prefix to append to the [rootPrefix] but before all other keys.
-     */
-    val cachePrefix: String? = "cache",
-
-    /**
-     * Key part for cache entries.
-     */
-    val cacheEntryPrefix: String = "entry",
-
-    /**
-     * Separator to use inbetween key parts
-     * https://redis.io/topics/data-types-intro#redis-keys
-     */
-    val separator: String = ":",
-    /**
-     * The channel where invalidation messages will be broadcast.
-     */
-    val invalidationChannel: String,
-    /**
-     * The group used when reading from the [invalidationChannel].
-     */
-    val invalidationGroup: String,
-)
-
-data class MapsConfig(
-    val username: String,
-    val key: String,
-    val scopes: List<String> = listOf(
-        "styles:tiles",
-        "styles:read",
-        "fonts:read",
-        "datasets:read",
-    ),
-) {
-    private val mapboxTileAPIBase = "https://api.mapbox.com/styles/v1"
-    private val mapboxTileStyle = "mapbox/streets-v11"
-
-    val mapboxTileURL = "$mapboxTileAPIBase/$mapboxTileStyle"
-    val tokenEndpoint = "https://api.mapbox.com/tokens/v2/$username?access_token=$key"
-}
-
-data class BundlesConfig(
-    val es6ManifestLocation: String = "./assets/manifest.module.json",
-    val es5ManifestLocation: String = "./assets/manifest.legacy.json",
-    val publicFolder: String,
-    val defaultBundle: String,
-)
-
-data class ManagementConfig(
-    val origin: Url,
-)
-
-data class StudioConfig(
-    val skipAuth: Boolean,
-    val domain: String,
-    val origin: Url = Url("https://$domain"),
-)
-
-data class CacheConfig constructor(
+data class LibroConfig constructor(
     /**
      * Whether the application is running in test mode.
      */
@@ -209,9 +99,9 @@ data class CacheConfig constructor(
         null
     } else {
         Bugsnag(serverReportingKey).apply {
-            setAppVersion(this@CacheConfig.serverVersion)
+            setAppVersion(this@LibroConfig.serverVersion)
             setAppType("libro-server")
-            setReleaseStage(this@CacheConfig.env)
+            setReleaseStage(this@LibroConfig.env)
             addCallback {
                 when (val exception = it.exception!!) {
                     is CSPReportException -> {
@@ -243,28 +133,28 @@ data class CacheConfig constructor(
             config: ApplicationConfig,
             testing: Boolean,
             client: HttpClient? = null,
-        ): CacheConfig {
-            val cacheConfig = config.config("cache")
+        ): LibroConfig {
+            val libroConfig = config.config("libro")
 
-            val (persistentRedisURI, streamRedisURI, redisConfig) = redisConfig(cacheConfig, testing)
+            val (persistentRedisURI, streamRedisURI, redisConfig) = redisConfig(libroConfig, testing)
 
-            return CacheConfig(
-                bundles = bundlesConfig(cacheConfig, testing),
+            return LibroConfig(
+                bundles = bundlesConfig(libroConfig, testing),
                 port = config.config("ktor").config("deployment").property("port").getString().toInt(),
                 testing = testing,
-                management = managementConfig(cacheConfig, testing),
-                sessions = sessionsConfig(cacheConfig, testing),
+                management = managementConfig(libroConfig, testing),
+                sessions = sessionsConfig(libroConfig, testing),
                 persistentRedisURI = persistentRedisURI,
                 streamRedisURI = streamRedisURI,
                 redis = redisConfig,
-                services = cacheConfig.config("services"),
-                defaultLanguage = defaultLanguage(cacheConfig, testing),
+                services = libroConfig.config("services"),
+                defaultLanguage = defaultLanguage(libroConfig, testing),
                 studio = studioConfig(config),
                 enableInvalidator = true, // TODO
-                maps = mapsConfig(cacheConfig, testing),
-                serverReportingKey = cacheConfig.config("reporting").propertyOrNull("serverReportingKey")?.getString(),
-                clientReportingKey = cacheConfig.config("reporting").propertyOrNull("clientReportingKey")?.getString(),
-                cacheExpiration = cacheConfig.propertyOrNull("cacheExpiration")?.toString()?.toLongOrNull(),
+                maps = mapsConfig(libroConfig, testing),
+                serverReportingKey = libroConfig.config("reporting").propertyOrNull("serverReportingKey")?.getString(),
+                clientReportingKey = libroConfig.config("reporting").propertyOrNull("clientReportingKey")?.getString(),
+                cacheExpiration = libroConfig.propertyOrNull("cacheExpiration")?.toString()?.toLongOrNull(),
                 clientOverride = client,
                 serverVersion = Versions.ServerVersion,
                 clientVersion = Versions.ClientVersion,
@@ -272,19 +162,19 @@ data class CacheConfig constructor(
         }
 
         private fun defaultLanguage(
-            cacheConfig: ApplicationConfig,
+            libroConfig: ApplicationConfig,
             testing: Boolean,
         ): String = if (testing) {
             "en"
         } else {
-            cacheConfig.property("defaultLanguage").getString()
+            libroConfig.property("defaultLanguage").getString()
         }
 
         private fun bundlesConfig(
-            cacheConfig: ApplicationConfig,
+            libroConfig: ApplicationConfig,
             testing: Boolean,
         ): BundlesConfig {
-            val bundlesConfig = cacheConfig.config("bundle")
+            val bundlesConfig = libroConfig.config("bundle")
 
             return if (testing) {
                 BundlesConfig(
@@ -300,7 +190,7 @@ data class CacheConfig constructor(
         }
 
         private fun redisConfig(
-            cacheConfig: ApplicationConfig,
+            libroConfig: ApplicationConfig,
             testing: Boolean,
         ): Triple<RedisURI, RedisURI, RedisConfig> = if (testing) {
             // TODO: in-memory redis
@@ -325,7 +215,7 @@ data class CacheConfig constructor(
 
             Triple(persistentRedisURI, streamRedisURI, redisConfig)
         } else {
-            val redisConfigProp = cacheConfig.config("services").config("redis")
+            val redisConfigProp = libroConfig.config("services").config("redis")
             val redisHost = redisConfigProp.property("host").getString()
             val redisPort = redisConfigProp.property("port").getString().toInt()
             val redisDb = redisConfigProp.property("db").getString().toInt()
@@ -334,8 +224,7 @@ data class CacheConfig constructor(
             val redisSsl = redisConfigProp.propertyOrNull("ssl")?.getString()?.toBoolean()
             val persistentRedisDb = redisConfigProp.property("persistentDb").getString().toInt()
             val streamRedisDb = redisConfigProp.property("streamDb").getString().toInt()
-            fun redisUrl(db: Int) = RedisURI
-                .builder()
+            fun redisUrl(db: Int) = RedisURI.builder()
                 .withHost(redisHost)
                 .withPort(redisPort)
                 .withDatabase(db)
@@ -364,29 +253,28 @@ data class CacheConfig constructor(
         }
 
         private fun mapsConfig(
-            cacheConfig: ApplicationConfig,
+            libroConfig: ApplicationConfig,
             testing: Boolean,
         ): MapsConfig? {
             if (testing) {
                 return null
             }
 
-            val username = cacheConfig.config("maps").propertyOrNull("username")?.getString() ?: return null
-            val key = cacheConfig.config("maps").propertyOrNull("key")?.getString() ?: return null
+            val username = libroConfig.config("maps").propertyOrNull("username")?.getString() ?: return null
+            val key = libroConfig.config("maps").propertyOrNull("key")?.getString() ?: return null
 
             return MapsConfig(
                 username = username,
                 key = key,
             )
         }
-
-        private fun managementConfig(cacheConfig: ApplicationConfig, testing: Boolean): ManagementConfig {
+        private fun managementConfig(libroConfig: ApplicationConfig, testing: Boolean): ManagementConfig {
             if (testing) {
-                ManagementConfig(
+                return ManagementConfig(
                     origin = Url("https://localhost"),
                 )
             }
-            val managementConfig = cacheConfig.config("management")
+            val managementConfig = libroConfig.config("management")
 
             return ManagementConfig(
                 origin = Url(managementConfig.property("origin").getString()),
@@ -394,11 +282,11 @@ data class CacheConfig constructor(
         }
 
         private fun sessionsConfig(
-            cacheConfig: ApplicationConfig,
+            libroConfig: ApplicationConfig,
             testing: Boolean,
         ): SessionsConfig {
-            val services = cacheConfig.config("services")
-            val cacheSession = cacheConfig.config("session")
+            val services = libroConfig.config("services")
+            val libroSession = libroConfig.config("session")
 
             return if (testing) {
                 SessionsConfig.forTesting()
@@ -406,8 +294,8 @@ data class CacheConfig constructor(
                 val oidcConfig = services.config("oidc")
 
                 SessionsConfig(
-                    sessionSecret = cacheSession.property("secret").getString(),
-                    jwtEncryptionToken = cacheSession.property("jwtEncryptionToken").getString(),
+                    sessionSecret = libroSession.property("secret").getString(),
+                    jwtEncryptionToken = libroSession.property("jwtEncryptionToken").getString(),
                     clientId = oidcConfig.property("clientId").getString(),
                     clientSecret = oidcConfig.property("clientSecret").getString(),
                     oAuthToken = oidcConfig.property("oAuthToken").getString(),
@@ -462,26 +350,3 @@ data class CacheConfig constructor(
         }
     }
 }
-
-class Configuration {
-    lateinit var config: CacheConfig
-}
-
-private val cacheConfigurationKey = AttributeKey<CacheConfig>("CacheConfiguration")
-
-val CacheConfiguration = createApplicationPlugin(name = "CacheConfiguration", ::Configuration) {
-    application.attributes.put(cacheConfigurationKey, pluginConfig.config)
-
-    onCall {
-        it.attributes.put(cacheConfigurationKey, pluginConfig.config)
-    }
-}
-
-internal val ApplicationCallPipeline.cacheConfig: CacheConfig
-    get() = attributes.getOrNull(cacheConfigurationKey) ?: reportMissingRegistry()
-
-private fun reportMissingRegistry(): Nothing {
-    throw CacheConfigurationNotYetConfiguredException()
-}
-class CacheConfigurationNotYetConfiguredException :
-    IllegalStateException("Cache configuration is not yet ready: you are asking it to early before the CacheConfiguration feature.")

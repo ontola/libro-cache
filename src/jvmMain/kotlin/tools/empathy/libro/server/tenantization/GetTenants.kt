@@ -14,7 +14,7 @@ import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.plugins.services
 import tools.empathy.libro.server.util.UrlSerializer
 import tools.empathy.libro.server.util.copy
@@ -33,11 +33,11 @@ data class TenantsResponse(
 )
 
 internal suspend fun ApplicationCall.getTenantsRequest(): HttpResponse = application
-    .cacheConfig
+    .libroConfig
     .client
     .get(services.route("/_public/spi/tenants")) {
         headers {
-            header(HttpHeaders.Authorization, "Bearer ${application.cacheConfig.sessions.oAuthToken}")
+            header(HttpHeaders.Authorization, "Bearer ${application.libroConfig.sessions.oAuthToken}")
             proxySafeHeaders(request)
             copy(HttpHeaders.XForwardedFor, request)
             copy("X-Real-Ip", request)

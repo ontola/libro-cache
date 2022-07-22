@@ -4,7 +4,7 @@ import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
 import kotlinx.serialization.json.Json
 import tools.empathy.libro.server.bundle.bundles
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.plugins.language
 import tools.empathy.libro.server.plugins.sessionManager
 import tools.empathy.libro.server.tenantization.tenant
@@ -41,16 +41,16 @@ fun ApplicationCall.pageRenderContextFromCall(
         configuration = PageConfiguration(
             appElement = "root",
             bundles = bundles,
-            tileServerUrl = application.cacheConfig.maps?.mapboxTileURL,
-            bugsnagOpts = application.cacheConfig.clientReportingKey?.let {
+            tileServerUrl = application.libroConfig.maps?.mapboxTileURL,
+            bugsnagOpts = application.libroConfig.clientReportingKey?.let {
                 BugsnagOpts(
                     apiKey = it,
-                    releaseStage = application.cacheConfig.env,
-                    appVersion = application.cacheConfig.clientVersion,
+                    releaseStage = application.libroConfig.env,
+                    appVersion = application.libroConfig.clientVersion,
                 )
             },
         ),
-        serializer = application.cacheConfig.serializer,
+        serializer = application.libroConfig.serializer,
         data = data,
     )
 }

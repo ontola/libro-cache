@@ -12,7 +12,7 @@ import io.ktor.http.authority
 import io.ktor.http.formUrlEncode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.header
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.tenantization.getTenants
 import tools.empathy.libro.server.util.LibroHttpHeaders
 
@@ -23,7 +23,7 @@ class BulkCheck : Check() {
 
     override suspend fun runTest(call: ApplicationCall): Exception? {
         val tenant = call.getTenants().sites.first().location
-        val origin = "http://localhost:${call.application.cacheConfig.port}"
+        val origin = "http://localhost:${call.application.libroConfig.port}"
 
         val response = HttpClient(CIO).post("$origin/link-lib/bulk") {
             headers {

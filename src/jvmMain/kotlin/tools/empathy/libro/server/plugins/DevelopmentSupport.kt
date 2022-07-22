@@ -9,6 +9,7 @@ import io.ktor.server.request.header
 import io.ktor.server.request.host
 import io.ktor.server.request.port
 import io.ktor.server.response.respondRedirect
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.webmanifest.Icon
 import tools.empathy.libro.webmanifest.Manifest
@@ -39,7 +40,7 @@ fun managementTenant(origin: Url, client: HttpClient): TenantData {
 
 val DevelopmentSupport = createApplicationPlugin("DevelopmentSupport") {
     onCall { call ->
-        val config = call.application.cacheConfig
+        val config = call.application.libroConfig
         if (config.isDev) {
             val isLocalHost = call.request.host() == "localhost" && !arrayOf(80, 443).contains(call.request.port())
             val isLocalDevelopment = !call.request.behindProxy() && isLocalHost

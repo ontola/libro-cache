@@ -13,18 +13,18 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import tools.empathy.libro.server.bulk.CacheControl
 import tools.empathy.libro.server.bulk.CacheEntry
-import tools.empathy.libro.server.plugins.CacheConfig
+import tools.empathy.libro.server.configuration.LibroConfig
 import tools.empathy.libro.server.plugins.StorageAdapter
 import tools.empathy.libro.server.tenantization.CachedLookupKeys
 import tools.empathy.libro.server.util.KeyManager
 import tools.empathy.libro.webmanifest.Manifest
 
 data class TestStorageAdapterBuilder(
-    val cacheConfig: CacheConfig,
+    val libroConfig: LibroConfig,
     val resources: MutableList<Triple<String, String, CacheControl>> = mutableListOf(),
     val memoizedManifests: MutableMap<String, Manifest> = mutableMapOf(),
 ) {
-    private val keyManager = KeyManager(cacheConfig.redis)
+    private val keyManager = KeyManager(libroConfig.redis)
     private val keys = mutableListOf<String>()
     private val values = mutableListOf<String>()
     private val hKeys = mutableListOf<String>()
@@ -65,7 +65,7 @@ data class TestStorageAdapterBuilder(
     private fun initManifests() {
         for ((website, manifest) in memoizedManifests) {
             keys.add(keyManager.toKey(CachedLookupKeys.Manifest.name, website))
-            values.add(cacheConfig.serializer.encodeToString(manifest))
+            values.add(libroConfig.serializer.encodeToString(manifest))
         }
     }
 

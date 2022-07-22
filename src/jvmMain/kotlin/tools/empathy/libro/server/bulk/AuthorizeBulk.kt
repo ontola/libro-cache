@@ -17,7 +17,7 @@ import io.ktor.server.sessions.set
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import mu.KotlinLogging
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.plugins.deviceId
 import tools.empathy.libro.server.plugins.language
 import tools.empathy.libro.server.plugins.services
@@ -39,7 +39,7 @@ internal suspend fun ApplicationCall.authorizeBulk(
         .build()
         .encodedPath
 
-    val res: HttpResponse = application.cacheConfig.client.post(services.route(bulkUri)) {
+    val res: HttpResponse = application.libroConfig.client.post(services.route(bulkUri)) {
         timeout {
             requestTimeoutMillis = 120.seconds.inWholeMilliseconds
         }

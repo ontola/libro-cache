@@ -1,4 +1,3 @@
-
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
@@ -13,8 +12,8 @@ import io.ktor.server.testing.withApplication
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import tools.empathy.libro.server.configuration.LibroConfig
 import tools.empathy.libro.server.module
-import tools.empathy.libro.server.plugins.CacheConfig
 import tools.empathy.libro.server.plugins.StorageAdapter
 import tools.empathy.libro.server.sessions.SessionData
 import tools.empathy.libro.server.sessions.TokenPair
@@ -23,7 +22,7 @@ import kotlin.test.assertEquals
 
 data class TestContext(
     val adapter: StorageAdapter<String, String>,
-    val config: CacheConfig,
+    val config: LibroConfig,
 )
 
 data class MockConfiguration(
@@ -56,7 +55,7 @@ fun <R> withCacheTestApplication(
         refreshTokenSuccess
     }
     val client = clientBuilder.build()
-    val config = CacheConfig.fromEnvironment(env.config, true, client)
+    val config = LibroConfig.fromEnvironment(env.config, true, client)
     val adapterBuilder = TestStorageAdapterBuilder(config)
 
     val mockConfig = MockConfiguration(clientBuilder, adapterBuilder)

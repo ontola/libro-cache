@@ -12,7 +12,7 @@ import io.ktor.server.application.ApplicationCall
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.plugins.language
 import tools.empathy.libro.server.plugins.services
 import tools.empathy.libro.server.util.measured
@@ -26,7 +26,7 @@ internal suspend fun ApplicationCall.authorizePlain(
         .asFlow()
         .map {
             it to measured("authorizePlain - $it") {
-                application.cacheConfig.client.get {
+                application.libroConfig.client.get {
                     url(services.route(Url(it).fullPath))
                     initHeaders(this@authorizePlain, lang)
                     headers {

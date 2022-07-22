@@ -3,7 +3,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
-import tools.empathy.libro.server.plugins.SessionsConfig
+import tools.empathy.libro.server.configuration.SessionsConfig
 import tools.empathy.libro.server.sessions.UserType
 import java.util.Date
 import kotlin.time.Duration.Companion.hours

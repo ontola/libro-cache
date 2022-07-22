@@ -5,13 +5,13 @@ package tools.empathy.libro.server.bundle
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.util.AttributeKey
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 
 /**
  * Provides info on the client (JS) bundle.
  */
 val Bundle = createApplicationPlugin(name = "Bundle") {
-    val bundles = loadBundleManifests(application.cacheConfig)
+    val bundles = loadBundleManifests(application.libroConfig)
 
     onCall { call ->
         call.attributes.put(BundleKey, bundles)

@@ -10,7 +10,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.server.application.ApplicationCall
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.plugins.services
 import tools.empathy.libro.server.util.copy
 import tools.empathy.libro.server.util.proxySafeHeaders
@@ -21,7 +21,7 @@ import tools.empathy.url.appendPath
  */
 internal suspend inline fun <reified K> ApplicationCall.getManifest(websiteBase: Url): K {
     val manifestUrl = websiteBase.appendPath("manifest.json")
-    val manifestRequest = application.cacheConfig.client.get(services.route(manifestUrl.fullPath)) {
+    val manifestRequest = application.libroConfig.client.get(services.route(manifestUrl.fullPath)) {
         expectSuccess = false
         headers {
             append("Website-IRI", websiteBase.toString())

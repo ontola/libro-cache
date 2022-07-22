@@ -17,6 +17,8 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import tools.empathy.libro.server.bulk.CacheControl
 import tools.empathy.libro.server.bulk.CacheEntry
+import tools.empathy.libro.server.configuration.LibroConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.util.KeyManager
 import tools.empathy.serialization.DataSlice
 import kotlin.time.ExperimentalTime
@@ -137,8 +139,8 @@ class StorageConfiguration {
     lateinit var keyManager: KeyManager
     var expiration: Long? = null
 
-    fun complete(cacheConfig: CacheConfig) {
-        if (!this::keyManager.isInitialized) keyManager = KeyManager(cacheConfig.redis)
+    fun complete(libroConfig: LibroConfig) {
+        if (!this::keyManager.isInitialized) keyManager = KeyManager(libroConfig.redis)
     }
 }
 
@@ -291,7 +293,7 @@ class Storage(
 }
 
 val StoragePlugin = createApplicationPlugin(name = "Storage", ::StorageConfiguration) {
-    pluginConfig.complete(application.cacheConfig)
+    pluginConfig.complete(application.libroConfig)
 
     val feature = Storage(
         pluginConfig.adapter,

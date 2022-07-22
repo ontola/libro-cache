@@ -2,7 +2,7 @@ package tools.empathy.libro.server.health
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.routes.headRequest
 import tools.empathy.libro.server.tenantization.getTenants
 
@@ -15,7 +15,7 @@ class HeadRequestCheck : Check() {
         val tenant = call.getTenants().sites.first().location
 
         val response = call.headRequest(
-            call.application.cacheConfig.client,
+            call.application.libroConfig.client,
             tenant.encodedPath,
             tenant
         )

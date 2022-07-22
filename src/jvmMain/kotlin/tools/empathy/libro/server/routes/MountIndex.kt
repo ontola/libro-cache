@@ -31,12 +31,12 @@ import tools.empathy.libro.server.bulk.coldHandler
 import tools.empathy.libro.server.bulk.collectResources
 import tools.empathy.libro.server.bulk.entriesToOutputStream
 import tools.empathy.libro.server.bulk.initHeaders
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.csp.nonce
 import tools.empathy.libro.server.document.PageRenderContext
 import tools.empathy.libro.server.document.indexPage
 import tools.empathy.libro.server.document.pageRenderContextFromCall
 import tools.empathy.libro.server.isHTML
-import tools.empathy.libro.server.plugins.cacheConfig
 import tools.empathy.libro.server.plugins.deviceId
 import tools.empathy.libro.server.plugins.language
 import tools.empathy.libro.server.plugins.logger
@@ -67,7 +67,7 @@ data class HeadResponse(
 
 fun Routing.mountIndex() {
     get("{...}") {
-        call.indexHandler(call.application.cacheConfig.client)
+        call.indexHandler(call.application.libroConfig.client)
     }
 }
 

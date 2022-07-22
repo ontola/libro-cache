@@ -3,7 +3,7 @@ package tools.empathy.libro.server.health
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.get
 import io.ktor.server.application.ApplicationCall
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.plugins.services
 
 class BackendCheck : Check() {
@@ -12,7 +12,7 @@ class BackendCheck : Check() {
     }
 
     override suspend fun runTest(call: ApplicationCall): Exception? {
-        call.application.cacheConfig.client.get(call.services.route("/_public/spi/tenants")) {
+        call.application.libroConfig.client.get(call.services.route("/_public/spi/tenants")) {
             expectSuccess = true
         }
 

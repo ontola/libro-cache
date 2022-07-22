@@ -1,6 +1,6 @@
 package tools.empathy.libro.server.util
 
-import tools.empathy.libro.server.plugins.RedisConfig
+import tools.empathy.libro.server.configuration.RedisConfig
 import java.net.URLEncoder
 
 class KeyManager(

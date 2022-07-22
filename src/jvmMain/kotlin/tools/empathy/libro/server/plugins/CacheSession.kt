@@ -7,31 +7,33 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.plugin
 import io.ktor.util.AttributeKey
+import tools.empathy.libro.server.configuration.LibroConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.sessions.SessionManager
 
 class CacheSessionConfiguration {
     lateinit var client: HttpClient
     lateinit var sessionSecret: String
     lateinit var jwtValidator: JWTVerifier
-    lateinit var cacheConfig: CacheConfig
+    lateinit var libroConfig: LibroConfig
     lateinit var oidcClientId: String
     lateinit var oidcClientSecret: String
     lateinit var oAuthToken: String
     lateinit var oidcUrl: Url
 
-    fun complete(cacheConfig: CacheConfig) {
-        if (!this::cacheConfig.isInitialized) this.cacheConfig = cacheConfig
-        if (!this::sessionSecret.isInitialized) sessionSecret = cacheConfig.sessions.sessionSecret
-        if (!this::client.isInitialized) client = cacheConfig.client
-        if (!this::oidcClientId.isInitialized) oidcClientId = cacheConfig.sessions.clientId
-        if (!this::oidcClientSecret.isInitialized) oidcClientSecret = cacheConfig.sessions.clientSecret
-        if (!this::oAuthToken.isInitialized) oAuthToken = cacheConfig.sessions.oAuthToken
-        if (!this::oidcUrl.isInitialized) oidcUrl = cacheConfig.sessions.oidcUrl
+    fun complete(libroConfig: LibroConfig) {
+        if (!this::libroConfig.isInitialized) this.libroConfig = libroConfig
+        if (!this::sessionSecret.isInitialized) sessionSecret = libroConfig.sessions.sessionSecret
+        if (!this::client.isInitialized) client = libroConfig.client
+        if (!this::oidcClientId.isInitialized) oidcClientId = libroConfig.sessions.clientId
+        if (!this::oidcClientSecret.isInitialized) oidcClientSecret = libroConfig.sessions.clientSecret
+        if (!this::oAuthToken.isInitialized) oAuthToken = libroConfig.sessions.oAuthToken
+        if (!this::oidcUrl.isInitialized) oidcUrl = libroConfig.sessions.oidcUrl
     }
 }
 
 val CacheSession = createApplicationPlugin(name = "CacheSession", ::CacheSessionConfiguration) {
-    pluginConfig.complete(application.cacheConfig)
+    pluginConfig.complete(application.libroConfig)
 
     onCall { call ->
         call.attributes.put(CacheSessionKey, SessionManager(call, pluginConfig))

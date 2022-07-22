@@ -87,7 +87,7 @@ class SessionRefresher(private val configuration: CacheSessionConfiguration) {
         } catch (e: Exception) {
             logger.error(e.message)
             if (e !is InvalidGrantException) {
-                configuration.cacheConfig.notify(e)
+                configuration.libroConfig.notify(e)
             }
             null
         }

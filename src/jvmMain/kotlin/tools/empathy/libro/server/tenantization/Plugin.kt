@@ -1,4 +1,5 @@
 @file:UseSerializers(UrlSerializer::class)
+
 package tools.empathy.libro.server.tenantization
 
 import io.ktor.client.plugins.ResponseException
@@ -15,10 +16,10 @@ import kotlinx.serialization.decodeFromString
 import mu.KotlinLogging
 import tools.empathy.libro.server.BadGatewayException
 import tools.empathy.libro.server.TenantNotFoundException
+import tools.empathy.libro.server.configuration.LibroConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.document.PageRenderContext
-import tools.empathy.libro.server.plugins.CacheConfig
 import tools.empathy.libro.server.plugins.blacklisted
-import tools.empathy.libro.server.plugins.cacheConfig
 import tools.empathy.libro.server.plugins.setManifestLanguage
 import tools.empathy.libro.server.plugins.storage
 import tools.empathy.libro.server.util.UrlSerializer
@@ -55,14 +56,14 @@ class TenantizationConfiguration {
 
     fun staticTenant(url: Url): TenantData? = staticTenants[url.host]
 
-    fun complete(cacheConfig: CacheConfig) {
-        this.tenantExpiration = cacheConfig.tenantExpiration
+    fun complete(libroConfig: LibroConfig) {
+        this.tenantExpiration = libroConfig.tenantExpiration
     }
 }
 
 val Tenantization = createApplicationPlugin(name = "Tenantization", ::TenantizationConfiguration) {
     val logger = KotlinLogging.logger {}
-    pluginConfig.complete(application.cacheConfig)
+    pluginConfig.complete(application.libroConfig)
 
     @Throws(TenantNotFoundException::class)
     suspend fun ApplicationCall.getWebsiteBase(): Url {
@@ -83,10 +84,10 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
             call.getManifest(Url(it))
         }(websiteBase.toString())
 
-        return call.application.cacheConfig.serializer.decodeFromString(manifest!!)
+        return call.application.libroConfig.serializer.decodeFromString(manifest!!)
     }
 
-    fun interceptDeployment(call: ApplicationCall, cacheConfig: CacheConfig, deployment: PageRenderContext) {
+    fun interceptDeployment(call: ApplicationCall, libroConfig: LibroConfig, deployment: PageRenderContext) {
         val websiteBase = deployment.manifest.ontola.websiteIRI
 
         val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
@@ -95,7 +96,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
         call.attributes.put(
             TenantizationKey,
             TenantData(
-                client = cacheConfig.client,
+                client = libroConfig.client,
                 websiteIRI = manifest.ontola.websiteIRI,
                 websiteOrigin = baseOrigin,
                 manifest = manifest,
@@ -103,7 +104,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
         )
     }
 
-    suspend fun intercept(call: ApplicationCall, cacheConfig: CacheConfig) {
+    suspend fun intercept(call: ApplicationCall, libroConfig: LibroConfig) {
         try {
             val websiteBase = call.getWebsiteBase()
 
@@ -114,7 +115,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
             call.attributes.put(
                 TenantizationKey,
                 TenantData(
-                    client = cacheConfig.client,
+                    client = libroConfig.client,
                     websiteIRI = manifest.ontola.websiteIRI,
                     websiteOrigin = baseOrigin,
                     manifest = manifest,
@@ -126,7 +127,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
             call.attributes.put(
                 TenantizationKey,
                 TenantData(
-                    client = cacheConfig.client,
+                    client = libroConfig.client,
                     websiteIRI = origin,
                     websiteOrigin = origin,
                     manifest = Manifest.forWebsite(origin),
@@ -147,14 +148,15 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
     onCall { call ->
         if (call.attributes.getOrNull(StudioDeploymentKey) != null) {
             val deployment = call.attributes[StudioDeploymentKey]
-            interceptDeployment(call, this@createApplicationPlugin.application.cacheConfig, deployment)
+            interceptDeployment(call, this@createApplicationPlugin.application.libroConfig, deployment)
         } else if (!call.blacklisted) {
             val url = Url(call.request.origin()).rebase(call.request.uri)
             val staticTenant = pluginConfig.staticTenant(url)
-            if (staticTenant != null)
+            if (staticTenant != null) {
                 call.attributes.put(TenantizationKey, staticTenant)
-            else
-                intercept(call, this@createApplicationPlugin.application.cacheConfig)
+            } else {
+                intercept(call, this@createApplicationPlugin.application.libroConfig)
+            }
         }
     }
 }

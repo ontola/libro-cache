@@ -24,8 +24,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.plugins.CacheSessionConfiguration
-import tools.empathy.libro.server.plugins.cacheConfig
 import tools.empathy.libro.server.plugins.deviceId
 import tools.empathy.libro.server.plugins.logger
 import tools.empathy.libro.server.plugins.setPreferredLanguage
@@ -147,7 +147,7 @@ class SessionManager(
     }
 
     fun setAuthorization(accessToken: String, refreshToken: String) {
-        if (configuration.cacheConfig.isDev) {
+        if (configuration.libroConfig.isDev) {
             logger.debug {
                 val prefix = session?.let { "Updating session ${call.sessionId}" } ?: "Creating session"
                 "$prefix with access '$accessToken' and refresh '$refreshToken'"
@@ -167,7 +167,7 @@ class SessionManager(
         logger.trace { "Requesting guest token" }
         val serviceToken = configuration.oAuthToken
         val path = call.tenant.websiteIRI.appendPath("oauth", "token").fullPath
-        val response = call.application.cacheConfig.client.post(configuration.oidcUrl.appendPath(path)) {
+        val response = call.application.libroConfig.client.post(configuration.oidcUrl.appendPath(path)) {
             expectSuccess = false
 
             headers {

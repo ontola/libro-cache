@@ -2,6 +2,7 @@ package tools.empathy.libro.server.landing
 
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.server.application.ApplicationCall
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.health.BackendCheck
 import tools.empathy.libro.server.health.BulkCheck
 import tools.empathy.libro.server.health.CheckResult
@@ -11,7 +12,6 @@ import tools.empathy.libro.server.health.ManifestCheck
 import tools.empathy.libro.server.health.RedisCheck
 import tools.empathy.libro.server.health.humanStatus
 import tools.empathy.libro.server.plugins.Versions
-import tools.empathy.libro.server.plugins.cacheConfig
 import tools.empathy.libro.server.tenantization.TenantsResponse
 import tools.empathy.libro.server.tenantization.getApiVersion
 import tools.empathy.libro.server.tenantization.getTenants
@@ -53,7 +53,7 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
         null
     }
 
-    val defaultServicePort = application.cacheConfig.services.config("base").propertyOrNull("defaultServicePort")
+    val defaultServicePort = application.libroConfig.services.config("base").propertyOrNull("defaultServicePort")
     val logo = add(
         ImageObject(
             Value.Id.Local(),
@@ -89,7 +89,7 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
                     Value.Id.Global("https://localhost/home/widgets"),
                     listOfNotNull(
                         if (tenants == null) noBackendWidget(defaultServicePort?.getString()) else tenantWidget(tenants),
-                        if (this@landingPage.application.cacheConfig.isDev) docsWidget() else null,
+                        if (this@landingPage.application.libroConfig.isDev) docsWidget() else null,
                         studioWidget(),
                         healthWidget(this@landingPage),
                     ),

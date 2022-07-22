@@ -1,9 +1,9 @@
 package tools.empathy.studio
 
 import io.ktor.server.application.Application
+import tools.empathy.libro.server.configuration.StudioConfig
+import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.document.PageConfiguration
-import tools.empathy.libro.server.plugins.StudioConfig
-import tools.empathy.libro.server.plugins.cacheConfig
 import tools.empathy.libro.server.plugins.persistentStorage
 
 class StudioConfiguration {
@@ -23,7 +23,7 @@ class StudioConfiguration {
      * initialized.
      */
     fun complete(application: Application) {
-        studioConfig = application.cacheConfig.studio
+        studioConfig = application.libroConfig.studio
         distributionRepo = DistributionRepo(application.persistentStorage)
         publicationRepo = PublicationRepo(application.persistentStorage)
     }

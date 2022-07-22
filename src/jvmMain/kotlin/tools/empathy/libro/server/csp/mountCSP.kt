@@ -12,7 +12,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import tools.empathy.libro.server.plugins.cacheConfig
+import tools.empathy.libro.server.configuration.libroConfig
 
 class CSPReportException(
     val report: CSPReport,
@@ -62,7 +62,7 @@ fun Routing.mountCSP() {
         val raw = call.receiveText()
         val body = lenientSerializer.decodeFromString<CSPReportEnvelope>(raw)
 
-        application.cacheConfig.notify(CSPReportException(body.cspReport, raw))
+        application.libroConfig.notify(CSPReportException(body.cspReport, raw))
 
         call.respond(HttpStatusCode.OK)
     }
