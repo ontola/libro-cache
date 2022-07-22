@@ -27,7 +27,7 @@ val configureClient: HttpClientConfig<*>.() -> Unit = {
     install(Logging) {
         configureClientLogging()
     }
-    install(UserAgent) { agent = "cache" }
+    install(UserAgent) { agent = "libro-server" }
 }
 
 fun createClient(production: Boolean): HttpClient = HttpClient(CIO) {

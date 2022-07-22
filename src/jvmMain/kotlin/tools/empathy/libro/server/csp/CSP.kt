@@ -40,6 +40,9 @@ val CSP = createApplicationPlugin("CSP") {
     val cspReportToHeader = Json.encodeToString(cspReportEntry)
 
     onCall { call ->
+        if (call.blacklisted)
+            return@onCall
+
         val nonce = UUID.randomUUID().toString()
         call.attributes.put(CSPKey, nonce)
 

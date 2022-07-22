@@ -1,13 +1,17 @@
-# Package io.ontola.color
+# Module Libro server
+
+This is the technical reference in regard to the Libro server implementation.
+
+# Package tools.empathy.color
 
 This package defines a `Color` class with various calculations.
 
-# Package io.ontola.rdf.hextuples
+# Package tools.empathy.rdf.hextuples
 
 Implementation of the [Hextuples](https://github.com/ontola/hextuples) RDF
-serialization.
+serialization. Currently not activated in the server.
 
-# Package io.ontola.studio
+# Package tools.empathy.studio
 
 This package contains code to host the Studio and resulting distributions.
 
@@ -58,6 +62,10 @@ regarding the server and backend.
 
 The invalidator boots with the server and listens to a redis stream for
 `DeltaEvent` updates of a backend.
+
+# Package tools.empathy.libro.server.landing
+
+Contains the Libro management site.
 
 # Package tools.empathy.libro.server.plugins
 

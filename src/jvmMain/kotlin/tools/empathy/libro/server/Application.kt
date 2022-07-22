@@ -58,6 +58,7 @@ import tools.empathy.libro.server.plugins.CacheConfig
 import tools.empathy.libro.server.plugins.CacheConfiguration
 import tools.empathy.libro.server.plugins.CacheSession
 import tools.empathy.libro.server.plugins.CsrfProtection
+import tools.empathy.libro.server.plugins.DevelopmentSupport
 import tools.empathy.libro.server.plugins.DeviceId
 import tools.empathy.libro.server.plugins.HSTS
 import tools.empathy.libro.server.plugins.LanguageNegotiation
@@ -71,6 +72,7 @@ import tools.empathy.libro.server.plugins.StoragePlugin
 import tools.empathy.libro.server.plugins.Versions
 import tools.empathy.libro.server.plugins.cacheConfig
 import tools.empathy.libro.server.plugins.language
+import tools.empathy.libro.server.plugins.managementTenant
 import tools.empathy.libro.server.plugins.requestTimings
 import tools.empathy.libro.server.routes.mountBulk
 import tools.empathy.libro.server.routes.mountIndex
@@ -91,7 +93,6 @@ import tools.empathy.libro.server.util.configureCallLogging
 import tools.empathy.libro.server.util.configureClientLogging
 import tools.empathy.libro.server.util.isHtmlAccept
 import tools.empathy.libro.server.util.mountWebSocketProxy
-import tools.empathy.libro.webmanifest.Icon
 import tools.empathy.libro.webmanifest.Manifest
 import tools.empathy.studio.Studio
 import tools.empathy.studio.mountStudio
@@ -125,7 +126,8 @@ fun Application.module(
     val config = CacheConfig.fromEnvironment(environment.config, testing, client)
     config.print()
     val adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
-    val persistentAdapter = persistentStorage ?: RedisAdapter(RedisClient.create(config.persistentRedisURI).connect().coroutines())
+    val persistentAdapter =
+        persistentStorage ?: RedisAdapter(RedisClient.create(config.persistentRedisURI).connect().coroutines())
 
     install(MicrometerMetrics) {
         registry = Metrics.metricsRegistry
@@ -205,6 +207,8 @@ fun Application.module(
         this.config = config
     }
 
+    install(DevelopmentSupport)
+
     install(IgnoreTrailingSlash)
 
     install(Bundle)
@@ -242,7 +246,8 @@ fun Application.module(
             when (outgoingContent.contentType?.withoutParameters()) {
                 ContentType.Text.CSS,
                 ContentType.Application.JavaScript,
-                ContentType.Application.FontWoff -> CachingOptions(
+                ContentType.Application.FontWoff,
+                -> CachingOptions(
                     CacheControl.MaxAge(maxAgeSeconds = 365.days.inWholeSeconds.toInt()),
                 )
                 else -> null
@@ -328,6 +333,7 @@ fun Application.module(
             "/assets/",
             "/photos/",
             "/f_assets/",
+            "/libro/docs/",
             "/__webpack_hmr",
             "/.well-known/openid-configuration",
         )
@@ -340,31 +346,10 @@ fun Application.module(
     }
 
     install(Tenantization) {
-        val localDomain = "localhost"
-        val localOrigin = Url("https://$localDomain")
+        val management = managementTenant(cacheConfig.management.origin, cacheConfig.client)
 
         staticTenants = mapOf(
-            localDomain to TenantData(
-                client = cacheConfig.client,
-                websiteIRI = localOrigin,
-                websiteOrigin = localOrigin,
-                manifest = Manifest.forWebsite(localOrigin).let {
-                    it.copy(
-                        name = "Local",
-                        icons = arrayOf(
-                            Icon(
-                                src = "/f_assets/images/libro-logo-t-4.svg",
-                                sizes = "32x32 64x64 72x72 96x96 128x128",
-                                purpose = "favicon",
-                                type = "image/svg",
-                            ),
-                        ),
-                        ontola = it.ontola.copy(
-                            primaryColor = "#002233",
-                        ),
-                    )
-                },
-            ),
+            management.websiteOrigin.host to management,
             config.studio.domain to TenantData(
                 client = cacheConfig.client,
                 websiteIRI = config.studio.origin,
@@ -486,7 +471,7 @@ fun Application.module(
         if (testing) {
             mountTestingRoutes()
         }
-        mountStatic()
+        mountStatic(config.isDev)
         mountHealth()
         mountCSP()
         mountStudio()

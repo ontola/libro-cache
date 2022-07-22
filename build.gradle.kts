@@ -1,3 +1,5 @@
+import org.jetbrains.dokka.DokkaDefaults.moduleName
+
 val bugsnag_version: String by project
 val coroutines_version: String by project
 val datetime_version: String by project
@@ -201,3 +203,19 @@ configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
 }
 
 task("stage").dependsOn("shadowJar")
+
+tasks.dokkaHtml.configure {
+    moduleName.set("Libro server")
+}
+
+task("dokkaServe", type = Exec::class) {
+    dependsOn("dokkaHtml")
+
+    group = "documentation"
+
+    logger.warn("Serving documentation on http://localhost:36552")
+    commandLine("python3", "-m", "http.server", "36552", "--directory", "./build/dokka/html")
+}
+
+// Ensure docs are built when dev server starts
+tasks.named("jvmProcessResources").get().dependsOn("dokkaHtml")

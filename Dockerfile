@@ -20,7 +20,7 @@ EXPOSE 3080:3080
 RUN mkdir /app
 WORKDIR /app
 
-COPY --from=builder /app/build/libs/cache-*all.jar /app/cache.jar
+COPY --from=builder /app/build/libs/libro-*all.jar /app/libro.jar
 COPY ./server_version.txt /app/server_version.txt
 
-CMD ["java", "-jar", "cache.jar"]
+CMD ["java", "-jar", "libro.jar"]

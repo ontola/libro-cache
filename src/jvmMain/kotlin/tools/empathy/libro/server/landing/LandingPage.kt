@@ -1,4 +1,4 @@
-package tools.empathy.libro
+package tools.empathy.libro.server.landing
 
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.server.application.ApplicationCall
@@ -76,6 +76,8 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
             id = Value.Id.Global("https://localhost/home"),
             name = "Welcome to Libro",
             text = """
+                The information on this page is cached until a full reload.
+                
                 API version: ${getApiVersion() ?: "Not detected"}$MdLineBreak
                 Server version: ${Versions.ServerVersion}$MdLineBreak
                 Client version: ${request.headers[LibroHttpHeaders.XClientVersion]}
@@ -85,8 +87,9 @@ suspend fun ApplicationCall.landingPage(): DataSlice = dataSlice {
             widgets = add(
                 Seq(
                     Value.Id.Global("https://localhost/home/widgets"),
-                    listOf(
+                    listOfNotNull(
                         if (tenants == null) noBackendWidget(defaultServicePort?.getString()) else tenantWidget(tenants),
+                        if (this@landingPage.application.cacheConfig.isDev) docsWidget() else null,
                         studioWidget(),
                         healthWidget(this@landingPage),
                     ),
@@ -176,6 +179,43 @@ private fun DataSlice.modulesPage(): Value.Id {
     )
 }
 
+private fun DataSlice.docsWidget(): Value.Id {
+    val entryPoint = Value.Id.Global("https://localhost/home/widgets/docs/list/entryPoint")
+
+    val action = add(
+        Action(
+            id = Value.Id.Global("https://localhost/home/widgets/docs/list/action"),
+            specificType = Schema.CreateAction,
+            name = "Documentation",
+            text = "Open the docs",
+            target = entryPoint,
+            actionStatus = Value.Id.Global("http://schema.org/PotentialActionStatus"),
+        ),
+    )
+
+    add(
+        EntryPoint(
+            id = entryPoint,
+            name = "Open",
+            isPartOf = action,
+            httpMethod = "GET",
+            formTarget = "_blank",
+            url = Value.Id.Global("/libro/docs/"),
+        ),
+    )
+
+    return add(
+        Widget(
+            id = Value.Id.Global("https://localhost/home/widgets/docs"),
+            order = 0,
+            topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/grid"),
+            widgetSize = 1,
+            view = Value.Id.Global("https://argu.nl/enums/widgets/view#preview_view"),
+            widgetResource = entryPoint,
+        ),
+    )
+}
+
 private fun DataSlice.studioWidget(): Value.Id {
     val entryPoint = Value.Id.Global("https://localhost/home/widgets/studio/list/entryPoint")
 
@@ -195,6 +235,7 @@ private fun DataSlice.studioWidget(): Value.Id {
             name = "Open",
             isPartOf = action,
             httpMethod = "GET",
+            formTarget = "_blank",
             url = Value.Id.Global("/d/studio"),
         ),
     )

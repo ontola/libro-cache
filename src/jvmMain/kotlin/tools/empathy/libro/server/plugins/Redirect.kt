@@ -17,6 +17,10 @@ class RedirectConfiguration {
     }
 }
 
+/**
+ * Redirect certain prefixes to new locations.
+ * Useful when maintaining platforms over time.
+ */
 val Redirect = createApplicationPlugin(name = "Redirect", ::RedirectConfiguration) {
     pluginConfig.complete(application.persistentStorage)
 

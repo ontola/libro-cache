@@ -17,6 +17,11 @@ class StudioConfiguration {
     lateinit var publicationRepo: PublicationRepo
     lateinit var pageConfig: PageConfiguration
 
+    /**
+     * Circumvents a circular initialization problem where [StudioConfiguration] needs
+     * access to the [Application], which in turn needs [StudioConfiguration] to be
+     * initialized.
+     */
     fun complete(application: Application) {
         studioConfig = application.cacheConfig.studio
         distributionRepo = DistributionRepo(application.persistentStorage)

@@ -113,6 +113,10 @@ data class BundlesConfig(
     val defaultBundle: String,
 )
 
+data class ManagementConfig(
+    val origin: Url,
+)
+
 data class StudioConfig(
     val skipAuth: Boolean,
     val domain: String,
@@ -126,7 +130,14 @@ data class CacheConfig constructor(
     val testing: Boolean,
     val env: String = if (testing) "testing" else System.getenv("KTOR_ENV") ?: "production",
     val port: Int,
+    /**
+     * Configuration relating to client bundles.
+     */
     val bundles: BundlesConfig,
+    /**
+     * Configuration relating to the management panel.
+     */
+    val management: ManagementConfig,
     /**
      * Configuration relating to session management.
      */
@@ -153,7 +164,8 @@ data class CacheConfig constructor(
     val defaultLanguage: String,
     val studio: StudioConfig,
     /**
-     * Whether the invalidator should be running.
+     * Whether the invalidator module should be running.
+     * @see tools.empathy.libro.server.invalidator.module
      */
     val enableInvalidator: Boolean,
     val maps: MapsConfig? = null,
@@ -240,6 +252,7 @@ data class CacheConfig constructor(
                 bundles = bundlesConfig(cacheConfig, testing),
                 port = config.config("ktor").config("deployment").property("port").getString().toInt(),
                 testing = testing,
+                management = managementConfig(cacheConfig, testing),
                 sessions = sessionsConfig(cacheConfig, testing),
                 persistentRedisURI = persistentRedisURI,
                 streamRedisURI = streamRedisURI,
@@ -364,6 +377,19 @@ data class CacheConfig constructor(
             return MapsConfig(
                 username = username,
                 key = key,
+            )
+        }
+
+        private fun managementConfig(cacheConfig: ApplicationConfig, testing: Boolean): ManagementConfig {
+            if (testing) {
+                ManagementConfig(
+                    origin = Url("https://localhost"),
+                )
+            }
+            val managementConfig = cacheConfig.config("management")
+
+            return ManagementConfig(
+                origin = Url(managementConfig.property("origin").getString()),
             )
         }
 

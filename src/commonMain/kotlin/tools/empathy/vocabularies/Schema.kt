@@ -10,6 +10,7 @@ object Schema : Vocab {
     val Blog by Term()
     val BlogPosting by Term()
     val CommentClass = "${vocab}Comment"
+    val CreateAction by Term()
     val CreativeWork by Term()
     val DataDownload by Term()
     val EntryPoint by Term()

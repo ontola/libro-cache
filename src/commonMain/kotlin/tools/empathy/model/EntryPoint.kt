@@ -8,6 +8,7 @@ import tools.empathy.serialization.id
 import tools.empathy.serialization.record
 import tools.empathy.serialization.s
 import tools.empathy.serialization.type
+import tools.empathy.vocabularies.Libro
 
 data class EntryPoint(
     override val id: Value.Id,
@@ -15,6 +16,7 @@ data class EntryPoint(
     val isPartOf: Value.Id,
     val httpMethod: String,
     val url: Value.Id,
+    val formTarget: String? = null,
 ) : Entity
 
 fun DataSlice.add(it: EntryPoint): Value.Id = record(it.id) {
@@ -23,4 +25,5 @@ fun DataSlice.add(it: EntryPoint): Value.Id = record(it.id) {
     field("isPartOf") { id(it.isPartOf) }
     field("httpMethod") { s(it.httpMethod) }
     field("url") { id(it.url) }
+    field(Libro.target) { s(it.formTarget) }
 }

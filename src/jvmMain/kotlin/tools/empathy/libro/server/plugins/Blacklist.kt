@@ -1,4 +1,5 @@
 @file:UseSerializers(UrlSerializer::class)
+
 package tools.empathy.libro.server.plugins
 
 import io.ktor.server.application.ApplicationCall
@@ -40,6 +41,11 @@ class BlacklistConfiguration {
     }
 }
 
+/**
+ * Plugin to mark urls as excluded from the CSP and studio lookups.
+ *
+ * TODO: Generalise so that the proxy and other components can use this feature too.
+ */
 val Blacklist = createApplicationPlugin(name = "Blacklist", ::BlacklistConfiguration) {
     val logger = pluginConfig.logger
 
