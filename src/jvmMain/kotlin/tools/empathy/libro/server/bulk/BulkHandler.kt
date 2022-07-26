@@ -60,7 +60,7 @@ fun Routing.mountBulkHandler() {
         }
 
         val updatedEntries: List<CacheEntry>? = call.measured("handler hot") {
-            val requested = requestedResources()
+            val requested = call.requestedResources()
             call.logger.debug { "Fetching ${requested.size} resources from cache" }
 
             call.collectResources(requested)

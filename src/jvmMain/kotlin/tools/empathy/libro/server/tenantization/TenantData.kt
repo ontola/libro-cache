@@ -12,4 +12,5 @@ data class TenantData(
     val websiteIRI: Url,
     val websiteOrigin: Url,
     val manifest: Manifest,
+    val isCors: Boolean = false,
 )

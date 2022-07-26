@@ -3,12 +3,14 @@
 package tools.empathy.libro.server.tenantization
 
 import io.ktor.client.plugins.ResponseException
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.plugin
+import io.ktor.server.request.header
 import io.ktor.server.request.uri
 import io.ktor.util.AttributeKey
 import kotlinx.serialization.UseSerializers
@@ -16,6 +18,7 @@ import kotlinx.serialization.decodeFromString
 import mu.KotlinLogging
 import tools.empathy.libro.server.BadGatewayException
 import tools.empathy.libro.server.TenantNotFoundException
+import tools.empathy.libro.server.bulk.requestedResources
 import tools.empathy.libro.server.configuration.LibroConfig
 import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.document.PageRenderContext
@@ -27,9 +30,11 @@ import tools.empathy.libro.server.util.measuredHit
 import tools.empathy.libro.server.util.origin
 import tools.empathy.libro.webmanifest.Manifest
 import tools.empathy.studio.StudioDeploymentKey
+import tools.empathy.url.appendPath
 import tools.empathy.url.fullUrl
 import tools.empathy.url.origin
 import tools.empathy.url.rebase
+import tools.empathy.url.retrieveIriParamOrSelf
 import kotlin.properties.Delegates
 
 private val TenantizationKey = AttributeKey<TenantData>("TenantizationKey")
@@ -76,12 +81,12 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
         return Url(websiteBase)
     }
 
-    suspend fun getManifest(call: ApplicationCall, websiteBase: Url): Manifest {
+    suspend fun getManifest(call: ApplicationCall, websiteBase: Url, isCors: Boolean): Manifest {
         val manifest = call.cachedLookup(
             CachedLookupKeys.Manifest,
             expiration = pluginConfig.tenantExpiration
         ) {
-            call.getManifest(Url(it))
+            call.getManifest(Url(it), isCors)
         }(websiteBase.toString())
 
         return call.application.libroConfig.serializer.decodeFromString(manifest!!)
@@ -104,23 +109,27 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
         )
     }
 
+    suspend fun interceptFor(websiteBase: Url, call: ApplicationCall, libroConfig: LibroConfig, isCors: Boolean = false) {
+        val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
+        val manifest = getManifest(call, websiteBase, isCors)
+
+        call.setManifestLanguage(manifest.lang)
+        call.attributes.put(
+            TenantizationKey,
+            TenantData(
+                client = libroConfig.client,
+                websiteIRI = manifest.ontola.websiteIRI,
+                websiteOrigin = baseOrigin,
+                manifest = manifest,
+                isCors,
+            )
+        )
+    }
+
     suspend fun intercept(call: ApplicationCall, libroConfig: LibroConfig) {
         try {
             val websiteBase = call.getWebsiteBase()
-
-            val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
-            val manifest = getManifest(call, websiteBase)
-
-            call.setManifestLanguage(manifest.lang)
-            call.attributes.put(
-                TenantizationKey,
-                TenantData(
-                    client = libroConfig.client,
-                    websiteIRI = manifest.ontola.websiteIRI,
-                    websiteOrigin = baseOrigin,
-                    manifest = manifest,
-                )
-            )
+            interceptFor(websiteBase, call, libroConfig)
         } catch (e: ResponseException) {
             val origin = call.fullUrl().origin().let { Url(it) }
 
@@ -131,6 +140,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
                     websiteIRI = origin,
                     websiteOrigin = origin,
                     manifest = Manifest.forWebsite(origin),
+                    isCors = false,
                 )
             )
 
@@ -151,8 +161,21 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
             interceptDeployment(call, this@createApplicationPlugin.application.libroConfig, deployment)
         } else if (!call.blacklisted) {
             val url = Url(call.request.origin()).rebase(call.request.uri)
+            val refererBase = call.request.header(HttpHeaders.Referrer)
+                ?.let { URLBuilder(it).apply { parameters.clear() }.build() }
             val staticTenant = pluginConfig.staticTenant(url)
-            if (staticTenant != null) {
+            val staticTenantBrowser = staticTenant?.websiteIRI?.appendPath("browser")
+            val staticTenantResource = staticTenant?.websiteIRI?.appendPath("resource")
+            val isDevBrowser = refererBase == staticTenantBrowser
+            val isExternal = refererBase == staticTenantResource
+
+            if (call.application.libroConfig.isDev && staticTenant != null && (isDevBrowser || isExternal)) {
+                val requestedResources = call.requestedResources()
+                val test = requestedResources.find { !it.iri.startsWith(staticTenant.websiteIRI.toString()) } ?: requestedResources.first()
+                val resource = Url(test.iri).retrieveIriParamOrSelf()
+                val origin = Url(resource.origin())
+                interceptFor(origin, call, this@createApplicationPlugin.application.libroConfig, isCors = true)
+            } else if (staticTenant != null) {
                 call.attributes.put(TenantizationKey, staticTenant)
             } else {
                 intercept(call, this@createApplicationPlugin.application.libroConfig)

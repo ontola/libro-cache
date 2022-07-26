@@ -15,7 +15,7 @@ class ManifestCheck : Check() {
     override suspend fun runTest(call: ApplicationCall): Exception? {
         val tenant = call.getTenants().sites.first().location
         try {
-            call.getManifest<Manifest>(tenant)
+            call.getManifest<Manifest>(tenant, false)
         } catch (e: ResponseException) {
             if (e.response.status == HttpStatusCode.Forbidden) {
                 return Exception("Backend token invalid")

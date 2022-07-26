@@ -2,18 +2,23 @@ package tools.empathy.libro.server.bulk
 
 import io.ktor.http.URLBuilder
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.request.receiveParameters
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.util.AttributeKey
+import kotlinx.css.map
 import tools.empathy.url.withoutTrailingSlash
 import java.net.URLDecoder
 import java.nio.charset.Charset
 
-internal suspend fun PipelineContext<Unit, ApplicationCall>.requestedResources(): List<CacheRequest> {
-    val params = call.receiveParameters()
+private val BulkResourcesKey = AttributeKey<List<CacheRequest>>("BulkResourcesKey")
+
+internal suspend fun ApplicationCall.requestedResources(): List<CacheRequest> {
+    if (attributes.contains(BulkResourcesKey))
+        return attributes[BulkResourcesKey]
+
+    val params = receiveParameters()
     val resources = params.getAll("resource[]")
 
-    return resources
+    val cacheRequests = resources
         ?.map { r ->
             val docIRI = URLBuilder(URLDecoder.decode(r, Charset.defaultCharset().name())).apply {
                 fragment = ""
@@ -21,4 +26,6 @@ internal suspend fun PipelineContext<Unit, ApplicationCall>.requestedResources()
             CacheRequest(docIRI)
         }
         ?: emptyList()
+
+    return cacheRequests.also { attributes.put(BulkResourcesKey, it) }
 }

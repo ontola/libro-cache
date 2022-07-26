@@ -5,6 +5,7 @@ import io.ktor.http.Url
 import io.ktor.http.authority
 import io.ktor.http.fullPath
 import io.ktor.http.hostWithPort
+import java.io.UnsupportedEncodingException
 
 fun Url.appendPath(path: String): Url = appendPath(*path.split("/").toTypedArray())
 
@@ -48,12 +49,25 @@ fun Url?.absolutize(other: String): String {
 
     val prefix = withoutTrailingSlash
 
-    if (other == prefix)
+    if (other == prefix) {
         return "/"
-    if (other.startsWith(prefix))
+    }
+    if (other.startsWith(prefix)) {
         return other.removePrefix(prefix)
+    }
 
     return other
+}
+
+fun Url.retrieveIriParamOrSelf(): Url = if (parameters.contains("iri")) {
+    try {
+        val iri = parameters["iri"]
+        Url(java.net.URLDecoder.decode(iri, "UTF-8"))
+    } catch (e: Exception) {
+        this
+    }
+} else {
+    this
 }
 
 val Url.withoutTrailingSlash

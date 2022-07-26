@@ -6,6 +6,7 @@ import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.header
 import tools.empathy.libro.server.plugins.sessionManager
 import tools.empathy.libro.server.tenantization.tenant
 import tools.empathy.libro.server.util.LibroHttpHeaders
@@ -29,9 +30,15 @@ fun HttpRequestBuilder.initHeaders(
         header(LibroHttpHeaders.WebsiteIri, websiteBase)
 
         proxySafeHeaders(originalReq, lang)
-        copy(HttpHeaders.Host, originalReq)
-        copy(HttpHeaders.Forwarded, originalReq)
-        copy(HttpHeaders.Origin, originalReq)
+        if (!call.tenant.isCors) {
+            copy(HttpHeaders.Host, originalReq)
+            copy(HttpHeaders.Forwarded, originalReq)
+            copy(HttpHeaders.Origin, originalReq)
+        } else {
+            set(HttpHeaders.XForwardedHost, call.tenant.websiteIRI.host)
+            set(HttpHeaders.Host, call.tenant.websiteIRI.host)
+            set(HttpHeaders.Origin, call.tenant.websiteIRI.toString())
+        }
         copy(HttpHeaders.Referrer, originalReq)
         copy(HttpHeaders.UserAgent, originalReq)
 

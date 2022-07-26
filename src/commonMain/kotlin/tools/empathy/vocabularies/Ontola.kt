@@ -45,6 +45,13 @@ object Ontola : Vocab {
     val UnconfirmedUser by Term()
     val VideoSet by Term()
     val Widget by Term()
+
+    object Errors : Vocab {
+        override val vocab = Ontola.vocab
+
+        val RecordNotFoundError by Term("errors/RecordNotFoundError")
+    }
+
     val destroy = Value.Id.Global("${vocab}_destroy")
     val action by Term()
     val actionDialog by Term()

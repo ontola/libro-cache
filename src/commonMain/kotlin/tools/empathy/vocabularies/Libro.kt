@@ -40,6 +40,7 @@ object Libro : Vocab {
     object Boostrap : Vocab {
         override val vocab = Libro.vocab
 
+        val Browser by Term("bootstrap/Browser")
         val TopologiesList by Term("bootstrap/TopologiesList")
         val ModulesList by Term("bootstrap/ModulesList")
     }

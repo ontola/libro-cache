@@ -17,16 +17,25 @@ import tools.empathy.libro.server.util.proxySafeHeaders
 import tools.empathy.url.appendPath
 
 /**
- * Retrieves the [io.ontola.apex.webmanifest.Manifest] from the connected backend.
+ * Retrieves the [tools.empathy.libro.webmanifest.Manifest] from the connected backend.
  */
-internal suspend inline fun <reified K> ApplicationCall.getManifest(websiteBase: Url): K {
+internal suspend inline fun <reified K> ApplicationCall.getManifest(websiteBase: Url, isCors: Boolean): K {
     val manifestUrl = websiteBase.appendPath("manifest.json")
-    val manifestRequest = application.libroConfig.client.get(services.route(manifestUrl.fullPath)) {
+    val routedManifestUrl = if (isCors) {
+        manifestUrl
+    } else {
+        services.route(manifestUrl.fullPath)
+    }
+
+    val manifestRequest = application.libroConfig.client.get(routedManifestUrl) {
         expectSuccess = false
         headers {
             append("Website-IRI", websiteBase.toString())
 
             proxySafeHeaders(request)
+            if (isCors) {
+                set(HttpHeaders.XForwardedHost, websiteBase.host)
+            }
             copy(HttpHeaders.XForwardedFor, request)
             copy("X-Real-Ip", request)
         }

@@ -21,6 +21,9 @@ import tools.empathy.model.menu.add
 import tools.empathy.serialization.DataSlice
 import tools.empathy.serialization.Value
 import tools.empathy.serialization.dataSlice
+import tools.empathy.serialization.record
+import tools.empathy.serialization.type
+import tools.empathy.vocabularies.Ontola
 
 suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
     val defaultServicePort = application
@@ -52,6 +55,7 @@ suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
 
     checks.forEach { it.run(this@landingSite) }
 
+    initDefaultResources()
     val homePage = homePage(
         tenants,
         defaultServicePort,
@@ -60,6 +64,7 @@ suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
         application.libroConfig.isDev,
     )
     val modulesPage = modulesPage()
+    val browserPage = browserPage()
 
     val navigationsMenu = add(
         MenuItem(
@@ -105,6 +110,17 @@ suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
                                 order = 2,
                             )
                         ),
+                        add(
+                            MenuItem(
+                                id = Value.Id.Local(),
+                                name = "Browser",
+                                isPartOf = Value.Id.Global("/"),
+                                edge = browserPage,
+                                href = browserPage,
+                                targetType = Value.Id.Global("https://argu.nl/enums/custom_menu_items/target_type#edge"),
+                                order = 2,
+                            )
+                        ),
                     )
                 )
             )
@@ -120,4 +136,13 @@ suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
             navigationsMenu = navigationsMenu,
         ),
     )
+}
+
+/**
+ * Libro assumes these resources to exist
+ */
+private fun DataSlice.initDefaultResources() {
+    record(Value.Id.Global("/banners/page/1#members")) {
+        type(Ontola.Errors.RecordNotFoundError)
+    }
 }

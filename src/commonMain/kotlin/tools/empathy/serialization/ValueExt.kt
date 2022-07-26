@@ -75,3 +75,5 @@ fun JsonObject.toId(): Value.Id {
 }
 
 fun Url.toValue(): Value.Id.Global = Value.Id.Global(this.toString())
+
+fun Value.Id.Global.toUrl(): Url = Url(this.value)
