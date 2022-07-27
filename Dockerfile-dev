@@ -1,0 +1,10 @@
+FROM bellsoft/liberica-openjdk-alpine-musl:17
+
+# Prep image with gradle cache to use as mount point for host cache when container runs
+RUN mkdir /root/.gradle
+
+RUN mkdir -p /usr/src/app
+
+WORKDIR /usr/src/app
+
+CMD ["./gradlew", "--no-daemon", "run"]
