@@ -16,7 +16,7 @@ data class ResourcesManifest(
     @SerialName("./sw.js")
     val swJs: String = "/$publicFolder/sw.js",
     @SerialName("main.css")
-    val mainCss: String = "/$publicFolder/$defaultBundle.bundle.css",
+    val mainCss: String? = if (defaultBundle != null && publicFolder != null) "/$publicFolder/$defaultBundle.bundle.css" else null,
     @SerialName("main.js")
-    val mainJs: String = "/$publicFolder/$defaultBundle.bundle.js",
+    val mainJs: String? = if (defaultBundle != null && publicFolder != null) "/$publicFolder/$defaultBundle.bundle.js" else null,
 )

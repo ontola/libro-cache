@@ -39,6 +39,7 @@ import io.ontola.cache.plugins.services
 import io.ontola.cache.sessions.SessionData
 import io.ontola.cache.sessions.TokenPair
 import io.ontola.cache.tenantization.tenant
+import io.ontola.cache.tenantization.tenantOrNull
 import io.ontola.cache.util.CacheHttpHeaders
 import io.ontola.cache.util.VaryHeader
 import io.ontola.cache.util.measured
@@ -185,6 +186,10 @@ suspend fun ApplicationCall.indexHandler(client: HttpClient) {
 
     if (!request.isHTML()) {
         return respond(HttpStatusCode.NotFound)
+    }
+
+    tenantOrNull?.manifest?.ontola?.preload?.forEach {
+        response.header(HttpHeaders.Link, it)
     }
 
     if (attributes.getOrNull(StudioDeploymentKey) != null) {

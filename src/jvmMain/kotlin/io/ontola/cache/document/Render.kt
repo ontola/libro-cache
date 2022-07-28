@@ -182,18 +182,22 @@ fun BODY.manifestBlock(nonce: String, manifest: Manifest, serializer: Json) {
 
 @OptIn(ExperimentalSerializationApi::class)
 fun BODY.assetsBlock(nonce: String, config: PageConfiguration) {
-    script(type = "module") {
-        async = true
-        this.nonce = nonce
-        attributes["crossorigin"] = "anonymous"
-        src = config.assets.es6.mainJs
+    config.assets.es6.mainJs?.let {
+        script(type = "module") {
+            async = true
+            this.nonce = nonce
+            attributes["crossorigin"] = "anonymous"
+            src = it
+        }
     }
-    script(type = "application/javascript") {
-        async = true
-        this.nonce = nonce
-        attributes["nomodule"] = "true"
-        attributes["crossorigin"] = "anonymous"
-        src = config.assets.es5.mainJs
+    config.assets.es5.mainJs?.let {
+        script(type = "application/javascript") {
+            async = true
+            this.nonce = nonce
+            attributes["nomodule"] = "true"
+            attributes["crossorigin"] = "anonymous"
+            src = it
+        }
     }
 }
 

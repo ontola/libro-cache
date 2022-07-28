@@ -155,8 +155,10 @@ private fun HEAD.stylesheets(config: PageConfiguration, nonce: String) {
     val openSans = "https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap"
     val fontAwesome = "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
 
-    link(rel = "stylesheet", type = "text/css", href = config.assets.es6.mainCss) {
-        attributes["crossorigin"] = "anonymous"
+    config.assets.es6.mainCss?.let {
+        link(rel = "stylesheet", type = "text/css", href = it) {
+            attributes["crossorigin"] = "anonymous"
+        }
     }
 
     link(rel = "preload", href = openSans) {
@@ -174,11 +176,11 @@ private fun HEAD.stylesheets(config: PageConfiguration, nonce: String) {
         unsafe {
             raw(
                 """
-                    var elements = Array.from(document.querySelectorAll("[as='style']"));
-                    elements.forEach((e) => e.addEventListener("load", (e) => e.target.rel = "stylesheet"));
-                    window.setTimeout(() => {
-                      elements.map((e) => e.rel = "stylesheet");
-                    }, 2000);
+                    var cssElements = Array.from(document.querySelectorAll("[as='style']"));
+                    var cssDeferTimeout = window.setTimeout(() => {
+                      cssElements.map((e) => e.rel = "stylesheet");
+                    }, 1000);
+                    cssElements.forEach((e) => e.addEventListener("load", (e) => {clearTimeout(cssDeferTimeout); e.target.rel = "stylesheet"}));
                 """.trimIndent()
             )
         }
