@@ -347,6 +347,7 @@ fun Application.module(
                 manifest = Manifest.forWebsite(config.studio.origin).copy(
                     name = "Studio",
                 ),
+                showPreloader = false,
             )
         )
     }

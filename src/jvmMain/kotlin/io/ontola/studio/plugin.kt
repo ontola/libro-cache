@@ -88,6 +88,7 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
                 name = "Studio",
             ),
             uri = uri,
+            showPreloader = false,
         )
         call.attributes.put(StudioDeploymentKey, ctx)
     }
@@ -141,6 +142,7 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
                 data = distribution.data,
                 manifest = distribution.manifest,
                 uri = uri,
+                showPreloader = false,
             )
 
             call.attributes.put(StudioDeploymentKey, ctx)

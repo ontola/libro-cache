@@ -94,10 +94,6 @@ fun BODY.preloadBlock(nonce: String, config: PageConfiguration, manifest: Manife
             +"height: 3.2rem; z-index: -1;"
         }
     }
-    div {
-        id = config.appElement
-        classes = setOf(manifest.ontola.theme ?: "common", "preloader-fixed")
-    }
     noScript {
         h1 { +"Deze website heeft javascript nodig om te werken" }
         p { +"Javascript staat momenteel uitgeschakeld, probeer een andere browser of in prive modus." }
@@ -217,7 +213,16 @@ fun HTML.indexPage(ctx: PageRenderContext) {
         attributes["style"] = "margin: 0;"
 
         themeBlock(manifest)
-        preloadBlock(nonce, config, manifest)
+        if (ctx.showPreloader) {
+            preloadBlock(nonce, config, manifest)
+        }
+        div {
+            id = config.appElement
+            classes = setOfNotNull(
+                manifest.ontola.theme ?: "common",
+                if (ctx.showPreloader) "preloader-fixed" else null
+            )
+        }
         serviceWorkerBlock(nonce, manifest)
         seedBlock(nonce, data, ctx.serializer)
         assetsBlock(nonce, config)

@@ -9,4 +9,5 @@ data class TenantData(
     val websiteIRI: Url,
     val websiteOrigin: Url,
     val manifest: Manifest,
+    val showPreloader: Boolean = true,
 )
