@@ -10,3 +10,8 @@ class TenantNotFoundException : RuntimeException() {
     override val message: String?
         get() = "Website not found"
 }
+
+class WrongWebsiteIRIException : RuntimeException() {
+    override val message: String?
+        get() = "Website-Iri does not correspond with authority headers"
+}

@@ -1,170 +1,176 @@
 package tools.empathy.libro.server.plugins
 
-import io.ktor.http.Headers
-import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpMethod
-import io.ktor.http.Parameters
-import io.ktor.http.RequestConnectionPoint
-import io.ktor.server.application.Application
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.request.ApplicationReceivePipeline
-import io.ktor.server.request.ApplicationRequest
-import io.ktor.server.request.RequestCookies
-import io.ktor.server.response.ApplicationResponse
-import io.ktor.util.Attributes
-import io.ktor.utils.io.ByteReadChannel
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.slot
-import mu.KLogger
-import tools.empathy.libro.server.tenantization.closeToWebsiteIRI
+import kotlinx.coroutines.runBlocking
+import tools.empathy.libro.server.TenantNotFoundException
+import tools.empathy.libro.server.WrongWebsiteIRIException
+import tools.empathy.libro.server.tenantization.CachedLookupKeys
+import tools.empathy.libro.server.tenantization.getWebsiteBase
+import withCacheTestApplication
 import kotlin.test.Test
-import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class TenantizationTest {
-    private fun createRequest(path: String, headers: Headers): ApplicationRequest {
-        lateinit var request: ApplicationRequest
-
-        val call = object : ApplicationCall {
-            override val application: Application
-                get() = TODO("Not yet implemented")
-            override val attributes: Attributes
-                get() = Attributes()
-            override val parameters: Parameters
-                get() = TODO("Not yet implemented")
-            override val request: ApplicationRequest
-                get() = request
-            override val response: ApplicationResponse
-                get() = TODO("Not yet implemented")
-
-            override fun afterFinish(handler: (cause: Throwable?) -> Unit) {
-                TODO("Not yet implemented")
-            }
-        }
-
-        request = object : ApplicationRequest {
-            override val call: ApplicationCall
-                get() = call
-            override val cookies: RequestCookies
-                get() = TODO("Not yet implemented")
-            override val headers: Headers
-                get() = headers
-            override val local: RequestConnectionPoint
-                get() = object : RequestConnectionPoint {
-                    override val host: String
-                        get() = "localhost"
-                    override val method: HttpMethod
-                        get() = HttpMethod.Get
-                    override val port: Int
-                        get() = 80
-                    override val remoteHost: String
-                        get() = "localhost"
-                    override val scheme: String
-                        get() = "https"
-                    override val uri: String
-                        get() = path
-                    override val version: String
-                        get() = "1.1"
-                }
-            override val pipeline: ApplicationReceivePipeline
-                get() = TODO("Not yet implemented")
-            override val queryParameters: Parameters
-                get() = TODO("Not yet implemented")
-            override val rawQueryParameters: Parameters
-                get() = TODO("Not yet implemented")
-
-            override fun receiveChannel(): ByteReadChannel {
-                TODO("Not yet implemented")
-            }
-        }
-
-        return request
-    }
-
     @Test
-    fun closeToWebsiteIRIShouldHaveAuthoritativeHeader() {
+    fun getWebsiteBaseShouldHaveAuthoritativeHeader() {
+        val headers = mapOf<String, String>()
         assertFailsWith<Exception>("No header usable for authority present") {
-            createRequest("/", HeadersBuilder().build()).closeToWebsiteIRI(mockk())
+            getWebsiteBaseFromRequest(headers)
         }
-    }
-
-    @Test
-    fun closeToWebsiteIRIRaisedWithoutProtocol() {
         assertFailsWith<Exception>("No header usable for authority present") {
-            val headers = HeadersBuilder().apply {
-                append("X-Forwarded-Host", "example.test")
-            }.build()
-            createRequest("/", headers)
-                .closeToWebsiteIRI(mockk())
+            getWebsiteBaseFromRequest(headers, "/path")
         }
     }
 
     @Test
-    fun closeToWebsiteIRIShouldUseWebsiteIRIHeader() {
-        val headers = HeadersBuilder().apply {
-            append("X-Forwarded-Host", "example.test")
-            append("X-Forwarded-Proto", "https")
-            append("Website-IRI", "https://example.test/mypath")
-        }.build()
-        val req = createRequest("/", headers)
-        val iri = req.closeToWebsiteIRI(mockk())
+    fun getWebsiteBaseRaisedWithoutProtocol() {
+        val headers = mapOf(
+            "X-Forwarded-Host" to "example.test"
+        )
+        assertFailsWith<Exception>("No header usable for authority present") {
+            getWebsiteBaseFromRequest(headers)
+        }
+        assertFailsWith<Exception>("No header usable for authority present") {
+            getWebsiteBaseFromRequest(headers, "/path")
+        }
+    }
 
+    @Test
+    fun getWebsiteBaseShouldUseWebsiteIRIHeader() {
+        val headers = mapOf(
+            "X-Forwarded-Host" to "example.test",
+            "X-Forwarded-Proto" to "https",
+            "Website-IRI" to "https://example.test/mypath"
+        )
+
+        val iri = getWebsiteBaseFromRequest(headers)
         assertEquals("https://example.test/mypath", iri)
+
+        val iriWithPath = getWebsiteBaseFromRequest(headers, "/path")
+        assertEquals("https://example.test/mypath", iriWithPath)
     }
 
     @Test
-    fun closeToWebsiteIRIShouldLogForging() {
-        val logger = mockk<KLogger>()
-        val warning = slot<String>()
-        every { logger.warn(capture(warning)) } returns Unit
-
-        val headers = HeadersBuilder().apply {
-            append("X-Forwarded-Host", "example.test")
-            append("X-Forwarded-Proto", "https")
-            append("Website-IRI", "https://forged.test/mypath")
-        }.build()
-        val req = createRequest("/", headers)
-        req.closeToWebsiteIRI(logger)
-
-        assertContains(warning.captured, "Website-Iri does not correspond")
-        assertContains(warning.captured, "https://forged.test/mypath")
-        assertContains(warning.captured, "https://example.test")
+    fun getWebsiteBaseShouldNotBeForged() {
+        val headers = mapOf(
+            "X-Forwarded-Host" to "example.test",
+            "X-Forwarded-Proto" to "https",
+            "Website-IRI" to "https://forged.test/mypath"
+        )
+        assertFailsWith<WrongWebsiteIRIException> {
+            getWebsiteBaseFromRequest(headers)
+        }
+        assertFailsWith<WrongWebsiteIRIException> {
+            getWebsiteBaseFromRequest(headers, "/path")
+        }
     }
 
     @Test
-    fun closeToWebsiteIRIShouldBuildFromXForwardedSet() {
-        val headers = HeadersBuilder().apply {
-            append("X-Forwarded-Host", "example.test")
-            append("X-Forwarded-Proto", "https")
-        }.build()
-        val req = createRequest("/", headers)
-        val iri = req.closeToWebsiteIRI(mockk())
+    fun getWebsiteBaseShouldBuildFromXForwardedSet() {
+        val headers = mapOf(
+            "X-Forwarded-Host" to "example.test",
+            "X-Forwarded-Proto" to "https"
+        )
 
-        assertEquals("https://example.test", iri)
+        val iri = getWebsiteBaseFromRequest(headers)
+        assertEquals("https://example.test/", iri)
+
+        val iriWithPath = getWebsiteBaseFromRequest(headers, "/path")
+        assertEquals("https://example.test/", iriWithPath)
+    }
+    @Test
+    fun getWebsiteBaseShouldBuildWithPathFromXForwardedSet() {
+        val headers = mapOf(
+            "X-Forwarded-Host" to "exam.ple",
+            "X-Forwarded-Proto" to "https"
+        )
+
+        assertFailsWith<TenantNotFoundException> {
+            getWebsiteBaseFromRequest(headers)
+        }
+
+        val iriWithPath = getWebsiteBaseFromRequest(headers, "/path")
+        assertEquals("https://exam.ple/path", iriWithPath)
     }
 
     @Test
-    fun closeToWebsiteIRIShouldBuildIgnoreBulkRoute() {
-        val headers = HeadersBuilder().apply {
-            append("X-Forwarded-Host", "example.test")
-            append("X-Forwarded-Proto", "https")
-        }.build()
-        val req = createRequest("/link-lib/bulk", headers)
-        val iri = req.closeToWebsiteIRI(mockk())
+    fun getWebsiteBaseShouldBuildIgnoreBulkRoute() {
+        val headers = mapOf(
+            "X-Forwarded-Host" to "example.test",
+            "X-Forwarded-Proto" to "https"
+        )
 
-        assertEquals("https://example.test", iri)
+        val iri = getWebsiteBaseFromRequest(headers, "/link-lib/bulk")
+        assertEquals("https://example.test/", iri)
     }
 
     @Test
-    fun closeToWebsiteIRIFromOrigin() {
-        val headers = HeadersBuilder().apply {
-            append("Origin", "https://example.test")
-        }.build()
-        val req = createRequest("/", headers)
-        val iri = req.closeToWebsiteIRI(mockk())
+    fun getWebsiteBaseShouldBuildFromOrigin() {
+        val headers = mapOf(
+            "Origin" to "https://example.test"
+        )
 
-        assertEquals("https://example.test", iri)
+        val iri = getWebsiteBaseFromRequest(headers)
+        assertEquals("https://example.test/", iri)
+
+        val iriWithPath = getWebsiteBaseFromRequest(headers, "/path")
+        assertEquals("https://example.test/", iriWithPath)
+    }
+    @Test
+    fun getWebsiteBaseWithoutSlash() {
+        val headers = mapOf(
+            "Origin" to "https://example.test"
+        )
+
+        val iri = getWebsiteBaseFromRequest(headers, "")
+        assertEquals("https://example.test/", iri)
+    }
+
+    @Test
+    fun getWebsiteBaseWithPathShouldIgnoreSlash() {
+        val headers = mapOf(
+            "Origin" to "https://exam.ple"
+        )
+
+        val iriWithPath = getWebsiteBaseFromRequest(headers, "/path/")
+        assertEquals("https://exam.ple/path", iriWithPath)
+    }
+
+    @Test
+    fun getWebsiteBaseShouldBuildWithPathFromOrigin() {
+        val headers = mapOf(
+            "Origin" to "https://exam.ple"
+        )
+
+        assertFailsWith<TenantNotFoundException> {
+            getWebsiteBaseFromRequest(headers)
+        }
+
+        val iriWithPath = getWebsiteBaseFromRequest(headers, "/path")
+        assertEquals("https://exam.ple/path", iriWithPath)
+    }
+
+    private fun getWebsiteBaseFromRequest(headers: Map<String, String>, path: String = "/"): String? {
+        return withCacheTestApplication(
+            {
+                storage.addHashKey(CachedLookupKeys.Manifest.name, "https://exam.ple/path", "")
+                storage.addHashKey(CachedLookupKeys.Manifest.name, "https://example.test/", "")
+            }
+        ) { ctx ->
+            runBlocking {
+                val request = createCall(
+                    readResponse = true
+                ) {
+                    this.method = HttpMethod.Get
+                    this.uri = path
+                    headers.forEach { header ->
+                        addHeader(header.key, header.value)
+                    }
+                }.request
+
+                request.call.getWebsiteBase()
+            }
+        }
     }
 }

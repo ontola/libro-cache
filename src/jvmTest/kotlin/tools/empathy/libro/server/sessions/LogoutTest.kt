@@ -12,6 +12,7 @@ import tools.empathy.libro.server.sessions.oidc.ClientCredentials
 import tools.empathy.libro.server.sessions.oidc.OIDCServerSettings
 import tools.empathy.libro.server.util.LibroHttpHeaders
 import tools.empathy.url.appendPath
+import tools.empathy.url.asHrefString
 import tools.empathy.url.origin
 import withCacheTestApplication
 import kotlin.test.Test
@@ -43,9 +44,9 @@ class LogoutTest {
             val csrfToken = getCsrfToken()
 
             handleRequest(HttpMethod.Post, "/logout") {
-                addHeader(HttpHeaders.Origin, websiteIRI.toString())
+                addHeader(HttpHeaders.Origin, websiteIRI.toString().removeSuffix("/"))
                 addHeader(HttpHeaders.XForwardedProto, "https")
-                addHeader(LibroHttpHeaders.WebsiteIri, websiteIRI.toString())
+                addHeader(LibroHttpHeaders.WebsiteIri, websiteIRI.asHrefString)
                 addHeader(LibroHttpHeaders.XCsrfToken, csrfToken)
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())

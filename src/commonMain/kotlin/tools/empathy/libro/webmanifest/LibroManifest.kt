@@ -37,8 +37,6 @@ data class LibroManifest(
     val blobUploadIri: String = "",
     @SerialName("csp")
     val csp: CSPManifest? = null,
-    @SerialName("css_class")
-    val cssClass: String = "default",
     @SerialName("header_background")
     val headerBackground: String = "primary",
     @SerialName("header_text")

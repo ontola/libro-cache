@@ -20,17 +20,15 @@ import tools.empathy.libro.server.configuration.LibroConfig
 import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.document.PageRenderContext
 import tools.empathy.libro.server.plugins.blacklisted
+import tools.empathy.libro.server.plugins.persistentStorage
 import tools.empathy.libro.server.plugins.setManifestLanguage
-import tools.empathy.libro.server.plugins.storage
 import tools.empathy.libro.server.util.UrlSerializer
-import tools.empathy.libro.server.util.measuredHit
 import tools.empathy.libro.server.util.origin
 import tools.empathy.libro.webmanifest.Manifest
 import tools.empathy.studio.StudioDeploymentKey
 import tools.empathy.url.fullUrl
 import tools.empathy.url.origin
 import tools.empathy.url.rebase
-import kotlin.properties.Delegates
 
 private val TenantizationKey = AttributeKey<TenantData>("TenantizationKey")
 
@@ -51,40 +49,19 @@ class TenantizationNotYetConfiguredException :
 class TenantizationConfiguration {
     val logger = KotlinLogging.logger {}
 
-    var tenantExpiration by Delegates.notNull<Long>()
     var staticTenants: Map<String, TenantData> = emptyMap()
 
     fun staticTenant(url: Url): TenantData? = staticTenants[url.host]
-
-    fun complete(libroConfig: LibroConfig) {
-        this.tenantExpiration = libroConfig.tenantExpiration
-    }
 }
 
 val Tenantization = createApplicationPlugin(name = "Tenantization", ::TenantizationConfiguration) {
     val logger = KotlinLogging.logger {}
-    pluginConfig.complete(application.libroConfig)
 
     @Throws(TenantNotFoundException::class)
-    suspend fun ApplicationCall.getWebsiteBase(): Url {
-        val websiteIRI = request.closeToWebsiteIRI(pluginConfig.logger)
+    suspend fun getManifest(call: ApplicationCall, websiteBase: String): Manifest {
+        val manifest = application.persistentStorage.getHashValue(CachedLookupKeys.Manifest.name, hashKey = websiteBase) ?: throw TenantNotFoundException()
 
-        val websiteBase = cachedLookup(CachedLookupKeys.WebsiteBase, expiration = pluginConfig.tenantExpiration) {
-            getTenant(websiteIRI).websiteBase
-        }(websiteIRI) ?: throw TenantNotFoundException()
-
-        return Url(websiteBase)
-    }
-
-    suspend fun getManifest(call: ApplicationCall, websiteBase: Url): Manifest {
-        val manifest = call.cachedLookup(
-            CachedLookupKeys.Manifest,
-            expiration = pluginConfig.tenantExpiration
-        ) {
-            call.getManifest(Url(it))
-        }(websiteBase.toString())
-
-        return call.application.libroConfig.serializer.decodeFromString(manifest!!)
+        return call.application.libroConfig.serializer.decodeFromString(manifest)
     }
 
     fun interceptDeployment(call: ApplicationCall, libroConfig: LibroConfig, deployment: PageRenderContext) {
@@ -108,7 +85,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
         try {
             val websiteBase = call.getWebsiteBase()
 
-            val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
+            val baseOrigin = URLBuilder(Url(websiteBase)).apply { encodedPathSegments = emptyList() }.build()
             val manifest = getManifest(call, websiteBase)
 
             call.setManifestLanguage(manifest.lang)
@@ -163,29 +140,4 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
 
 enum class CachedLookupKeys {
     Manifest,
-    WebsiteBase,
-}
-
-private fun ApplicationCall.cachedLookup(
-    prefix: CachedLookupKeys,
-    expiration: Long,
-    block: suspend (v: String) -> String?,
-): suspend (v: String) -> String? {
-    if (expiration == 0L) {
-        return block
-    }
-
-    return { dependency ->
-        measuredHit(
-            prefix.name,
-            block = {
-                application.storage.getString(prefix.name, dependency)
-            },
-            onMissed = {
-                block(dependency)?.also {
-                    application.storage.setString(prefix.name, dependency, value = it, expiration = expiration)
-                }
-            }
-        )
-    }
 }

@@ -36,7 +36,6 @@ fun Routing.mountHealth() {
             EnvironmentCheck(),
             RedisCheck(),
             HeadRequestCheck(),
-            ManifestCheck(),
             BulkCheck(),
         )
 

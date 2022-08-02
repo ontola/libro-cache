@@ -9,6 +9,7 @@ import io.ktor.server.testing.handleRequest
 import kotlinx.coroutines.runBlocking
 import tools.empathy.libro.server.sessions.SessionData
 import tools.empathy.libro.server.util.LibroHttpHeaders
+import tools.empathy.url.asHrefString
 import withCacheTestApplication
 import java.net.URLEncoder
 import kotlin.test.Test
@@ -27,7 +28,7 @@ class CSRFProtectionTest {
                 addHeader("authority", "mysite.local")
                 addHeader(HttpHeaders.Accept, "text/html")
                 addHeader(HttpHeaders.XForwardedProto, "https")
-                addHeader(LibroHttpHeaders.WebsiteIri, tenant.toString())
+                addHeader(LibroHttpHeaders.WebsiteIri, tenant.asHrefString)
             }.apply {
                 val session = sessions.get<SessionData>()
                 val csrfToken = session?.csrfToken

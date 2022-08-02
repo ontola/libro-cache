@@ -44,7 +44,7 @@ data class MockConfiguration(
 fun <R> withCacheTestApplication(
     configure: MockConfiguration.() -> Unit = {},
     test: TestApplicationEngine.(context: TestContext) -> R,
-) {
+): R? {
     val env = applicationEngineEnvironment {
         config = MapApplicationConfig(
             "ktor.deployment.environment" to "test",
@@ -71,7 +71,7 @@ fun <R> withCacheTestApplication(
     val adapter = adapterBuilder.build()
     val context = TestContext(adapter, config)
 
-    withApplication(
+    return withApplication(
         env,
         test = {
             application.module(
@@ -80,6 +80,8 @@ fun <R> withCacheTestApplication(
                 persistentStorage = adapter,
                 client = client,
             )
+
+            var foo: R? = null
 
             cookiesSession {
                 mockConfig.initialAccessTokens?.let {
@@ -94,8 +96,10 @@ fun <R> withCacheTestApplication(
                     }
                 }
 
-                test(context)
+                foo = test(context)
             }
+
+            foo
         },
     )
 }

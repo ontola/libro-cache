@@ -41,6 +41,17 @@ data class TestStorageAdapterBuilder(
         values.add(Json.encodeToString(settings))
     }
 
+    fun addHashKey(key: String, field: String, value: String) {
+        val prefixed = keyManager.toKey(key)
+        if (hKeys.indexOf(prefixed) == -1) {
+            hKeys.add(prefixed)
+            hValues.add(mutableMapOf())
+        }
+        val map = hValues[hKeys.indexOf(prefixed)]
+
+        map[field] = value
+    }
+
     fun build(): StorageAdapter<String, String> {
         val adapter = mockk<StorageAdapter<String, String>>()
 
@@ -71,8 +82,7 @@ data class TestStorageAdapterBuilder(
 
     private fun initManifests() {
         for ((website, manifest) in memoizedManifests) {
-            keys.add(keyManager.toKey(CachedLookupKeys.Manifest.name, website))
-            values.add(libroConfig.serializer.encodeToString(manifest))
+            addHashKey(CachedLookupKeys.Manifest.name, website, libroConfig.serializer.encodeToString(manifest))
         }
     }
 
@@ -128,6 +138,34 @@ data class TestStorageAdapterBuilder(
                     .entries
                     .asFlow()
                     .map { Pair(it.key, it.value) }
+            }
+        }
+
+        val hGetKey = slot<String>()
+        val hGetField = slot<String>()
+        coEvery {
+            hget(capture(hGetKey), capture(hGetField))
+        } answers {
+            val i = hKeys.indexOf(hGetKey.captured)
+
+            if (i == -1) {
+                null
+            } else {
+                hValues[i][hGetField.captured]
+            }
+        }
+
+        val existsKey = slot<String>()
+        val existsField = slot<String>()
+        coEvery {
+            hexists(capture(existsKey), capture(existsField))
+        } answers {
+            val i = hKeys.indexOf(existsKey.captured)
+
+            if (i == -1) {
+                false
+            } else {
+                hValues[i].containsKey(existsField.captured)
             }
         }
 

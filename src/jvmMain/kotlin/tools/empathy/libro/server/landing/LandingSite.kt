@@ -7,7 +7,6 @@ import tools.empathy.libro.server.health.BackendCheck
 import tools.empathy.libro.server.health.BulkCheck
 import tools.empathy.libro.server.health.EnvironmentCheck
 import tools.empathy.libro.server.health.HeadRequestCheck
-import tools.empathy.libro.server.health.ManifestCheck
 import tools.empathy.libro.server.health.RedisCheck
 import tools.empathy.libro.server.plugins.Versions
 import tools.empathy.libro.server.tenantization.getApiVersion
@@ -46,7 +45,6 @@ suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
         EnvironmentCheck(),
         RedisCheck(),
         HeadRequestCheck(),
-        ManifestCheck(),
         BulkCheck(),
     )
 

@@ -32,6 +32,8 @@ interface StorageAdapter<K : Any, V : Any> {
 
     suspend fun hdel(key: K, vararg fields: V): Long?
 
+    suspend fun hexists(key: K, field: K): Boolean
+
     suspend fun hget(key: String, field: String): String?
 
     fun hgetall(key: K): Flow<Pair<K, V>>
@@ -71,6 +73,10 @@ class RedisAdapter(val client: RedisCoroutinesCommands<String, String>) : Storag
 
     override suspend fun expire(key: String, seconds: Long): Boolean? {
         return client.expire(key, seconds)
+    }
+
+    override suspend fun hexists(key: String, field: String): Boolean {
+        return client.hexists(key, field) ?: false
     }
 
     override suspend fun hget(key: String, field: String): String? {
@@ -240,6 +246,12 @@ class Storage(
         val prefixed = keyManager.toKey(*key)
 
         return adapter.get(prefixed)
+    }
+
+    suspend fun hexists(vararg key: String, hashKey: String): Boolean {
+        val prefixed = keyManager.toKey(*key)
+
+        return adapter.hexists(prefixed, hashKey)
     }
 
     suspend fun getHash(vararg key: String): Map<String, String> {

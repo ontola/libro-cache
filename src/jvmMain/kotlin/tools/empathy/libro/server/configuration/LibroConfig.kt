@@ -11,7 +11,6 @@ import mu.KotlinLogging
 import tools.empathy.libro.server.createClient
 import tools.empathy.libro.server.csp.CSPReportException
 import tools.empathy.libro.server.plugins.Versions
-import kotlin.time.Duration.Companion.minutes
 
 data class LibroConfig constructor(
     /**
@@ -72,11 +71,6 @@ data class LibroConfig constructor(
      * Omit to disable expiration.
      */
     val cacheExpiration: Long? = null,
-    /**
-     * The amount of seconds after which tenant finder lookups should expire.
-     * Set to zero to disable caching.
-     */
-    val tenantExpiration: Long = 10.minutes.inWholeSeconds,
     /**
      * Client to use for requests to external systems.
      */
@@ -341,7 +335,6 @@ data class LibroConfig constructor(
                 "Default lang: $defaultLanguage",
                 "Invalidator: $enableInvalidator",
                 "Cache exp: ${if (cacheExpiration == null) "never" else "$cacheExpiration seconds"}",
-                "Tenant exp: ${if (tenantExpiration == 0L) "caching disabled" else "$tenantExpiration seconds"}",
                 "Server reporting: $serverReportingKey",
                 "Client reporting: $clientReportingKey",
             ).joinToString(", ")
