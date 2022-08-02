@@ -12,13 +12,9 @@ data class SessionsConfig(
      */
     val jwtEncryptionToken: String,
     /**
-     * The id to identify this client.
+     * The name to identify this client.
      */
-    val clientId: String,
-    /**
-     * The secret to identify this client.
-     */
-    val clientSecret: String,
+    val clientName: String,
     /**
      * The url of the OIDC identity provider
      */
@@ -28,8 +24,7 @@ data class SessionsConfig(
         fun forTesting(): SessionsConfig = SessionsConfig(
             sessionSecret = "secret",
             jwtEncryptionToken = "jwtEncryptionToken",
-            clientId = "0",
-            clientSecret = "",
+            clientName = "Libro",
             oidcUrl = Url("https://oidcserver.test"),
         )
     }

@@ -1,7 +1,11 @@
 package tools.empathy.libro.server.health
 
 import io.ktor.server.application.ApplicationCall
+import kotlinx.coroutines.runBlocking
 import tools.empathy.libro.server.configuration.libroConfig
+import tools.empathy.libro.server.module
+import tools.empathy.libro.server.plugins.storage
+import tools.empathy.libro.server.sessions.oidc.OIDCSettingsManager
 
 class EnvironmentCheck : Check() {
     init {
@@ -18,6 +22,8 @@ class EnvironmentCheck : Check() {
                 }
             }
 
+            val oidcSettings = runBlocking { OIDCSettingsManager(config, call.application.storage).get() }
+
             if (env != "development") {
                 checkValue("invalidationChannel", config.redis.invalidationChannel)
                 checkValue("reportingKey", config.serverReportingKey)
@@ -26,8 +32,9 @@ class EnvironmentCheck : Check() {
             }
 
             checkValue("redisUrl", config.redis.uri.toString())
-            checkValue("clientId", config.sessions.clientId)
-            checkValue("clientSecret", config.sessions.clientSecret)
+            checkValue("clientName", config.sessions.clientName)
+            checkValue("clientId", oidcSettings?.credentials?.clientId)
+            checkValue("clientSecret", oidcSettings?.credentials?.clientSecret)
             checkValue("jwtEncryptionToken", config.sessions.jwtEncryptionToken)
             checkValue("sessionSecret", config.sessions.sessionSecret)
         }

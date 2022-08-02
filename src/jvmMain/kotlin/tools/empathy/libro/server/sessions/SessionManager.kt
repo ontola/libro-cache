@@ -29,6 +29,7 @@ import tools.empathy.libro.server.plugins.CacheSessionConfiguration
 import tools.empathy.libro.server.plugins.deviceId
 import tools.empathy.libro.server.plugins.logger
 import tools.empathy.libro.server.plugins.setPreferredLanguage
+import tools.empathy.libro.server.sessions.oidc.OIDCServerSettings
 import tools.empathy.libro.server.tenantization.tenant
 import tools.empathy.libro.server.util.LibroHttpHeaders
 import tools.empathy.libro.server.util.copy
@@ -74,11 +75,14 @@ class SessionManager(
     val isStaff: Boolean
         get() = claims()?.scopes?.contains("staff") ?: false
 
+    private val oidcSettings: OIDCServerSettings
+        get() = runBlocking { configuration.oidcSettingsManager.get()!! }
+
     val logoutRequest: LogoutRequest?
         get() = session?.credentials?.accessToken?.let {
             LogoutRequest(
-                configuration.oidcClientId,
-                configuration.oidcClientSecret,
+                oidcSettings.credentials.clientId,
+                oidcSettings.credentials.clientSecret,
                 it,
             )
         }
@@ -183,8 +187,8 @@ class SessionManager(
 
             setBody(
                 OIDCRequest.guestRequest(
-                    configuration.oidcClientId,
-                    configuration.oidcClientSecret,
+                    oidcSettings.credentials.clientId,
+                    oidcSettings.credentials.clientSecret,
                 )
             )
         }
@@ -195,7 +199,7 @@ class SessionManager(
             if (error.error == "invalid_grant") {
                 throw InvalidGrantException()
             } else {
-                throw RuntimeException("Unexpected body with status 400")
+                throw RuntimeException("Unexpected body with status 400 (${error.error})")
             }
         }
 

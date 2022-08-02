@@ -44,6 +44,7 @@ import io.ktor.server.websocket.WebSockets
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.coroutines
+import kotlinx.coroutines.runBlocking
 import tools.empathy.libro.server.bundle.Bundle
 import tools.empathy.libro.server.configuration.LibroConfig
 import tools.empathy.libro.server.configuration.LibroConfiguration
@@ -68,10 +69,12 @@ import tools.empathy.libro.server.plugins.Redirect
 import tools.empathy.libro.server.plugins.RedisAdapter
 import tools.empathy.libro.server.plugins.ServiceRegistry
 import tools.empathy.libro.server.plugins.SessionLanguage
+import tools.empathy.libro.server.plugins.Storage
 import tools.empathy.libro.server.plugins.StorageAdapter
 import tools.empathy.libro.server.plugins.StoragePlugin
 import tools.empathy.libro.server.plugins.Versions
 import tools.empathy.libro.server.plugins.language
+import tools.empathy.libro.server.plugins.logger
 import tools.empathy.libro.server.plugins.managementTenant
 import tools.empathy.libro.server.plugins.requestTimings
 import tools.empathy.libro.server.routes.mountBulk
@@ -83,11 +86,13 @@ import tools.empathy.libro.server.routes.mountStatic
 import tools.empathy.libro.server.routes.mountTestingRoutes
 import tools.empathy.libro.server.sessions.RedisSessionStorage
 import tools.empathy.libro.server.sessions.SessionData
+import tools.empathy.libro.server.sessions.oidc.OIDCSettingsManager
 import tools.empathy.libro.server.sessions.signedTransformer
 import tools.empathy.libro.server.statuspages.RenderLanguage
 import tools.empathy.libro.server.statuspages.errorPage
 import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.server.tenantization.Tenantization
+import tools.empathy.libro.server.util.KeyManager
 import tools.empathy.libro.server.util.LibroHttpHeaders
 import tools.empathy.libro.server.util.configureCallLogging
 import tools.empathy.libro.server.util.configureClientLogging
@@ -128,6 +133,8 @@ fun Application.module(
     val adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
     val persistentAdapter =
         persistentStorage ?: RedisAdapter(RedisClient.create(config.persistentRedisURI).connect().coroutines())
+    val oidcManager = OIDCSettingsManager(config, Storage(persistentAdapter, KeyManager(config.redis), expiration = null))
+    val oidcSettings = lazy { runBlocking { oidcManager.get() } }
 
     install(MicrometerMetrics) {
         registry = Metrics.metricsRegistry
@@ -311,10 +318,9 @@ fun Application.module(
     }
 
     install(CacheSession) {
+        this.oidcSettingsManager = oidcManager
         val jwtToken = Algorithm.HMAC512(config.sessions.jwtEncryptionToken)
-        jwtValidator = JWT.require(jwtToken)
-            .withClaim("application_id", config.sessions.clientId)
-            .build()
+        jwtValidator = JWT.require(jwtToken).build()
     }
 
     install(Blacklist) {
@@ -392,8 +398,13 @@ fun Application.module(
 
             URLBuilder(Url(websiteIri!!).appendPath("oauth", "token")).apply {
                 parameters.apply {
-                    append("client_id", config.sessions.clientId)
-                    append("client_secret", config.sessions.clientSecret)
+                    if (oidcSettings.value == null) {
+                        logger.warn { "No OIDC settings, omitting credentials from login transformation" }
+                    }
+                    oidcSettings.value?.let {
+                        append("client_id", it.credentials.clientId)
+                        append("client_secret", it.credentials.clientSecret)
+                    }
                     append("grant_type", "password")
                     append("scope", "user")
                 }
@@ -421,6 +432,7 @@ fun Application.module(
             ProxyRule(Regex("^/d/health"), exclude = true),
             ProxyRule(Regex("^/_studio/"), exclude = true),
             ProxyRule(Regex("^/link-lib/bulk"), exclude = true),
+            ProxyRule(Regex("^/([\\w/]*/)?login"), exclude = true),
             ProxyRule(Regex("^/([\\w/]*/)?logout"), exclude = true),
             ProxyRule(Regex("/static/"), exclude = true),
         )

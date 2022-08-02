@@ -11,7 +11,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
-import io.ktor.http.fullPath
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -96,7 +95,8 @@ class SessionRefresher(private val configuration: CacheSessionConfiguration) {
     private suspend fun refreshToken(userToken: String, refreshToken: String): OIDCTokenResponse {
         val issuer = JWT.decode(userToken).issuer
         val tokenUri = Url(issuer).appendPath("oauth", "token")
-        val oidcTokenUri = configuration.oidcUrl.appendPath(tokenUri.fullPath)
+        val oidcServerSettings = configuration.oidcSettingsManager.get()!!
+        val oidcTokenUri = oidcServerSettings.accessTokenUrl
 
         val response = configuration.client.post(oidcTokenUri) {
             expectSuccess = false
@@ -112,8 +112,8 @@ class SessionRefresher(private val configuration: CacheSessionConfiguration) {
 
             setBody(
                 OIDCRequest.refreshRequest(
-                    configuration.oidcClientId,
-                    configuration.oidcClientSecret,
+                    oidcServerSettings.credentials.clientId,
+                    oidcServerSettings.credentials.clientSecret,
                     refreshToken
                 )
             )

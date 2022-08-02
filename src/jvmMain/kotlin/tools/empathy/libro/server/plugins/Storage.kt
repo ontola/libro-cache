@@ -324,4 +324,4 @@ private fun reportMissingRegistry(): Nothing {
     throw StorageNotYetConfiguredException()
 }
 class StorageNotYetConfiguredException :
-    IllegalStateException("Logger is not yet ready: you are asking it to early before the Storage feature.")
+    IllegalStateException("Storage is not yet ready: you are asking it to early before the Storage feature.")
