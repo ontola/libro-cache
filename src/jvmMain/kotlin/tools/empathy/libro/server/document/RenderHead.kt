@@ -145,9 +145,6 @@ private fun HEAD.opening(manifest: Manifest) {
     link(rel = "manifest", href = manifest.ontola.websiteIRI.rebase("manifest.json").fullPath)
     meta(name = "website", content = manifest.ontola.websiteIRI.withoutTrailingSlash)
     manifest.ontola.preconnect?.forEach { link(rel = "preconnect", href = it) }
-    meta(content = manifest.name) {
-        attributes["property"] = "og:title"
-    }
     meta(content = "website") {
         attributes["property"] = "og:type"
     }

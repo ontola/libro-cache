@@ -72,9 +72,6 @@ class SessionManager(
     val isUser: Boolean
         get() = claims()?.user?.type == UserType.User
 
-    val isStaff: Boolean
-        get() = claims()?.scopes?.contains("staff") ?: false
-
     private val oidcSettings: OIDCServerSettings
         get() = runBlocking { configuration.oidcSettingsManager.get()!! }
 

@@ -7,7 +7,12 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.server.testing.handleRequest
+import kotlinx.datetime.Instant
+import tools.empathy.libro.server.sessions.oidc.ClientCredentials
+import tools.empathy.libro.server.sessions.oidc.OIDCServerSettings
 import tools.empathy.libro.server.util.LibroHttpHeaders
+import tools.empathy.url.appendPath
+import tools.empathy.url.origin
 import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,6 +24,21 @@ class LogoutTest {
         withCacheTestApplication({
             initialAccessTokens = generateTestAccessTokenPair(false)
             initTenant(websiteIRI)
+            val origin = Url(websiteIRI.origin())
+            registerOIDCServerSettings(
+                OIDCServerSettings(
+                    Url("https://oidcserver.test"),
+                    authorizeUrl = origin.appendPath("oauth", "authorize"),
+                    accessTokenUrl = origin.appendPath("oauth", "tokens"),
+                    credentials = ClientCredentials(
+                        clientId = "libroclient",
+                        clientSecret = "librosecret",
+                        clientIdIssuedAt = 0,
+                        clientSecretExpiresAt = Instant.DISTANT_FUTURE.epochSeconds.toInt(),
+                        listOf(Url("urn:ietf:wg:oauth:2.0:oob")),
+                    )
+                )
+            )
         }) {
             val csrfToken = getCsrfToken()
 

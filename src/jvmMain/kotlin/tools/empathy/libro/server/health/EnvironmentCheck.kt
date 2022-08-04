@@ -3,7 +3,6 @@ package tools.empathy.libro.server.health
 import io.ktor.server.application.ApplicationCall
 import kotlinx.coroutines.runBlocking
 import tools.empathy.libro.server.configuration.libroConfig
-import tools.empathy.libro.server.module
 import tools.empathy.libro.server.plugins.storage
 import tools.empathy.libro.server.sessions.oidc.OIDCSettingsManager
 

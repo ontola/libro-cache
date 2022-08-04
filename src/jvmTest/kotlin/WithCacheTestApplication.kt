@@ -17,6 +17,7 @@ import tools.empathy.libro.server.module
 import tools.empathy.libro.server.plugins.StorageAdapter
 import tools.empathy.libro.server.sessions.SessionData
 import tools.empathy.libro.server.sessions.TokenPair
+import tools.empathy.libro.server.sessions.oidc.OIDCServerSettings
 import tools.empathy.libro.webmanifest.Manifest
 import kotlin.test.assertEquals
 
@@ -33,6 +34,10 @@ data class MockConfiguration(
     fun initTenant(website: Url, manifest: Manifest = Manifest.forWebsite(website)) {
         storage.addManifest(website, manifest)
         clientBuilder.addManifest(website, manifest)
+    }
+
+    fun registerOIDCServerSettings(settings: OIDCServerSettings) {
+        storage.registerOIDCServerSettings(settings)
     }
 }
 

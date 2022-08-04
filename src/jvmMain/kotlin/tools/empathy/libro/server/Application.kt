@@ -16,6 +16,9 @@ import io.ktor.http.fullPath
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.OAuthServerSettings
+import io.ktor.server.auth.oauth
 import io.ktor.server.html.respondHtml
 import io.ktor.server.locations.Locations
 import io.ktor.server.logging.toLogString
@@ -84,8 +87,10 @@ import tools.empathy.libro.server.routes.mountManifest
 import tools.empathy.libro.server.routes.mountMaps
 import tools.empathy.libro.server.routes.mountStatic
 import tools.empathy.libro.server.routes.mountTestingRoutes
+import tools.empathy.libro.server.sessions.OIDCSession
 import tools.empathy.libro.server.sessions.RedisSessionStorage
 import tools.empathy.libro.server.sessions.SessionData
+import tools.empathy.libro.server.sessions.mountLogin
 import tools.empathy.libro.server.sessions.oidc.OIDCSettingsManager
 import tools.empathy.libro.server.sessions.signedTransformer
 import tools.empathy.libro.server.statuspages.RenderLanguage
@@ -98,9 +103,10 @@ import tools.empathy.libro.server.util.configureCallLogging
 import tools.empathy.libro.server.util.configureClientLogging
 import tools.empathy.libro.server.util.isHtmlAccept
 import tools.empathy.libro.server.util.mountWebSocketProxy
-import tools.empathy.libro.webmanifest.Manifest
+import tools.empathy.libro.server.util.origin
 import tools.empathy.studio.Studio
 import tools.empathy.studio.mountStudio
+import tools.empathy.studio.studioManifest
 import tools.empathy.url.appendPath
 import tools.empathy.url.disableCertValidation
 import java.util.UUID
@@ -292,6 +298,16 @@ fun Application.module(
                 )
             }
         }
+        cookie<OIDCSession>(name = "oidc_identity") {
+            cookie.httpOnly = true
+            cookie.secure = true
+            cookie.extensions["SameSite"] = "Lax"
+            if (!testing && !config.isDev) {
+                transform(
+                    signedTransformer(signingSecret = config.sessions.sessionSecret),
+                )
+            }
+        }
         cookie<String>("deviceId") {
             cookie.httpOnly = true
             cookie.secure = true
@@ -321,6 +337,34 @@ fun Application.module(
         this.oidcSettingsManager = oidcManager
         val jwtToken = Algorithm.HMAC512(config.sessions.jwtEncryptionToken)
         jwtValidator = JWT.require(jwtToken).build()
+    }
+
+    install(Authentication) {
+        oauth("libro-oidc") {
+            this.client = config.client
+
+            urlProvider = {
+                println("urlProvider")
+                val thingy = Url(request.origin()).appendPath("libro", "callback").toString()
+                println(thingy)
+                thingy
+            }
+            providerLookup = {
+                val origin = Url(request.origin())
+                val redirectUris = listOf(origin.appendPath("libro", "callback")).also { println(it) }
+                runBlocking { oidcManager.get(origin, redirectUris) }?.let {
+                    OAuthServerSettings.OAuth2ServerSettings(
+                        name = "oidc-${it.origin}",
+                        authorizeUrl = it.authorizeUrl.toString(),
+                        accessTokenUrl = it.accessTokenUrl.toString(),
+                        requestMethod = HttpMethod.Post,
+                        clientId = it.credentials.clientId,
+                        clientSecret = it.credentials.clientSecret,
+                        defaultScopes = listOf("user", "staff"),
+                    )
+                }
+            }
+        }
     }
 
     install(Blacklist) {
@@ -367,9 +411,7 @@ fun Application.module(
                 client = libroConfig.client,
                 websiteIRI = config.studio.origin,
                 websiteOrigin = config.studio.origin,
-                manifest = Manifest.forWebsite(config.studio.origin).copy(
-                    name = "Studio",
-                ),
+                manifest = studioManifest(config.studio.origin),
             ),
         )
     }
@@ -420,6 +462,7 @@ fun Application.module(
             ProxyRule(Regex("^/oauth/discovery/keys")),
             ProxyRule(Regex("^/oauth/introspect")),
             ProxyRule(Regex("^/oauth/userinfo")),
+            ProxyRule(Regex("^/oauth/token")),
 
             ProxyRule(Regex("/media_objects/\\w+/content"), client = ProxyClient.RedirectingBackend),
             ProxyRule(Regex("/active_storage/"), client = ProxyClient.RedirectingBackend),
@@ -432,7 +475,7 @@ fun Application.module(
             ProxyRule(Regex("^/d/health"), exclude = true),
             ProxyRule(Regex("^/_studio/"), exclude = true),
             ProxyRule(Regex("^/link-lib/bulk"), exclude = true),
-            ProxyRule(Regex("^/([\\w/]*/)?login"), exclude = true),
+            ProxyRule(Regex("^/([\\w/]*/)?libro/login"), exclude = true),
             ProxyRule(Regex("^/([\\w/]*/)?logout"), exclude = true),
             ProxyRule(Regex("/static/"), exclude = true),
         )
@@ -501,6 +544,7 @@ fun Application.module(
         mountManifest()
         mountBulk()
         mountWebSocketProxy()
+        mountLogin()
         mountLogout()
         mountMaps()
         mountIndex()

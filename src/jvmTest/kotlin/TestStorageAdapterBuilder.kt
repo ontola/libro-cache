@@ -11,10 +11,12 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import tools.empathy.libro.server.bulk.CacheControl
 import tools.empathy.libro.server.bulk.CacheEntry
 import tools.empathy.libro.server.configuration.LibroConfig
 import tools.empathy.libro.server.plugins.StorageAdapter
+import tools.empathy.libro.server.sessions.oidc.OIDCServerSettings
 import tools.empathy.libro.server.tenantization.CachedLookupKeys
 import tools.empathy.libro.server.util.KeyManager
 import tools.empathy.libro.webmanifest.Manifest
@@ -32,6 +34,11 @@ data class TestStorageAdapterBuilder(
 
     fun addManifest(website: Url, manifest: Manifest) {
         memoizedManifests[website.toString()] = manifest
+    }
+
+    fun registerOIDCServerSettings(settings: OIDCServerSettings) {
+        keys.add(keyManager.toKey("oidc", "registration", settings.origin.toString()))
+        values.add(Json.encodeToString(settings))
     }
 
     fun build(): StorageAdapter<String, String> {

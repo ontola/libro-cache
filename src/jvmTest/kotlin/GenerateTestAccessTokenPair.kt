@@ -16,7 +16,6 @@ fun generateTestAccessTokenPair(
 
     val accessToken = JWT
         .create()
-        .withClaim("application_id", config.clientId)
         .withIssuer(config.oidcUrl.toString())
         .withIssuedAt(Date.from(Clock.System.now().toJavaInstant()))
         .withExpiresAt(Date.from(Clock.System.now().plus(1.hours).toJavaInstant()))
@@ -31,7 +30,6 @@ fun generateTestAccessTokenPair(
                 "language" to "en",
             )
         )
-        .withClaim("application_id", config.clientId)
         .apply {
             if (expired) {
                 this.withExpiresAt(Date.from(Instant.DISTANT_PAST.toJavaInstant()))
@@ -40,7 +38,6 @@ fun generateTestAccessTokenPair(
         .sign(Algorithm.HMAC512(config.jwtEncryptionToken))
     val refreshToken = JWT
         .create()
-        .withClaim("application_id", config.clientId)
         .sign(Algorithm.HMAC512(config.jwtEncryptionToken))
 
     return Pair(accessToken, refreshToken)

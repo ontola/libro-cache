@@ -38,7 +38,7 @@ data class UserData(
 @Serializable
 data class Claims(
     @SerialName("application_id")
-    val applicationId: String,
+    val applicationId: String? = null,
     val exp: Long,
     val iat: Long,
     val iss: String? = null,
@@ -47,7 +47,7 @@ data class Claims(
     val scopes: List<String>,
     @SerialName("session_id")
     val sessionId: String? = null,
-    val user: UserData,
+    val user: UserData? = null,
 )
 
 @Serializable

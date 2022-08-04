@@ -31,6 +31,7 @@ import tools.empathy.libro.server.plugins.setManifestLanguage
 import tools.empathy.libro.server.util.measured
 import tools.empathy.libro.webmanifest.Manifest
 import tools.empathy.serialization.translations
+import tools.empathy.url.appendPath
 import tools.empathy.url.filename
 import tools.empathy.url.fullUrl
 import tools.empathy.url.origin
@@ -48,6 +49,11 @@ private val logger = KotlinLogging.logger {}
 
 val StudioDeploymentKey = AttributeKey<PageRenderContext>("StudioDeploymentKey")
 
+fun studioManifest(url: Url): Manifest = Manifest.forWebsite(Url(url.origin())).copy(
+    name = "Studio",
+    shortName = "Studio",
+)
+
 @OptIn(ExperimentalSerializationApi::class)
 val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
     pluginConfig.complete(application)
@@ -57,14 +63,16 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
         indent = 4
     }
 
-    fun hostStudio(call: ApplicationCall) {
+    suspend fun hostStudio(call: ApplicationCall) {
         val uri = call.fullUrl()
+
+        if (uri == Url(uri.origin())) {
+            return call.respondRedirect(uri.appendPath("libro", "studio").toString())
+        }
 
         val ctx = call.pageRenderContextFromCall(
             data = null,
-            manifest = Manifest.forWebsite(Url(uri.origin())).copy(
-                name = "Studio",
-            ),
+            manifest = studioManifest(uri),
             uri = uri,
         )
         call.attributes.put(StudioDeploymentKey, ctx)
