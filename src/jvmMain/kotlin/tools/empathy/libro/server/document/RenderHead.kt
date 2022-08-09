@@ -22,8 +22,8 @@ import tools.empathy.serialization.DataSlice
 import tools.empathy.serialization.Value
 import tools.empathy.serialization.canonical
 import tools.empathy.serialization.translations
+import tools.empathy.url.asHrefString
 import tools.empathy.url.rebase
-import tools.empathy.url.withoutTrailingSlash
 
 fun HEAD.renderHead(
     url: Url,
@@ -142,8 +142,8 @@ private fun HEAD.appIcons(manifest: Manifest) {
 
 private fun HEAD.opening(manifest: Manifest) {
     meta(charset = "utf-8")
-    link(rel = "manifest", href = manifest.ontola.websiteIRI.rebase("manifest.json").fullPath)
-    meta(name = "website", content = manifest.ontola.websiteIRI.withoutTrailingSlash)
+    link(rel = "manifest", href = manifest.ontola.websiteIRI.rebase("manifest.json").asHrefString)
+    meta(name = "website", content = manifest.ontola.websiteIRI.asHrefString)
     manifest.ontola.preconnect?.forEach { link(rel = "preconnect", href = it) }
     meta(content = manifest.name) {
         attributes["property"] = "og:title"

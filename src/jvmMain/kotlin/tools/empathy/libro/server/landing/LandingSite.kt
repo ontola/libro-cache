@@ -87,7 +87,7 @@ suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
                             MenuItem(
                                 id = Value.Id.Local(),
                                 name = "Home",
-                                isPartOf = Value.Id.Global("/"),
+                                isPartOf = Value.Id.Global("/home"),
                                 edge = homePage,
                                 href = homePage,
                                 targetType = Value.Id.Global("https://argu.nl/enums/custom_menu_items/target_type#edge"),
@@ -113,7 +113,7 @@ suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
 
     add(
         WebSite(
-            id = Value.Id.Global("https://localhost"),
+            id = Value.Id.Global("https://localhost/"),
             name = "Libro",
             text = "Backend ${if (tenants == null) "not " else ""}found",
             homepage = homePage,
