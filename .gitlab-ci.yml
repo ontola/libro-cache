@@ -10,6 +10,7 @@ include:
 
 build:
   before_script:
+    - CI_APPLICATION_REPOSITORY=$CI_REGISTRY_IMAGE
     - apk add git
     - git describe --always > server_version.txt
   artifacts:
