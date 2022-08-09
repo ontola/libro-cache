@@ -3,6 +3,7 @@ package tools.empathy.url
 import io.ktor.http.Url
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 class UrlTest {
     @Test
@@ -57,5 +58,32 @@ class UrlTest {
     fun testRebase() {
         val value = Url("http://apex.svc.cluster.local:3000").rebase("/argu/u/session?redirect_url=https%3A%2F%2Fargu.localdev%2Fargu%2Fu%2Fsession%2Fnew%3Fredirect_url%3Dhttps%253A%252F%252Fargu.localdev%252Fargu")
         assertEquals(Url("http://apex.svc.cluster.local:3000/argu/u/session?redirect_url=https%3A%2F%2Fargu.localdev%2Fargu%2Fu%2Fsession%2Fnew%3Fredirect_url%3Dhttps%253A%252F%252Fargu.localdev%252Fargu"), value)
+    }
+
+    @Test
+    fun testAsHref() {
+        assertEquals(Url("https://example.com/"), Url("https://example.com").asHref)
+        assertEquals("https://example.com/", Url("https://example.com").asHref.toString())
+        assertEquals(Url("https://example.com/"), Url("https://example.com/").asHref)
+        assertEquals("https://example.com/", Url("https://example.com/").asHref.toString())
+
+        assertEquals(Url("https://example.com/mypath"), Url("https://example.com/mypath").asHref)
+        assertEquals("https://example.com/mypath", Url("https://example.com/mypath").asHref.toString())
+        assertEquals(Url("https://example.com/mypath"), Url("https://example.com/mypath/").asHref)
+        assertEquals("https://example.com/mypath", Url("https://example.com/mypath/").asHref.toString())
+        assertEquals(Url("https://example.com/mypath"), Url("https://example.com/mypath//").asHref)
+        assertEquals("https://example.com/mypath", Url("https://example.com/mypath//").asHref.toString())
+        assertNotEquals(Url("https://example.com/mypath//"), Url("https://example.com/mypath//").asHref)
+        assertEquals("https://example.com/mypath", Url("https://example.com/mypath//").asHref.toString())
+    }
+
+    @Test
+    fun testAsHrefString() {
+        assertEquals("https://example.com/", Url("https://example.com").asHrefString)
+        assertEquals("https://example.com/", Url("https://example.com/").asHrefString)
+
+        assertEquals("https://example.com/mypath", Url("https://example.com/mypath").asHrefString)
+        assertEquals("https://example.com/mypath", Url("https://example.com/mypath/").asHrefString)
+        assertEquals("https://example.com/mypath", Url("https://example.com/mypath//").asHrefString)
     }
 }

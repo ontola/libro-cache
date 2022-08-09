@@ -56,6 +56,14 @@ fun Url?.absolutize(other: String): String {
     return other
 }
 
+/** Ensures a path is present and trailing paths are trimmed */
+val Url.asHref
+    get() = if (this.pathSegments.size > 1) Url(this.withoutTrailingSlash) else this
+
+/** Ensures a path is present and trailing paths are trimmed */
+val Url.asHrefString
+    get() = asHref.toString()
+
 val Url.withoutTrailingSlash
     get() = this.toString().trimEnd('/')
 
