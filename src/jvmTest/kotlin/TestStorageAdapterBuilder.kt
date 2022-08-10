@@ -15,9 +15,9 @@ import kotlinx.serialization.json.Json
 import tools.empathy.libro.server.bulk.CacheControl
 import tools.empathy.libro.server.bulk.CacheEntry
 import tools.empathy.libro.server.configuration.LibroConfig
+import tools.empathy.libro.server.plugins.LookupKeys
 import tools.empathy.libro.server.plugins.StorageAdapter
 import tools.empathy.libro.server.sessions.oidc.OIDCServerSettings
-import tools.empathy.libro.server.tenantization.CachedLookupKeys
 import tools.empathy.libro.server.util.KeyManager
 import tools.empathy.libro.webmanifest.Manifest
 
@@ -41,8 +41,8 @@ data class TestStorageAdapterBuilder(
         values.add(Json.encodeToString(settings))
     }
 
-    fun addHashKey(key: String, field: String, value: String) {
-        val prefixed = keyManager.toKey(key)
+    fun addHashKey(vararg key: String, field: String, value: String) {
+        val prefixed = keyManager.toKey(*key)
         if (hKeys.indexOf(prefixed) == -1) {
             hKeys.add(prefixed)
             hValues.add(mutableMapOf())
@@ -82,7 +82,11 @@ data class TestStorageAdapterBuilder(
 
     private fun initManifests() {
         for ((website, manifest) in memoizedManifests) {
-            addHashKey(CachedLookupKeys.Manifest.name, website, libroConfig.serializer.encodeToString(manifest))
+            addHashKey(
+                LookupKeys.Manifest.name,
+                field = website,
+                value = libroConfig.serializer.encodeToString(manifest)
+            )
         }
     }
 

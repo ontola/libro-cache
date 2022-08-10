@@ -19,6 +19,7 @@ import tools.empathy.libro.server.TenantNotFoundException
 import tools.empathy.libro.server.configuration.LibroConfig
 import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.document.PageRenderContext
+import tools.empathy.libro.server.plugins.LookupKeys
 import tools.empathy.libro.server.plugins.blacklisted
 import tools.empathy.libro.server.plugins.persistentStorage
 import tools.empathy.libro.server.plugins.setManifestLanguage
@@ -59,7 +60,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
 
     @Throws(TenantNotFoundException::class)
     suspend fun getManifest(call: ApplicationCall, websiteBase: String): Manifest {
-        val manifest = application.persistentStorage.getHashValue(CachedLookupKeys.Manifest.name, hashKey = websiteBase) ?: throw TenantNotFoundException()
+        val manifest = application.persistentStorage.getHashValue(LookupKeys.Manifest.name, hashKey = websiteBase) ?: throw TenantNotFoundException()
 
         return call.application.libroConfig.serializer.decodeFromString(manifest)
     }
@@ -136,8 +137,4 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
             }
         }
     }
-}
-
-enum class CachedLookupKeys {
-    Manifest,
 }

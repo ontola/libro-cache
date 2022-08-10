@@ -332,6 +332,11 @@ internal val ApplicationCallPipeline.storage: Storage
 internal val ApplicationCallPipeline.persistentStorage: Storage
     get() = attributes.getOrNull(PersistedStorageKey) ?: reportMissingRegistry()
 
+enum class LookupKeys {
+    Manifest,
+    Redirect,
+}
+
 private fun reportMissingRegistry(): Nothing {
     throw StorageNotYetConfiguredException()
 }

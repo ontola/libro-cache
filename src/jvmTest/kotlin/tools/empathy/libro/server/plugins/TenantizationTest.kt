@@ -4,7 +4,6 @@ import io.ktor.http.HttpMethod
 import kotlinx.coroutines.runBlocking
 import tools.empathy.libro.server.TenantNotFoundException
 import tools.empathy.libro.server.WrongWebsiteIRIException
-import tools.empathy.libro.server.tenantization.CachedLookupKeys
 import tools.empathy.libro.server.tenantization.getWebsiteBase
 import withCacheTestApplication
 import kotlin.test.Test
@@ -154,8 +153,8 @@ class TenantizationTest {
     private fun getWebsiteBaseFromRequest(headers: Map<String, String>, path: String = "/"): String? {
         return withCacheTestApplication(
             {
-                storage.addHashKey(CachedLookupKeys.Manifest.name, "https://exam.ple/path", "")
-                storage.addHashKey(CachedLookupKeys.Manifest.name, "https://example.test/", "")
+                storage.addHashKey(LookupKeys.Manifest.name, field = "https://exam.ple/path", value = "")
+                storage.addHashKey(LookupKeys.Manifest.name, field = "https://example.test/", value = "")
             }
         ) { ctx ->
             runBlocking {
