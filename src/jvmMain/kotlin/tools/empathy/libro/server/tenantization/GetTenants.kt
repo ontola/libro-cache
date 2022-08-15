@@ -27,7 +27,6 @@ data class TenantDescription(
 
 @Serializable
 data class TenantsResponse(
-    val schemas: List<String>,
     val sites: List<TenantDescription>,
 )
 

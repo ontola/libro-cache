@@ -132,7 +132,6 @@ val symbolMap = mapOf(
     "http://schema.org/dateModified" to "dateModified",
     "http://schema.org/datePublished" to "datePublished",
     "http://schema.org/dateRead" to "dateRead",
-    "https://argu.co/ns/core#dbSchema" to "dbSchema",
     "http://www.w3.org/ns/shacl#deactivated" to "deactivated",
     "https://argu.co/ns/core#decisionState" to "decisionState",
     "https://argu.co/ns/core#decisionsEmails" to "decisionsEmails",

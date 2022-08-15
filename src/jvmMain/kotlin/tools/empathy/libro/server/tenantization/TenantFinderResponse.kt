@@ -27,8 +27,6 @@ data class TenantFinderResponse(
     val secondaryColor: String? = "#d96833",
     @SerialName("primary_color")
     val primaryColor: String? = "#475668",
-    @SerialName("database_schema")
-    val databaseSchema: String? = null,
     @SerialName("display_name")
     val displayName: String? = null,
 ) {
