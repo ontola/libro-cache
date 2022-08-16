@@ -9,6 +9,9 @@ include:
   - template: Security/Secret-Detection.gitlab-ci.yml
 
 build:
+  variables:
+    AUTO_DEVOPS_BUILDX_INSTANCE_EXTRA_ARGS: "--driver=docker-container --platform=linux/amd64,linux/arm64/v8 --foobar"
+    AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: "--platform=linux/amd64,linux/arm64/v8 --foobaz"
   before_script:
     - CI_APPLICATION_REPOSITORY=$CI_REGISTRY_IMAGE
     - apk add git
