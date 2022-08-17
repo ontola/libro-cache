@@ -159,10 +159,8 @@ val preloaderCss = CssBuilder().apply {
     }
 
     "#root" {
-        put("-webkit-transition", "1s opacity")
-        transition("opacity", 1.s)
-        put("-webkit-transition-delay", ".5s")
-        transition("delay", .5.s)
+        put("-webkit-transition", ".4s opacity")
+        transition("opacity", .4.s)
         opacity = 1
     }
 
@@ -177,25 +175,17 @@ val preloaderCss = CssBuilder().apply {
     }
 
     ".preloader" {
-//        -webkit-box-align = center
-//        -ms-flex-align = center
         alignItems = Align.center
         put("display", "-webkit-box")
         put("display", "-ms-flexbox")
         display = Display.flex
-//        -webkit-box-orient = vertical
-//        -webkit-box-direction = normal
-//        -ms-flex-direction = column
         flexDirection = FlexDirection.column
         height = 100.vh
-//        -webkit-box-pack = center
-//        -ms-flex-pack = center
         justifyContent = JustifyContent.center
         opacity = 0
         overflow = Overflow.hidden
         position = Position.fixed
-//        -webkit-transition = 1s opacity
-        transition("opacity", 1.s)
+        transition("opacity", 4.s)
         width = 100.pct
         top = LinearDimension("0")
         bottom = LinearDimension("0")
@@ -234,23 +224,6 @@ val preloaderCss = CssBuilder().apply {
         fontSize = 10.px
     }
 
-//    val skStretchDelay = KeyframesBuilder().apply {
-//        from {
-//            "0%, 40%, 100%" {
-//                transform {
-//                    scaleY(.4)
-//                }
-//            }
-//        }
-//        to {
-//            "20%" {
-//                transform {
-//                    scaleY(1.0)
-//                }
-//            }
-//        }
-//    }
-
     "@keyframes sk-stretchdelay" {
         "0%, 40%, 100%" {
             transform {
@@ -270,43 +243,23 @@ val preloaderCss = CssBuilder().apply {
         width = 6.px
         display = Display.inlineBlock
 
-        // -webkit-animation: sk-stretchdelay 1.2s infinite ease-in-out;
         // infinite
         animation("sk-stretchdelay", 1.2.s, Timing.easeInOut, iterationCount = IterationCount.infinite)
     }
 
     ".spinner .rect2" {
-//        -webkit-animation-delay: -1.1s;
         put("animation-delay", "-1.1s")
     }
 
     ".spinner .rect3" {
-//        -webkit-animation-delay: -1.0s;
         put("animation-delay", "-1.0s")
     }
 
     ".spinner .rect4" {
-//        -webkit-animation-delay: -0.9s;
         put("animation-delay", "-0.9s")
     }
 
     ".spinner .rect5" {
-//        -webkit-animation-delay: -0.8s;
         put("animation-delay", "-0.8s")
     }
-
-//    "@-webkit-keyframes sk-stretchdelay" {
-//        0%, 40%, 100% { -webkit-transform: scaleY(0.4) }
-//        20% { -webkit-transform: scaleY(1.0) }
-//    }
-
-//    "@keyframes sk-stretchdelay" {
-//        0%, 40%, 100% {
-//        transform: scaleY(0.4);
-//        -webkit-transform: scaleY(0.4);
-//    }  20% {
-//        transform: scaleY(1.0);
-//        -webkit-transform: scaleY(1.0);
-//    }
-//    }
 }.toString()
