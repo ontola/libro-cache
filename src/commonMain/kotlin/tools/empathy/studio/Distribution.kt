@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import tools.empathy.libro.webmanifest.Manifest
 import tools.empathy.serialization.DataSlice
 import tools.empathy.serialization.Sitemap
+import tools.empathy.serialization.allowedInSitemap
 import tools.empathy.serialization.sitemap
 import tools.empathy.serialization.splitMultilingual
 
@@ -29,17 +30,6 @@ data class Distribution(
     val sitemap: String,
     val xmlSitemap: Sitemap = data.sitemap(),
 )
-
-val blackList = listOf<String>("#", "_", "menus/footer")
-
-fun allowedInSitemap(hextuple: String): Boolean {
-    for (substring in blackList) {
-        if (substring in hextuple) {
-            return false
-        }
-    }
-    return true
-}
 
 fun Project.toDistribution(meta: DistributionMeta): Distribution {
     if (data.isEmpty()) {

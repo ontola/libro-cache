@@ -11,6 +11,8 @@ val BLACKLIST_PATTERNS = listOf(
     "_:",
 )
 
+fun allowedInSitemap(id: String): Boolean = BLACKLIST_PATTERNS.none { it in id }
+
 @Serializable
 @XmlSerialName("urlset", namespace = "http://www.sitemaps.org/schemas/sitemap/0.9", prefix = "")
 data class Sitemap(val urls: List<SitemapUrl>)
@@ -39,7 +41,7 @@ data class Alternative(
 
 fun DataSlice.sitemap(): Sitemap = Sitemap(
     urls = keys
-        .filter { key -> BLACKLIST_PATTERNS.none { key.contains(it) } && this[key]?.canonical().isNullOrEmpty() }
+        .filter { key -> allowedInSitemap(key) && this[key]?.canonical().isNullOrEmpty() }
         .map { id ->
             SitemapUrl(
                 loc = id,

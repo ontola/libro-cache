@@ -25,7 +25,13 @@ class DistributionTest {
             fields = mutableMapOf(
                 "name" to listOf(Value.Str("test"))
             )
-        )
+        ),
+        "_:123" to Record(
+            Value.Id.Local("_:123"),
+            fields = mutableMapOf(
+                "name" to listOf(Value.Str("test local"))
+            )
+        ),
     )
 
     @Test
@@ -43,6 +49,12 @@ class DistributionTest {
 
     @Test
     fun `toDistribution creates a valid sitemap`() {
+        val dist = Project(name, iri, website, slice).toDistribution(meta)
+        assertTrue(dist.sitemap.split('\n').all { validURL(it) })
+    }
+
+    @Test
+    fun `toDistribution excludes local ids`() {
         val dist = Project(name, iri, website, slice).toDistribution(meta)
         assertTrue(dist.sitemap.split('\n').all { validURL(it) })
     }
