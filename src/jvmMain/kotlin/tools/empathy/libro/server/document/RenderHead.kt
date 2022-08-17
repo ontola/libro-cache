@@ -23,7 +23,9 @@ import tools.empathy.serialization.Value
 import tools.empathy.serialization.canonical
 import tools.empathy.serialization.translations
 import tools.empathy.url.asHrefString
+import tools.empathy.url.origin
 import tools.empathy.url.rebase
+import tools.empathy.vocabularies.ActivityStreams.rel
 
 fun HEAD.renderHead(
     url: Url,
@@ -164,16 +166,14 @@ private fun HEAD.services(config: PageConfiguration, manifest: Manifest) {
 private fun HEAD.stylesheets(config: PageConfiguration, nonce: String) {
     val openSans = "https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap"
     val fontAwesome = "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+    link(rel = "preconnect", href = Url(openSans).origin())
 
-    link(rel = "stylesheet", type = "text/css", href = config.bundles.es6.mainCss) {
-        attributes["crossorigin"] = "anonymous"
+    if (!config.bundles.es6.mainCss.contains("null")) {
+        link(rel = "stylesheet", type = "text/css", href = config.bundles.es6.mainCss) {
+            attributes["crossorigin"] = "anonymous"
+        }
     }
-
-    link(rel = "preload", href = openSans) {
-        attributes["as"] = "style"
-        attributes["crossorigin"] = "anonymous"
-    }
-
+    link(rel = "stylesheet", type = "text/css", href = openSans)
     link(rel = "preload", href = fontAwesome) {
         attributes["as"] = "style"
         attributes["crossorigin"] = "anonymous"
@@ -188,7 +188,7 @@ private fun HEAD.stylesheets(config: PageConfiguration, nonce: String) {
                     elements.forEach((e) => e.addEventListener("load", (e) => e.target.rel = "stylesheet"));
                     window.setTimeout(() => {
                       elements.map((e) => e.rel = "stylesheet");
-                    }, 2000);
+                    }, 1000);
                 """.trimIndent()
             )
         }
@@ -198,13 +198,11 @@ private fun HEAD.stylesheets(config: PageConfiguration, nonce: String) {
         unsafe {
             raw(
                 """
-                    <link href="$openSans" rel="stylesheet">
                     <link href="$fontAwesome" rel="stylesheet">
                 """.trimIndent()
             )
         }
-        link(rel = "stylesheet", href = "https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap")
-        link(rel = "stylesheet", href = "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css")
+        link(rel = "stylesheet", href = fontAwesome)
     }
 }
 
