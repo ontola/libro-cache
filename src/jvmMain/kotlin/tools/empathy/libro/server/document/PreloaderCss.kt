@@ -45,7 +45,6 @@ import kotlinx.css.maxWidth
 import kotlinx.css.minWidth
 import kotlinx.css.opacity
 import kotlinx.css.overflow
-import kotlinx.css.overflowY
 import kotlinx.css.p
 import kotlinx.css.padding
 import kotlinx.css.pct
@@ -164,16 +163,6 @@ val preloaderCss = CssBuilder().apply {
         opacity = 1
     }
 
-    "#root.preloader-fixed" {
-        position = Position.fixed
-        top = LinearDimension("0")
-        right = LinearDimension("0")
-        bottom = LinearDimension("0")
-        left = LinearDimension("0")
-        height = 100.vh
-        overflowY = Overflow.hidden
-    }
-
     ".preloader" {
         alignItems = Align.center
         put("display", "-webkit-box")
@@ -185,7 +174,7 @@ val preloaderCss = CssBuilder().apply {
         opacity = 0
         overflow = Overflow.hidden
         position = Position.fixed
-        transition("opacity", 4.s)
+        transition("opacity", .4.s)
         width = 100.pct
         top = LinearDimension("0")
         bottom = LinearDimension("0")
