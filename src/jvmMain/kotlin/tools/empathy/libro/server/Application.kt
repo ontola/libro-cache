@@ -403,7 +403,11 @@ fun Application.module(
     }
 
     install(Tenantization) {
-        val management = managementTenant(libroConfig.management.origin, libroConfig.client)
+        val management = managementTenant(
+            libroConfig.management.origin,
+            libroConfig.client,
+            libroConfig.devClientPort,
+        )
 
         staticTenants = mapOf(
             management.websiteOrigin.host to management,

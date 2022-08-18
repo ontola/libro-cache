@@ -49,7 +49,7 @@ suspend fun ApplicationCall.authorizeApex(toAuthorize: Flow<CacheRequest>): Flow
 }
 
 suspend fun ApplicationCall.authorize(toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
-    return if (tenant.websiteIRI == Url("https://localhost")) {
+    return if (tenant.websiteIRI == Url("https://localhost") || (tenant.allowUnsafe && tenant.websiteIRI == Url("http://localhost:${tenant.unsafePort}"))) {
         authorizeLocal(toAuthorize)
     } else {
         authorizeApex(toAuthorize)

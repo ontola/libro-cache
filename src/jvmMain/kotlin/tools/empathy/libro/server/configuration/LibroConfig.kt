@@ -19,6 +19,8 @@ data class LibroConfig constructor(
     val testing: Boolean,
     val env: String = if (testing) "testing" else System.getenv("KTOR_ENV") ?: "production",
     val port: Int,
+    /** The port used to host the libro-client (webpack dev server) */
+    val devClientPort: Int = 3001,
     /**
      * Configuration relating to client bundles.
      */

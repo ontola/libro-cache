@@ -13,12 +13,12 @@ import tools.empathy.vocabularies.Libro
 internal fun DataSlice.modulesPage(): Value.Id {
     return add(
         WebPage(
-            id = Value.Id.Global("https://localhost/modules"),
+            id = Value.Id.Global("/modules"),
             name = "Modules",
             text = "",
             widgets = add(
                 Seq(
-                    Value.Id.Global("https://localhost/modules/widgets"),
+                    Value.Id.Global("/modules/widgets"),
                     listOf(
                         *libroWidgets(),
                     ),
@@ -40,7 +40,7 @@ private fun DataSlice.libroWidgets(): Array<Value.Id> {
     return arrayOf(
         add(
             Widget(
-                id = Value.Id.Global("https://localhost/home/widgets/bootstrap/modules"),
+                id = Value.Id.Global("/home/widgets/bootstrap/modules"),
                 order = 1,
                 topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/grid"),
                 widgetSize = 2,
@@ -50,7 +50,7 @@ private fun DataSlice.libroWidgets(): Array<Value.Id> {
         ),
         add(
             Widget(
-                id = Value.Id.Global("https://localhost/home/widgets/bootstrap/topologies"),
+                id = Value.Id.Global("/home/widgets/bootstrap/topologies"),
                 order = 3,
                 topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/card"),
                 widgetSize = 1,

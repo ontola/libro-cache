@@ -5,7 +5,9 @@ package tools.empathy.libro.server.tenantization
 import io.ktor.client.plugins.ResponseException
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
+import io.ktor.http.URLProtocol
 import io.ktor.http.Url
+import io.ktor.http.fullPath
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.plugin
@@ -131,7 +133,24 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
             val url = Url(call.request.origin()).rebase(call.request.uri)
             val staticTenant = pluginConfig.staticTenant(url)
             if (staticTenant != null) {
-                call.attributes.put(TenantizationKey, staticTenant)
+                if (staticTenant.allowUnsafe && Url(call.request.uri).protocol == URLProtocol.HTTP) {
+                    val unsafeIRI = staticTenant.unsafeIRI
+
+                    call.attributes.put(
+                        TenantizationKey,
+                        staticTenant.copy(
+                            websiteIRI = unsafeIRI,
+                            websiteOrigin = Url(unsafeIRI.origin()),
+                            manifest = staticTenant.manifest.copy(
+                                ontola = staticTenant.manifest.ontola.copy(
+                                    websiteIRI = unsafeIRI,
+                                )
+                            )
+                        )
+                    )
+                } else {
+                    call.attributes.put(TenantizationKey, staticTenant)
+                }
             } else {
                 intercept(call, this@createApplicationPlugin.application.libroConfig)
             }

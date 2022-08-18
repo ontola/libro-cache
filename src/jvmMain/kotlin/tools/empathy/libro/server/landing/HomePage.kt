@@ -56,7 +56,7 @@ internal fun DataSlice.homePage(
 
     return add(
         WebPage(
-            id = Value.Id.Global("https://localhost/home"),
+            id = Value.Id.Global("/home"),
             name = "Welcome to Libro",
             text = """
                 The information on this page is cached until a full reload.
@@ -69,7 +69,7 @@ internal fun DataSlice.homePage(
             coverPhoto = cover,
             widgets = add(
                 Seq(
-                    Value.Id.Global("https://localhost/home/widgets"),
+                    Value.Id.Global("/home/widgets"),
                     listOfNotNull(
                         if (tenants == null) noBackendWidget(defaultServicePort) else tenantWidget(tenants),
                         if (isDev) docsWidget() else null,
@@ -83,11 +83,11 @@ internal fun DataSlice.homePage(
 }
 
 private fun DataSlice.docsWidget(): Value.Id {
-    val entryPoint = Value.Id.Global("https://localhost/home/widgets/docs/list/entryPoint")
+    val entryPoint = Value.Id.Global("/home/widgets/docs/list/entryPoint")
 
     val action = add(
         Action(
-            id = Value.Id.Global("https://localhost/home/widgets/docs/list/action"),
+            id = Value.Id.Global("/home/widgets/docs/list/action"),
             specificType = Schema.CreateAction,
             name = "Documentation",
             text = "Open the docs",
@@ -109,7 +109,7 @@ private fun DataSlice.docsWidget(): Value.Id {
 
     return add(
         Widget(
-            id = Value.Id.Global("https://localhost/home/widgets/docs"),
+            id = Value.Id.Global("/home/widgets/docs"),
             order = 0,
             topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/grid"),
             widgetSize = 1,
@@ -138,7 +138,7 @@ private fun DataSlice.noBackendWidget(defaultServicePort: String?): Value.Id {
 
     return add(
         Widget(
-            id = Value.Id.Global("https://localhost/home/widgets/tenants"),
+            id = Value.Id.Global("/home/widgets/tenants"),
             order = 1,
             topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/container"),
             widgetSize = 2,
@@ -159,7 +159,7 @@ private fun DataSlice.tenantWidget(tenants: TenantsResponse): Value.Id {
     }
 
     val collection = buildCollection {
-        id = Value.Id.Global("https://localhost/home/widgets/tenants/items")
+        id = Value.Id.Global("/home/widgets/tenants/items")
         title = "Tenants"
         display = CollectionDisplay.Table()
 
@@ -174,7 +174,7 @@ private fun DataSlice.tenantWidget(tenants: TenantsResponse): Value.Id {
 
     return add(
         Widget(
-            id = Value.Id.Global("https://localhost/home/widgets/tenants"),
+            id = Value.Id.Global("/home/widgets/tenants"),
             order = 1,
             topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/card"),
             widgetSize = 2,
@@ -185,11 +185,11 @@ private fun DataSlice.tenantWidget(tenants: TenantsResponse): Value.Id {
 }
 
 private fun DataSlice.studioWidget(): Value.Id {
-    val entryPoint = Value.Id.Global("https://localhost/home/widgets/studio/list/entryPoint")
+    val entryPoint = Value.Id.Global("/home/widgets/studio/list/entryPoint")
 
     val action = add(
         Action(
-            id = Value.Id.Global("https://localhost/home/widgets/studio/list/action"),
+            id = Value.Id.Global("/home/widgets/studio/list/action"),
             name = "Studio",
             text = "Open the studio",
             target = entryPoint,
@@ -210,7 +210,7 @@ private fun DataSlice.studioWidget(): Value.Id {
 
     return add(
         Widget(
-            id = Value.Id.Global("https://localhost/home/widgets/studio"),
+            id = Value.Id.Global("/home/widgets/studio"),
             order = 0,
             topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/grid"),
             widgetSize = 1,
@@ -221,10 +221,10 @@ private fun DataSlice.studioWidget(): Value.Id {
 }
 
 private fun DataSlice.healthWidget(checks: List<Check>): Value.Id {
-    val collectionBase = Value.Id.Global("https://localhost/home/widgets/health/checks")
+    val collectionBase = Value.Id.Global("/home/widgets/health/checks")
 
     val checkRecords = checks.mapIndexed { index, check ->
-        record(Value.Id.Global("https://localhost/home/widgets/health/checks/items/$index")) {
+        record(Value.Id.Global("/home/widgets/health/checks/items/$index")) {
             type(Schema.Thing.id)
             field(Schema.name) { s(check.name) }
             field(Libro.result) { s(humanStatus(check.result)) }
@@ -248,7 +248,7 @@ private fun DataSlice.healthWidget(checks: List<Check>): Value.Id {
 
     return add(
         Widget(
-            id = Value.Id.Global("https://localhost/home/widgets/health"),
+            id = Value.Id.Global("/home/widgets/health"),
             order = 0,
             topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/card"),
             widgetSize = 3,

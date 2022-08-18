@@ -14,11 +14,13 @@ import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.webmanifest.Icon
 import tools.empathy.libro.webmanifest.Manifest
 
-fun managementTenant(origin: Url, client: HttpClient): TenantData {
+fun managementTenant(origin: Url, client: HttpClient, port: Int): TenantData {
     return TenantData(
         client = client,
         websiteIRI = origin,
         websiteOrigin = origin,
+        allowUnsafe = true,
+        unsafePort = port,
         manifest = Manifest.forWebsite(origin).let {
             it.copy(
                 name = "Local",

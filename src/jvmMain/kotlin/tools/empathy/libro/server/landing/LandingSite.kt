@@ -111,7 +111,7 @@ suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
 
     add(
         WebSite(
-            id = Value.Id.Global("https://localhost/"),
+            id = Value.Id.Global("/"),
             name = "Libro",
             text = "Backend ${if (tenants == null) "not " else ""}found",
             homepage = homePage,
