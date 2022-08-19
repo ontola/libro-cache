@@ -11,17 +11,22 @@ import io.ktor.server.application.call
 import io.ktor.util.pipeline.PipelineContext
 import tools.empathy.libro.server.plugins.services
 import tools.empathy.libro.server.plugins.sessionManager
+import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.server.tenantization.tenant
 import tools.empathy.libro.server.util.proxySafeHeaders
 import tools.empathy.url.appendPath
 
 suspend fun PipelineContext<Unit, ApplicationCall>.logout(): HttpResponse? {
+    if (call.tenant is TenantData.Local) {
+        return null
+    }
+
     val logoutRequest = call.sessionManager.logoutRequest ?: return null
 
     val websiteIRI = call.tenant.websiteIRI
     val revokeUrl = websiteIRI.appendPath("oauth", "revoke")
 
-    return call.tenant.client.post(call.services.route(revokeUrl.encodedPath)) {
+    return (call.tenant as TenantData.External).client.post(call.services.route(revokeUrl.encodedPath)) {
         headers {
             append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             if (call.sessionManager.isUser) {

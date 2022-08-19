@@ -105,6 +105,7 @@ import tools.empathy.libro.server.util.isHtmlAccept
 import tools.empathy.libro.server.util.mountWebSocketProxy
 import tools.empathy.libro.server.util.origin
 import tools.empathy.studio.Studio
+import tools.empathy.studio.StudioDeploymentKey
 import tools.empathy.studio.mountStudio
 import tools.empathy.studio.studioManifest
 import tools.empathy.url.appendPath
@@ -405,17 +406,16 @@ fun Application.module(
     install(Tenantization) {
         val management = managementTenant(
             libroConfig.management.origin,
-            libroConfig.client,
             libroConfig.devClientPort,
         )
 
         staticTenants = mapOf(
             management.websiteOrigin.host to management,
-            config.studio.domain to TenantData(
-                client = libroConfig.client,
+            config.studio.domain to TenantData.Local(
                 websiteIRI = config.studio.origin,
                 websiteOrigin = config.studio.origin,
                 manifest = studioManifest(config.studio.origin),
+                context = { attributes[StudioDeploymentKey] }
             ),
         )
     }

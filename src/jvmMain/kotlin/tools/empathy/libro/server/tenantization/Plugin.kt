@@ -7,7 +7,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
-import io.ktor.http.fullPath
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.plugin
@@ -52,9 +51,9 @@ class TenantizationNotYetConfiguredException :
 class TenantizationConfiguration {
     val logger = KotlinLogging.logger {}
 
-    var staticTenants: Map<String, TenantData> = emptyMap()
+    var staticTenants: Map<String, TenantData.Local> = emptyMap()
 
-    fun staticTenant(url: Url): TenantData? = staticTenants[url.host]
+    fun staticTenant(url: Url): TenantData.Local? = staticTenants[url.host]
 }
 
 val Tenantization = createApplicationPlugin(name = "Tenantization", ::TenantizationConfiguration) {
@@ -67,7 +66,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
         return call.application.libroConfig.serializer.decodeFromString(manifest)
     }
 
-    fun interceptDeployment(call: ApplicationCall, libroConfig: LibroConfig, deployment: PageRenderContext) {
+    fun interceptDeployment(call: ApplicationCall, deployment: PageRenderContext) {
         val websiteBase = deployment.manifest.ontola.websiteIRI
 
         val baseOrigin = URLBuilder(websiteBase).apply { encodedPathSegments = emptyList() }.build()
@@ -75,11 +74,11 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
 
         call.attributes.put(
             TenantizationKey,
-            TenantData(
-                client = libroConfig.client,
+            TenantData.Local(
                 websiteIRI = manifest.ontola.websiteIRI,
                 websiteOrigin = baseOrigin,
                 manifest = manifest,
+                context = { deployment }
             )
         )
     }
@@ -94,7 +93,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
             call.setManifestLanguage(manifest.lang)
             call.attributes.put(
                 TenantizationKey,
-                TenantData(
+                TenantData.External(
                     client = libroConfig.client,
                     websiteIRI = manifest.ontola.websiteIRI,
                     websiteOrigin = baseOrigin,
@@ -106,7 +105,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
 
             call.attributes.put(
                 TenantizationKey,
-                TenantData(
+                TenantData.External(
                     client = libroConfig.client,
                     websiteIRI = origin,
                     websiteOrigin = origin,
@@ -128,7 +127,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
     onCall { call ->
         if (call.attributes.getOrNull(StudioDeploymentKey) != null) {
             val deployment = call.attributes[StudioDeploymentKey]
-            interceptDeployment(call, this@createApplicationPlugin.application.libroConfig, deployment)
+            interceptDeployment(call, deployment)
         } else if (!call.blacklisted) {
             val url = Url(call.request.origin()).rebase(call.request.uri)
             val staticTenant = pluginConfig.staticTenant(url)

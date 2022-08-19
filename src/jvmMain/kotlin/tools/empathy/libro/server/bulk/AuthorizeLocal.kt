@@ -4,15 +4,13 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
-import tools.empathy.libro.server.landing.landingSite
-import tools.empathy.vocabularies.LibroData
-import tools.empathy.vocabularies.OntolaData
-import tools.empathy.vocabularies.SchemaData
+import kotlinx.coroutines.flow.emptyFlow
+import tools.empathy.libro.server.tenantization.TenantData
 
-suspend fun ApplicationCall.authorizeLocal(_toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
-    val data = landingSite() + SchemaData + LibroData + OntolaData
+suspend fun ApplicationCall.authorizeLocal(tenant: TenantData.Local, _toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
+    val context = tenant.context.invoke(this)
 
-    return data.values.map { record ->
+    return context.data?.values?.map { record ->
         CacheEntry(
             record.id.value,
             HttpStatusCode.OK,
@@ -21,5 +19,5 @@ suspend fun ApplicationCall.authorizeLocal(_toAuthorize: Flow<CacheRequest>): Fl
                 record.id.value to record,
             ),
         )
-    }.asFlow()
+    }?.asFlow() ?: emptyFlow()
 }

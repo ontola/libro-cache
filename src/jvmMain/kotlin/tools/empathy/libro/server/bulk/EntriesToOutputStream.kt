@@ -19,7 +19,6 @@ suspend fun entriesToOutputStream(
 }
 
 private fun Writer.write(entry: CacheEntry) {
-//    write("${listOf(statusCode(entry.iri, entry.status)).toSlice()}\n")
     entry.contents?.let { contents ->
         write(Json.encodeToString(contents))
         write("\n")

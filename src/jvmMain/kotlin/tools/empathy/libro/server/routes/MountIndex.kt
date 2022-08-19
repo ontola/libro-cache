@@ -22,6 +22,7 @@ import io.ktor.server.sessions.set
 import io.ktor.util.AttributeKey
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList
+import kotlinx.css.head
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -31,7 +32,6 @@ import tools.empathy.libro.server.bulk.coldHandler
 import tools.empathy.libro.server.bulk.collectResources
 import tools.empathy.libro.server.bulk.entriesToOutputStream
 import tools.empathy.libro.server.bulk.initHeaders
-import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.csp.nonce
 import tools.empathy.libro.server.document.PageRenderContext
 import tools.empathy.libro.server.document.indexPage
@@ -43,6 +43,7 @@ import tools.empathy.libro.server.plugins.logger
 import tools.empathy.libro.server.plugins.services
 import tools.empathy.libro.server.sessions.SessionData
 import tools.empathy.libro.server.sessions.TokenPair
+import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.server.tenantization.tenant
 import tools.empathy.libro.server.util.LibroHttpHeaders
 import tools.empathy.libro.server.util.VaryHeader
@@ -67,11 +68,11 @@ data class HeadResponse(
 
 fun Routing.mountIndex() {
     get("{...}") {
-        call.indexHandler(call.application.libroConfig.client)
+        call.indexHandler()
     }
 }
 
-private suspend fun ApplicationCall.indexHandler(client: HttpClient) {
+private suspend fun ApplicationCall.indexHandler() {
     if (attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
         return
     }
@@ -90,7 +91,27 @@ private suspend fun ApplicationCall.indexHandler(client: HttpClient) {
 
     response.header(HttpHeaders.Vary, VaryHeader)
 
-    val head = headRequest(client)
+    when (val t = tenant) {
+        is TenantData.Local -> localIndexHandler(t)
+        is TenantData.External -> externalIndexHandler(t)
+    }
+}
+
+private suspend fun ApplicationCall.localIndexHandler(tenant: TenantData.Local) {
+    val context = tenant.context.invoke(this)
+    val requestedId = URLBuilder(tenant.websiteIRI).apply { encodedPath = request.uri }.buildString()
+    val idInData = context.data?.containsKey(requestedId) == true
+    val status = if (idInData) HttpStatusCode.OK else HttpStatusCode.NotFound
+    val ctx = context.apply {
+        this.nonce = this@localIndexHandler.nonce
+    }
+    val includes = context.data?.keys?.toList() ?: emptyList()
+
+    respondRenderWithData(ctx, includes, status)
+}
+
+private suspend fun ApplicationCall.externalIndexHandler(tenant: TenantData.External) {
+    val head = headRequest(tenant.client)
     updateSessionAccessToken(head)
 
     if (head.statusCode.isRedirect()) {
@@ -103,7 +124,7 @@ private suspend fun ApplicationCall.indexHandler(client: HttpClient) {
     ) + (head.includeResources ?: emptyList())
 
     val ctx = pageRenderContextFromCall().apply {
-        this.nonce = this@indexHandler.nonce
+        this.nonce = this@externalIndexHandler.nonce
     }
 
     respondRenderWithData(ctx, includes, head.statusCode)

@@ -11,6 +11,10 @@ import tools.empathy.serialization.DataSlice
 import tools.empathy.serialization.sitemap
 
 class DistributionRepo(val storage: Storage) {
+    private val lenientJson = Json {
+        ignoreUnknownKeys = true
+    }
+
     private fun distributionKey(projectId: String, distributionId: String): Array<String> =
         arrayOf(projectsPart, projectId, distributionsPart, distributionId)
 
@@ -44,9 +48,9 @@ class DistributionRepo(val storage: Storage) {
 
         return Distribution(
             data = data,
-            manifest = Json.decodeFromString(manifest),
+            manifest = lenientJson.decodeFromString(manifest),
             sitemap = sitemap,
-            xmlSitemap = xmlSitemap?.let { Json.decodeFromString(it) } ?: data.sitemap(),
+            xmlSitemap = xmlSitemap?.let { lenientJson.decodeFromString(it) } ?: data.sitemap(),
             meta = DistributionMeta(
                 version = version,
                 message = message,

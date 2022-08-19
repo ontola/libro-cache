@@ -10,6 +10,9 @@ import tools.empathy.libro.server.plugins.Storage
 import tools.empathy.serialization.normaliseAbsolutePaths
 
 class ProjectRepo(val storage: Storage) {
+    private val lenientJson = Json {
+        ignoreUnknownKeys = true
+    }
     private val projectSetKey = projectsPart
 
     private fun projectKey(projectId: String): Array<String> = arrayOf(projectsPart, projectId)
@@ -77,8 +80,8 @@ class ProjectRepo(val storage: Storage) {
             name = name,
             iri = Url(iri),
             websiteIRI = Url(websiteIRI),
-            data = Json.decodeFromString(data),
-            manifest = Json.decodeFromString(manifest),
+            data = lenientJson.decodeFromString(data),
+            manifest = lenientJson.decodeFromString(manifest),
         )
     }
 

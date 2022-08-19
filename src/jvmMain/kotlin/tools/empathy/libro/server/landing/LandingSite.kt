@@ -2,6 +2,7 @@ package tools.empathy.libro.server.landing
 
 import io.ktor.client.plugins.ResponseException
 import io.ktor.server.application.ApplicationCall
+import io.ktor.utils.io.errors.IOException
 import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.health.BackendCheck
 import tools.empathy.libro.server.health.BulkCheck
@@ -30,12 +31,25 @@ suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
         ?.getString()
     val tenants = try {
         this@landingSite.getTenants()
-    } catch (e: ResponseException) {
+    } catch (e: Exception) {
+        if (e !is IOException && e !is ResponseException) {
+            throw e
+        }
+
+        null
+    }
+    val apiVersion = try {
+        getApiVersion()
+    } catch (e: Exception) {
+        if (e !is IOException && e !is ResponseException) {
+            throw e
+        }
+
         null
     }
 
     val versions = VersionSet(
-        api = getApiVersion(),
+        api = apiVersion,
         server = Versions.ServerVersion,
         client = request.headers[LibroHttpHeaders.XClientVersion],
     )

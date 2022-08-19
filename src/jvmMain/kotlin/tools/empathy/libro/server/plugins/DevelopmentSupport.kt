@@ -1,6 +1,5 @@
 package tools.empathy.libro.server.plugins
 
-import io.ktor.client.HttpClient
 import io.ktor.http.HttpHeaders
 import io.ktor.http.Url
 import io.ktor.server.application.createApplicationPlugin
@@ -10,33 +9,45 @@ import io.ktor.server.request.host
 import io.ktor.server.request.port
 import io.ktor.server.response.respondRedirect
 import tools.empathy.libro.server.configuration.libroConfig
+import tools.empathy.libro.server.document.pageRenderContextFromCall
+import tools.empathy.libro.server.landing.landingSite
 import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.webmanifest.Icon
 import tools.empathy.libro.webmanifest.Manifest
+import tools.empathy.vocabularies.LibroData
+import tools.empathy.vocabularies.OntolaData
+import tools.empathy.vocabularies.SchemaData
 
-fun managementTenant(origin: Url, client: HttpClient, port: Int): TenantData {
-    return TenantData(
-        client = client,
+fun managementTenant(origin: Url, port: Int): TenantData.Local {
+    val managementManifest = Manifest.forWebsite(origin).let {
+        it.copy(
+            name = "Local",
+            icons = arrayOf(
+                Icon(
+                    src = "/f_assets/images/libro-logo-t-4.svg",
+                    sizes = "32x32 64x64 72x72 96x96 128x128",
+                    purpose = "favicon",
+                    type = "image/svg",
+                ),
+            ),
+            ontola = it.ontola.copy(
+                primaryColor = "#002233",
+            ),
+        )
+    }
+
+    return TenantData.Local(
         websiteIRI = origin,
         websiteOrigin = origin,
         allowUnsafe = true,
         unsafePort = port,
-        manifest = Manifest.forWebsite(origin).let {
-            it.copy(
-                name = "Local",
-                icons = arrayOf(
-                    Icon(
-                        src = "/f_assets/images/libro-logo-t-4.svg",
-                        sizes = "32x32 64x64 72x72 96x96 128x128",
-                        purpose = "favicon",
-                        type = "image/svg",
-                    ),
-                ),
-                ontola = it.ontola.copy(
-                    primaryColor = "#002233",
-                ),
+        context = {
+            pageRenderContextFromCall(
+                data = landingSite() + SchemaData + LibroData + OntolaData,
+                manifest = managementManifest,
             )
         },
+        manifest = managementManifest,
     )
 }
 

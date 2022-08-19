@@ -9,7 +9,6 @@ import io.ktor.server.response.respondOutputStream
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
 import io.ktor.util.AttributeKey
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filter
@@ -20,10 +19,8 @@ import tools.empathy.libro.server.plugins.logger
 import tools.empathy.libro.server.plugins.storage
 import tools.empathy.libro.server.util.measured
 
-val hexJson = ContentType.parse("application/hex+x-ndjson")
 val ndEmpJson = ContentType.parse("application/empathy+x-ndjson")
 
-@OptIn(ExperimentalCoroutinesApi::class)
 suspend fun ApplicationCall.collectResources(resources: List<CacheRequest>): Flow<CacheEntry> {
     val result = readAndPartition(resources)
     response.header("Link-Cache", result.stats.toString())

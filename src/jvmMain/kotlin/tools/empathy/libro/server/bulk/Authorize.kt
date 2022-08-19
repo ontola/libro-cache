@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import tools.empathy.libro.server.plugins.services
+import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.server.tenantization.tenant
 import tools.empathy.serialization.DataSlice
 import tools.empathy.serialization.merge
@@ -49,8 +50,8 @@ suspend fun ApplicationCall.authorizeApex(toAuthorize: Flow<CacheRequest>): Flow
 }
 
 suspend fun ApplicationCall.authorize(toAuthorize: Flow<CacheRequest>): Flow<CacheEntry> {
-    return if (tenant.websiteIRI == Url("https://localhost") || (tenant.allowUnsafe && tenant.websiteIRI == Url("http://localhost:${tenant.unsafePort}"))) {
-        authorizeLocal(toAuthorize)
+    return if (tenant is TenantData.Local) {
+        authorizeLocal(tenant as TenantData.Local, toAuthorize)
     } else {
         authorizeApex(toAuthorize)
     }
