@@ -412,6 +412,7 @@ fun Application.module(
         staticTenants = mapOf(
             management.websiteOrigin.host to management,
             config.studio.domain to TenantData.Local(
+                name = "Studio",
                 websiteIRI = config.studio.origin,
                 websiteOrigin = config.studio.origin,
                 manifest = studioManifest(config.studio.origin),

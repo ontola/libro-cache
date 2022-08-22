@@ -17,6 +17,7 @@ sealed class TenantData(
     open val manifest: Manifest,
 ) {
     data class Local(
+        val name: String,
         override val websiteIRI: Url,
         override val websiteOrigin: Url,
         override val manifest: Manifest,

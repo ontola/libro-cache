@@ -3,7 +3,7 @@ package tools.empathy.libro.server.landing
 import tools.empathy.libro.server.health.Check
 import tools.empathy.libro.server.health.CheckResult
 import tools.empathy.libro.server.health.humanStatus
-import tools.empathy.libro.server.tenantization.TenantsResponse
+import tools.empathy.libro.server.tenantization.TenantDescription
 import tools.empathy.model.Action
 import tools.empathy.model.CollectionDisplay
 import tools.empathy.model.EntryPoint
@@ -31,7 +31,8 @@ import tools.empathy.vocabularies.Schema
 internal const val MdLineBreak = "  "
 
 internal fun DataSlice.homePage(
-    tenants: TenantsResponse?,
+    tenants: List<TenantDescription>,
+    backendFound: Boolean,
     defaultServicePort: String?,
     versions: VersionSet,
     healthChecks: List<Check>,
@@ -71,8 +72,9 @@ internal fun DataSlice.homePage(
                 Seq(
                     Value.Id.Global("/home/widgets"),
                     listOfNotNull(
-                        if (tenants == null) noBackendWidget(defaultServicePort) else tenantWidget(tenants),
-                        if (isDev) docsWidget() else null,
+                        tenantWidget(tenants),
+                        docsWidget(isDev),
+                        if (!backendFound) noBackendWidget(defaultServicePort) else null,
                         studioWidget(),
                         healthWidget(healthChecks),
                     ),
@@ -82,7 +84,13 @@ internal fun DataSlice.homePage(
     )
 }
 
-private fun DataSlice.docsWidget(): Value.Id {
+private fun DataSlice.docsWidget(isDev: Boolean): Value.Id {
+    val docsUrl = if (isDev) {
+        Value.Id.Global("/libro/docs/")
+    } else {
+        Value.Id.Global("https://ontola.gitlab.io/cache/")
+    }
+
     val entryPoint = Value.Id.Global("/home/widgets/docs/list/entryPoint")
 
     val action = add(
@@ -90,7 +98,7 @@ private fun DataSlice.docsWidget(): Value.Id {
             id = Value.Id.Global("/home/widgets/docs/list/action"),
             specificType = Schema.CreateAction,
             name = "Documentation",
-            text = "Open the docs",
+            text = "Open the libro-server reference",
             target = entryPoint,
             actionStatus = Value.Id.Global("http://schema.org/PotentialActionStatus"),
         ),
@@ -103,7 +111,7 @@ private fun DataSlice.docsWidget(): Value.Id {
             isPartOf = action,
             httpMethod = "GET",
             formTarget = "_blank",
-            url = Value.Id.Global("/libro/docs/"),
+            url = docsUrl,
         ),
     )
 
@@ -138,7 +146,7 @@ private fun DataSlice.noBackendWidget(defaultServicePort: String?): Value.Id {
 
     return add(
         Widget(
-            id = Value.Id.Global("/home/widgets/tenants"),
+            id = Value.Id.Global("/home/widgets/noBackend"),
             order = 1,
             topology = Value.Id.Global("https://ns.ontola.io/libro/topologies/container"),
             widgetSize = 2,
@@ -148,8 +156,8 @@ private fun DataSlice.noBackendWidget(defaultServicePort: String?): Value.Id {
     )
 }
 
-private fun DataSlice.tenantWidget(tenants: TenantsResponse): Value.Id {
-    val tenantEntities = tenants.sites.map {
+private fun DataSlice.tenantWidget(tenants: List<TenantDescription>): Value.Id {
+    val tenantEntities = tenants.map {
         record {
             type(Schema.Thing.id)
             field(Schema.name) { s(it.name) }
@@ -204,7 +212,7 @@ private fun DataSlice.studioWidget(): Value.Id {
             isPartOf = action,
             httpMethod = "GET",
             formTarget = "_blank",
-            url = Value.Id.Global("/d/studio"),
+            url = Value.Id.Global("/libro/studio"),
         ),
     )
 

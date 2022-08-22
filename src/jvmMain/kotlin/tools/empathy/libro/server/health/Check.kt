@@ -26,7 +26,7 @@ abstract class Check {
     private fun fail(e: Exception) {
         result = if (e is Warning) CheckResult.Warn else CheckResult.Fail
         error = e
-        message = error.message!!
+        message = error.message ?: "unknown error"
     }
 
     abstract suspend fun runTest(call: ApplicationCall): Exception?

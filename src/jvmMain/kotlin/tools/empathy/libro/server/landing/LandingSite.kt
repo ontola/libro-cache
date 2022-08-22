@@ -11,7 +11,8 @@ import tools.empathy.libro.server.health.HeadRequestCheck
 import tools.empathy.libro.server.health.RedisCheck
 import tools.empathy.libro.server.plugins.Versions
 import tools.empathy.libro.server.tenantization.getApiVersion
-import tools.empathy.libro.server.tenantization.getTenants
+import tools.empathy.libro.server.tenantization.getExternalTenants
+import tools.empathy.libro.server.tenantization.getInternalTenants
 import tools.empathy.libro.server.util.LibroHttpHeaders
 import tools.empathy.model.Seq
 import tools.empathy.model.WebSite
@@ -21,6 +22,7 @@ import tools.empathy.model.menu.add
 import tools.empathy.serialization.DataSlice
 import tools.empathy.serialization.Value
 import tools.empathy.serialization.dataSlice
+import java.nio.channels.UnresolvedAddressException
 
 suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
     val defaultServicePort = application
@@ -29,19 +31,23 @@ suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
         .config("base")
         .propertyOrNull("defaultServicePort")
         ?.getString()
-    val tenants = try {
-        this@landingSite.getTenants()
+    var backendFound = true
+    val externalTenants = try {
+        this@landingSite.getExternalTenants()
     } catch (e: Exception) {
-        if (e !is IOException && e !is ResponseException) {
+        if (e !is IOException && e !is ResponseException && e !is UnresolvedAddressException) {
             throw e
         }
 
-        null
+        backendFound = false
+        emptyList()
     }
+    val tenants = externalTenants + this@landingSite.getInternalTenants()
+
     val apiVersion = try {
         getApiVersion()
     } catch (e: Exception) {
-        if (e !is IOException && e !is ResponseException) {
+        if (e !is IOException && e !is ResponseException && e !is UnresolvedAddressException) {
             throw e
         }
 
@@ -66,6 +72,7 @@ suspend fun ApplicationCall.landingSite(): DataSlice = dataSlice {
 
     val homePage = homePage(
         tenants,
+        backendFound,
         defaultServicePort,
         versions,
         checks,

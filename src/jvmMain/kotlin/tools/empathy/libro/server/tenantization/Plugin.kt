@@ -7,6 +7,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
+import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.plugin
@@ -32,7 +33,11 @@ import tools.empathy.url.fullUrl
 import tools.empathy.url.origin
 import tools.empathy.url.rebase
 
+private val StaticTenantsKey = AttributeKey<List<TenantData.Local>>("StaticTenantsKey")
 private val TenantizationKey = AttributeKey<TenantData>("TenantizationKey")
+
+internal val Application.staticTenants: List<TenantData.Local>
+    get() = attributes.getOrNull(StaticTenantsKey) ?: throw TenantizationNotYetConfiguredException()
 
 internal val ApplicationCall.tenant: TenantData
     get() = attributes.getOrNull(TenantizationKey) ?: reportMissingTenantization()
@@ -58,6 +63,7 @@ class TenantizationConfiguration {
 
 val Tenantization = createApplicationPlugin(name = "Tenantization", ::TenantizationConfiguration) {
     val logger = KotlinLogging.logger {}
+    application.attributes.put(StaticTenantsKey, pluginConfig.staticTenants.values.toList())
 
     @Throws(TenantNotFoundException::class)
     suspend fun getManifest(call: ApplicationCall, websiteBase: String): Manifest {
@@ -75,6 +81,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
         call.attributes.put(
             TenantizationKey,
             TenantData.Local(
+                name = manifest.name,
                 websiteIRI = manifest.ontola.websiteIRI,
                 websiteOrigin = baseOrigin,
                 manifest = manifest,

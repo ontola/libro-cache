@@ -37,6 +37,7 @@ fun managementTenant(origin: Url, port: Int): TenantData.Local {
     }
 
     return TenantData.Local(
+        name = "Libro Management",
         websiteIRI = origin,
         websiteOrigin = origin,
         allowUnsafe = true,

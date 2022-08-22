@@ -45,12 +45,19 @@ internal suspend fun ApplicationCall.getTenantsRequest(): HttpResponse = applica
 /**
  * Queries the `tenants` SPI endpoint for all the known tenants.
  */
-internal suspend fun ApplicationCall.getTenants(): TenantsResponse {
+internal suspend fun ApplicationCall.getExternalTenants(): List<TenantDescription> {
     val response = getTenantsRequest()
 
     if (response.status != HttpStatusCode.OK) {
         throw ResponseException(response, response.body())
     }
 
-    return response.body()
+    return response.body<TenantsResponse>().sites
+}
+
+internal fun ApplicationCall.getInternalTenants(): List<TenantDescription> = application.staticTenants.map {
+    TenantDescription(
+        name = it.name,
+        location = it.websiteIRI,
+    )
 }

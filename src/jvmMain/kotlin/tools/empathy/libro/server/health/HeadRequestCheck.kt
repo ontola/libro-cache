@@ -4,7 +4,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.routes.headRequest
-import tools.empathy.libro.server.tenantization.getTenants
+import tools.empathy.libro.server.tenantization.getExternalTenants
 
 class HeadRequestCheck : Check() {
     init {
@@ -12,7 +12,7 @@ class HeadRequestCheck : Check() {
     }
 
     override suspend fun runTest(call: ApplicationCall): Exception? {
-        val tenant = call.getTenants().sites.first().location
+        val tenant = call.getExternalTenants().first().location
 
         val response = call.headRequest(
             call.application.libroConfig.client,
