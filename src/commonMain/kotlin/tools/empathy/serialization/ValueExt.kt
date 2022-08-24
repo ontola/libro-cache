@@ -45,6 +45,7 @@ fun Value.toJsonElementMap(): JsonObject = when (this) {
         put("v", JsonPrimitive(this@toJsonElementMap.value))
         put("dt", JsonPrimitive(this@toJsonElementMap.dataType))
     }
+    is Value.NestedRecord -> error("Cannot serialize nested records in data slice")
 }
 
 fun JsonObject.toValue(): Value {

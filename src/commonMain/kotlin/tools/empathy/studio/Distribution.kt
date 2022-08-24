@@ -5,6 +5,7 @@ import tools.empathy.libro.webmanifest.Manifest
 import tools.empathy.serialization.DataSlice
 import tools.empathy.serialization.Sitemap
 import tools.empathy.serialization.allowedInSitemap
+import tools.empathy.serialization.deep.DeepSlice
 import tools.empathy.serialization.sitemap
 import tools.empathy.serialization.splitMultilingual
 
@@ -14,6 +15,12 @@ data class DistributionMeta(
     val message: String,
     val createdAt: Long,
     val live: Boolean,
+)
+
+@Serializable
+data class DistributionData(
+    val data: DeepSlice,
+    val manifest: Manifest,
 )
 
 /**
@@ -28,7 +35,7 @@ data class Distribution(
      * The sitemap, one line per resource iri
      */
     val sitemap: String,
-    val xmlSitemap: Sitemap = data.sitemap(),
+    val xmlSitemap: Sitemap = data.sitemap(manifest.ontola.websiteIRI),
 )
 
 fun Project.toDistribution(meta: DistributionMeta): Distribution {

@@ -31,11 +31,34 @@ import tools.empathy.libro.server.plugins.setManifestLanguage
 import tools.empathy.libro.server.util.measured
 import tools.empathy.libro.webmanifest.Manifest
 import tools.empathy.serialization.translations
+import tools.empathy.url.absolutize
 import tools.empathy.url.appendPath
+import tools.empathy.url.asHrefString
 import tools.empathy.url.filename
 import tools.empathy.url.fullUrl
 import tools.empathy.url.origin
-import tools.empathy.url.withoutTrailingSlash
+import tools.empathy.url.stem
+import tools.empathy.url.withTrailingSlash
+
+sealed class PublicationResult {
+    object NoMatch : PublicationResult()
+    object NotFound : PublicationResult()
+
+    class Present(val distribution: Distribution) : PublicationResult()
+}
+
+private fun requestUri(call: ApplicationCall): Url {
+    val origin = call.request.origin
+
+    return URLBuilder(
+        protocol = URLProtocol.createOrDefault(origin.scheme),
+        host = origin.host,
+        port = origin.port.onlyNonDefaultPort(),
+        pathSegments = call.request.path().split("/").filter { it.isNotBlank() },
+    ).apply {
+        parameters.appendAll(call.request.queryParameters)
+    }.build()
+}
 
 private fun Int.onlyNonDefaultPort(): Int {
     if (this == 80 || this == 443) {
@@ -62,6 +85,53 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
         xmlVersion = XmlVersion.XML10
         indent = 4
     }
+    val staticDistributions by lazy { readStaticDistributions() }
+
+    logger.error { "Static distributions: ${staticDistributions.keys}" }
+
+    suspend fun findStaticDistribution(call: ApplicationCall, uri: Url): PublicationResult = call.measured("studioLookupStatic") {
+        val stemmed = uri.stem()
+
+        val distributions = if (call.application.libroConfig.isDev) {
+            readStaticDistributions()
+        } else {
+            staticDistributions
+        }
+
+        val match = distributions.keys.find {
+            it.toString() == stemmed || stemmed.startsWith(it.withTrailingSlash)
+        }
+
+        val distributionData = distributions[match]
+
+        if (distributionData != null) {
+            PublicationResult.Present(distributionData)
+        } else {
+            PublicationResult.NoMatch
+        }
+    }
+
+    suspend fun findDatabaseDistribution(call: ApplicationCall, uri: Url): PublicationResult = call.measured("studioLookupDb") {
+        val publication = pluginConfig.publicationRepo.match(uri)
+
+        publication ?: return@measured PublicationResult.NoMatch
+
+        logger.debug { "Prefix match for project ${publication.projectId} and distribution ${publication.distributionId}" }
+
+        val distribution = pluginConfig.distributionRepo.get(publication.projectId, publication.distributionId)
+            ?: return@measured PublicationResult.NotFound
+
+        PublicationResult.Present(distribution)
+    }
+
+    suspend fun findDistribution(call: ApplicationCall, uri: Url): PublicationResult {
+        val static = findStaticDistribution(call, uri)
+        if (static is PublicationResult.Present) {
+            return static
+        }
+
+        return findDatabaseDistribution(call, uri)
+    }
 
     suspend fun hostStudio(call: ApplicationCall) {
         val uri = call.fullUrl()
@@ -83,29 +153,22 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
             return
         }
 
-        lateinit var uri: Url
-        val publication = call.measured("studioLookup") {
-            val origin = call.request.origin
-            uri = URLBuilder(
-                protocol = URLProtocol.createOrDefault(origin.scheme),
-                host = origin.host,
-                port = origin.port.onlyNonDefaultPort(),
-                pathSegments = call.request.path().split("/").filter { it.isNotBlank() },
-            ).apply {
-                parameters.appendAll(call.request.queryParameters)
-            }.build()
+        val uri = requestUri(call)
 
-            pluginConfig.publicationRepo.match(uri)
+        val distribution = when (val result = findDistribution(call, uri)) {
+            PublicationResult.NoMatch -> return
+            PublicationResult.NotFound -> return call.respond(HttpStatusCode.NotFound)
+            is PublicationResult.Present -> {
+                result.distribution
+            }
         }
-
-        publication ?: return
-
-        logger.debug { "Prefix match for project ${publication.projectId} and distribution ${publication.distributionId}" }
-
-        val distribution = pluginConfig.distributionRepo.get(publication.projectId, publication.distributionId)
-            ?: return call.respond(HttpStatusCode.NotFound)
-
-        val record = distribution.data[uri.withoutTrailingSlash]
+        val record = distribution.data[uri.asHrefString] ?: distribution.data[distribution.manifest.ontola.websiteIRI.absolutize(uri)]
+        val ctx = call.pageRenderContextFromCall(
+            data = distribution.data,
+            manifest = distribution.manifest,
+            uri = uri,
+        )
+        call.attributes.put(StudioDeploymentKey, ctx)
 
         if (uri.filename() == "manifest.json") {
             call.respondOutputStream(ContentType.Application.Json) {
@@ -124,13 +187,6 @@ val Studio = createApplicationPlugin(name = "Studio", ::StudioConfiguration) {
             call.respondRedirect(record.translations()!!.first().value, permanent = false)
         } else {
             record["_language"]?.firstOrNull()?.value?.let { call.setManifestLanguage(it) }
-            val ctx = call.pageRenderContextFromCall(
-                data = distribution.data,
-                manifest = distribution.manifest,
-                uri = uri,
-            )
-
-            call.attributes.put(StudioDeploymentKey, ctx)
         }
     }
 

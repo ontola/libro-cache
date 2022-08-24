@@ -2,6 +2,9 @@ package tools.empathy.serialization
 
 import io.ktor.http.Url
 
+/**
+ * Compacts the ids of the record and field references based on the [websiteIRI].
+ */
 fun Record.compact(websiteIRI: Url?): Record {
     websiteIRI ?: return this
 

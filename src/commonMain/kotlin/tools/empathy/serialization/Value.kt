@@ -5,6 +5,7 @@ import io.ktor.http.Url
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import tools.empathy.serialization.deep.DeepRecord
 
 @Serializable
 sealed class Value(
@@ -96,4 +97,15 @@ sealed class Value(
         @SerialName("l")
         val lang: String,
     ) : Value(lexical)
+
+    /**
+     * Should not be serialized, but acts as a placeholder for nesting.
+     */
+    data class NestedRecord(
+        @SerialName("v")
+        val lexical: String,
+    ) : Value(lexical) {
+        @Transient
+        lateinit var record: DeepRecord
+    }
 }

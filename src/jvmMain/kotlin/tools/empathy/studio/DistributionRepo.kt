@@ -7,6 +7,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import tools.empathy.libro.server.plugins.Storage
+import tools.empathy.libro.webmanifest.Manifest
 import tools.empathy.serialization.DataSlice
 import tools.empathy.serialization.sitemap
 
@@ -39,18 +40,20 @@ class DistributionRepo(val storage: Storage) {
     suspend fun get(projectId: String, distId: String): Distribution? {
         val key = distributionKey(projectId, distId)
         val data = getData(projectId, distId)
-        val manifest = storage.getHashValue(*key, hashKey = manifestKey) ?: return null
+        val manifestData = storage.getHashValue(*key, hashKey = manifestKey) ?: return null
         val sitemap = storage.getHashValue(*key, hashKey = sitemapKey) ?: return null
         val xmlSitemap = storage.getHashValue(*key, hashKey = xmlSitemapKey)
         val version = storage.getHashValue(*key, hashKey = versionKey) ?: return null
         val message = storage.getHashValue(*key, hashKey = messageKey) ?: return null
         val createdAt = storage.getHashValue(*key, hashKey = createdAtKey) ?: return null
 
+        val manifest = lenientJson.decodeFromString<Manifest>(manifestData)
+
         return Distribution(
             data = data,
-            manifest = lenientJson.decodeFromString(manifest),
+            manifest = manifest,
             sitemap = sitemap,
-            xmlSitemap = xmlSitemap?.let { lenientJson.decodeFromString(it) } ?: data.sitemap(),
+            xmlSitemap = xmlSitemap?.let { lenientJson.decodeFromString(it) } ?: data.sitemap(manifest.ontola.websiteIRI),
             meta = DistributionMeta(
                 version = version,
                 message = message,

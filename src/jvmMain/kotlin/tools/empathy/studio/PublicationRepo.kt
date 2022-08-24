@@ -1,7 +1,6 @@
 package tools.empathy.studio
 
 import io.ktor.http.Url
-import kotlinx.coroutines.FlowPreview
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -12,7 +11,6 @@ import tools.empathy.url.withTrailingSlash
 class PublicationRepo(val storage: Storage) {
     private val publicationsKey = arrayOf(routePart, startsWithPart)
 
-    @OptIn(FlowPreview::class)
     private suspend fun find(predicate: ((p: Publication) -> Boolean)?): List<Publication> = getAll()
         .filter { predicate?.invoke(it) == true }
 

@@ -1,8 +1,11 @@
 package tools.empathy.serialization
 
+import io.ktor.http.Url
 import kotlinx.serialization.Serializable
 import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
+import tools.empathy.url.rebase
+import tools.empathy.vocabularies.ActivityStreams.id
 
 val BLACKLIST_PATTERNS = listOf(
     "<",
@@ -39,13 +42,19 @@ data class Alternative(
     val rel: String = "alternative",
 )
 
-fun DataSlice.sitemap(): Sitemap = Sitemap(
+fun DataSlice.sitemap(baseId: Url): Sitemap = Sitemap(
     urls = keys
         .filter { key -> allowedInSitemap(key) && this[key]?.canonical().isNullOrEmpty() }
         .map { id ->
+            val absolute = if (id.startsWith('/')) {
+                baseId.rebase(id).toString()
+            } else {
+                id
+            }
+
             SitemapUrl(
-                loc = id,
-                alternatives = this[id]
+                loc = absolute,
+                alternatives = this[absolute]
                     ?.translations()
                     ?.map { Alternative(it.value, it.lang) }
                     ?: emptyList(),

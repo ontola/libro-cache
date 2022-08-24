@@ -38,9 +38,13 @@ fun DataSlice.record(id: Value.Id = Value.Id.Local("_:${nextId()}"), init: Recor
     val record = Record(id)
     record.init()
 
-    (this as MutableMap<String, Record>)[id.value] = record
+    add(record)
 
     return record.id
+}
+
+fun DataSlice.add(record: Record) {
+    (this as MutableMap<String, Record>)[record.id.value] = record
 }
 
 /**
