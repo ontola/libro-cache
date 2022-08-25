@@ -24,7 +24,7 @@ fun managementTenant(origin: Url, port: Int): TenantData.Local {
             name = "Local",
             icons = arrayOf(
                 Icon(
-                    src = "/f_assets/images/libro-logo-t-4.svg",
+                    src = "/f_assets/libro/libro-logo.svg",
                     sizes = "32x32 64x64 72x72 96x96 128x128",
                     purpose = "favicon",
                     type = "image/svg",

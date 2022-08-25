@@ -42,16 +42,16 @@ internal fun DataSlice.homePage(
         ImageObject(
             Value.Id.Local(),
             description = "Libro logo",
-            imgUrl64x64 = Value.Id.Global("/f_assets/images/libro-logo-t-4.svg"),
-            imgUrl256x256 = Value.Id.Global("/f_assets/images/libro-logo-t.svg"),
-            imgUrl1500x2000 = Value.Id.Global("/f_assets/images/libro-logo-t.svg"),
+            imgUrl64x64 = Value.Id.Global("/f_assets/libro/libro-logo.svg"),
+            imgUrl256x256 = Value.Id.Global("/f_assets/libro/libro-logo.svg"),
+            imgUrl1500x2000 = Value.Id.Global("/f_assets/libro/libro-logo.svg"),
         ),
     )
     val cover = add(
         ImageObject(
             Value.Id.Local(),
             description = "Libro cover",
-            imgUrl1500x2000 = Value.Id.Global("/f_assets/images/libro-cover.webp"),
+            imgUrl1500x2000 = Value.Id.Global("/f_assets/libro/libro-cover.webp"),
         ),
     )
 

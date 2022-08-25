@@ -11,10 +11,18 @@ import java.nio.file.Files
 import kotlin.io.path.Path
 import kotlin.io.path.isReadable
 import kotlin.io.path.isRegularFile
+import kotlin.io.path.notExists
 
 private val logger = KotlinLogging.logger {}
 
 internal fun readStaticDistributions(): Map<Url, Distribution> {
+    val sitesFolder = Path("resources/sites")
+
+    if (sitesFolder.notExists()) {
+        logger.warn { "Sites folder does not exist" }
+        return emptyMap()
+    }
+
     val staticDistributions = Files.walk(Path("resources/sites")).map {
         if (it.isRegularFile() && it.isReadable() && it.fileName.extension == "json") {
             try {

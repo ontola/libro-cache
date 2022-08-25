@@ -20,7 +20,8 @@ fun Routing.mountStatic(isDev: Boolean) {
 
     static("f_assets") {
         preCompressed(CompressedFileType.BROTLI, CompressedFileType.GZIP) {
-            files("resources/assets")
+            files("resources/client")
+            files("resources/static")
         }
     }
 }
