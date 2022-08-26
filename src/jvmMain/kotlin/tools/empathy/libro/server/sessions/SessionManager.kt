@@ -21,13 +21,10 @@ import io.ktor.server.sessions.sessionId
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.plugins.CacheSessionConfiguration
 import tools.empathy.libro.server.plugins.deviceId
-import tools.empathy.libro.server.plugins.logger
 import tools.empathy.libro.server.plugins.setPreferredLanguage
 import tools.empathy.libro.server.sessions.oidc.OIDCServerSettings
 import tools.empathy.libro.server.tenantization.tenant
@@ -73,7 +70,7 @@ class SessionManager(
         get() = claims()?.user?.type == UserType.User
 
     private val oidcSettings: OIDCServerSettings
-        get() = runBlocking { configuration.oidcSettingsManager.get()!! }
+        get() = runBlocking { configuration.oidcSettingsManager.getOrCreate()!! }
 
     val logoutRequest: LogoutRequest?
         get() = session?.credentials?.accessToken?.let {
@@ -115,22 +112,31 @@ class SessionManager(
         }
     }
 
-    suspend fun ensure() {
-        val existing = session ?: SessionData()
+    suspend fun ensure(retry: Boolean = true) {
+        try {
+            val existing = session ?: SessionData()
 
-        if (existing.credentials == null) {
-            if (requireAccessToken()) {
-                val guestToken = guestToken()
-                session = existing.copy(
-                    credentials = TokenPair(
-                        guestToken.accessToken,
-                        guestToken.refreshToken,
-                    ),
-                    deviceId = call.deviceId,
-                )
+            if (existing.credentials == null) {
+                if (requireAccessToken()) {
+                    val guestToken = guestToken()
+                    session = existing.copy(
+                        credentials = TokenPair(
+                            guestToken.accessToken,
+                            guestToken.refreshToken,
+                        ),
+                        deviceId = call.deviceId,
+                    )
+                }
+            } else if (existing.isExpired(configuration.jwtValidator)) {
+                session = refresher.refresh(existing)
             }
-        } else if (existing.isExpired(configuration.jwtValidator)) {
-            session = refresher.refresh(existing)
+        } catch (e: SessionException) {
+            if (retry && e is InvalidClientException) {
+                configuration.oidcSettingsManager.refresh()
+                return ensure(false)
+            }
+
+            throw e
         }
     }
 
@@ -186,18 +192,12 @@ class SessionManager(
                 OIDCRequest.guestRequest(
                     oidcSettings.credentials.clientId,
                     oidcSettings.credentials.clientSecret,
-                )
+                ),
             )
         }
 
-        if (response.status == HttpStatusCode.BadRequest) {
-            val error = Json.decodeFromString<BackendErrorResponse>(response.body())
-            call.logger.warn { "E: ${error.error} - ${error.code} - ${error.errorDescription}" }
-            if (error.error == "invalid_grant") {
-                throw InvalidGrantException()
-            } else {
-                throw RuntimeException("Unexpected body with status 400 (${error.error})")
-            }
+        if (response.status.value >= HttpStatusCode.BadRequest.value) {
+            throwSessionException(response)
         }
 
         return response.body()

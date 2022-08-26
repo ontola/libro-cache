@@ -13,13 +13,9 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import tools.empathy.libro.server.plugins.CacheSessionConfiguration
 import tools.empathy.url.appendPath
-
-class InvalidGrantException : Exception()
 
 @Serializable
 data class OIDCTokenResponse(
@@ -53,7 +49,7 @@ data class OIDCRequest(
             clientId,
             clientSecret,
             grantType = "password",
-            scope = "guest"
+            scope = "guest",
         )
 
         fun refreshRequest(clientId: String, clientSecret: String, refreshToken: String): OIDCRequest = OIDCRequest(
@@ -88,6 +84,10 @@ class SessionRefresher(private val configuration: CacheSessionConfiguration) {
             if (e !is InvalidGrantException) {
                 configuration.libroConfig.notify(e)
             }
+            if (e is InvalidClientException) {
+                throw e
+            }
+
             null
         }
     }
@@ -95,7 +95,7 @@ class SessionRefresher(private val configuration: CacheSessionConfiguration) {
     private suspend fun refreshToken(userToken: String, refreshToken: String): OIDCTokenResponse {
         val issuer = JWT.decode(userToken).issuer
         val tokenUri = Url(issuer).appendPath("oauth", "token")
-        val oidcServerSettings = configuration.oidcSettingsManager.get()!!
+        val oidcServerSettings = configuration.oidcSettingsManager.getOrCreate()!!
         val oidcTokenUri = oidcServerSettings.accessTokenUrl
 
         val response = configuration.client.post(oidcTokenUri) {
@@ -114,19 +114,13 @@ class SessionRefresher(private val configuration: CacheSessionConfiguration) {
                 OIDCRequest.refreshRequest(
                     oidcServerSettings.credentials.clientId,
                     oidcServerSettings.credentials.clientSecret,
-                    refreshToken
-                )
+                    refreshToken,
+                ),
             )
         }
 
-        if (response.status == HttpStatusCode.BadRequest) {
-            val error = Json.decodeFromString<BackendErrorResponse>(response.body())
-            logger.warn { "E: ${error.error} - ${error.code} - ${error.errorDescription}" }
-            if (error.error == "invalid_grant") {
-                throw InvalidGrantException()
-            } else {
-                throw RuntimeException("Unexpected body with status 400")
-            }
+        if (response.status.value >= HttpStatusCode.BadRequest.value) {
+            throwSessionException(response)
         }
 
         return response.body()

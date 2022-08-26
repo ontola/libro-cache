@@ -24,4 +24,12 @@ class OIDCSettingsRepository(private val storage: Storage) {
 
         return Json.decodeFromString(OIDCServerSettings.serializer(), registration)
     }
+
+    suspend fun deleteByOrigin(origin: Url) {
+        storage.deleteKey(
+            "oidc",
+            "registration",
+            origin.toString(),
+        )
+    }
 }

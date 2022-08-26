@@ -141,7 +141,6 @@ fun Application.module(
     val persistentAdapter =
         persistentStorage ?: RedisAdapter(RedisClient.create(config.persistentRedisURI).connect().coroutines())
     val oidcManager = OIDCSettingsManager(config, Storage(persistentAdapter, KeyManager(config.redis), expiration = null))
-    val oidcSettings = lazy { runBlocking { oidcManager.get() } }
 
     install(MicrometerMetrics) {
         registry = Metrics.metricsRegistry
@@ -345,15 +344,12 @@ fun Application.module(
             this.client = config.client
 
             urlProvider = {
-                println("urlProvider")
-                val thingy = Url(request.origin()).appendPath("libro", "callback").toString()
-                println(thingy)
-                thingy
+                Url(request.origin()).appendPath("libro", "callback").toString()
             }
             providerLookup = {
                 val origin = Url(request.origin())
-                val redirectUris = listOf(origin.appendPath("libro", "callback")).also { println(it) }
-                runBlocking { oidcManager.get(origin, redirectUris) }?.let {
+                val redirectUris = listOf(origin.appendPath("libro", "callback"))
+                runBlocking { oidcManager.getOrCreate(origin, redirectUris) }?.let {
                     OAuthServerSettings.OAuth2ServerSettings(
                         name = "oidc-${it.origin}",
                         authorizeUrl = it.authorizeUrl.toString(),
@@ -416,7 +412,7 @@ fun Application.module(
                 websiteIRI = config.studio.origin,
                 websiteOrigin = config.studio.origin,
                 manifest = studioManifest(config.studio.origin),
-                context = { attributes[StudioDeploymentKey] }
+                context = { attributes[StudioDeploymentKey] },
             ),
         )
     }
@@ -445,10 +441,10 @@ fun Application.module(
 
             URLBuilder(Url(websiteIri!!).appendPath("oauth", "token")).apply {
                 parameters.apply {
-                    if (oidcSettings.value == null) {
+                    if (oidcManager.getOrCreateBlocking() == null) {
                         logger.warn { "No OIDC settings, omitting credentials from login transformation" }
                     }
-                    oidcSettings.value?.let {
+                    oidcManager.getOrCreateBlocking()?.let {
                         append("client_id", it.credentials.clientId)
                         append("client_secret", it.credentials.clientSecret)
                     }

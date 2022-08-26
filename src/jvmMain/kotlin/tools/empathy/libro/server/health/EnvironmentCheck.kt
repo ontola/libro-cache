@@ -21,7 +21,7 @@ class EnvironmentCheck : Check() {
                 }
             }
 
-            val oidcSettings = runBlocking { OIDCSettingsManager(config, call.application.persistentStorage).get() }
+            val oidcSettings = runBlocking { OIDCSettingsManager(config, call.application.persistentStorage).getOrCreate() }
 
             if (env != "development") {
                 checkValue("invalidationChannel", config.redis.invalidationChannel)

@@ -2,13 +2,10 @@ package tools.empathy.libro.server.sessions
 
 import com.auth0.jwt.exceptions.TokenExpiredException
 import com.auth0.jwt.interfaces.JWTVerifier
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.properties.Properties
-import kotlinx.serialization.properties.encodeToMap
 import org.apache.commons.codec.binary.Base64
 import tools.empathy.libro.server.plugins.generateCSRFToken
 
@@ -18,6 +15,7 @@ private val json = Json { ignoreUnknownKeys = true }
 enum class UserType {
     @SerialName("guest")
     Guest,
+
     @SerialName("user")
     User,
 }
@@ -30,10 +28,7 @@ data class UserData(
     val id: String,
     val email: String? = null,
     val language: String,
-) {
-    @OptIn(ExperimentalSerializationApi::class)
-    val asMap: Map<String, Any> by lazy { Properties.encodeToMap(this) }
-}
+)
 
 @Serializable
 data class Claims(
@@ -61,7 +56,7 @@ data class SessionData(
     val credentials: TokenPair? = null,
     val deviceId: String? = null,
     @SerialName("csrfToken")
-    internal var _csrfToken: String? = generateCSRFToken()
+    internal var _csrfToken: String? = generateCSRFToken(),
 ) {
     val csrfToken: String
         get() {
