@@ -13,9 +13,35 @@ build:
     - CI_APPLICATION_REPOSITORY=$CI_REGISTRY_IMAGE
     - apk add git
     - git describe --always > server_version.txt
+    - echo "$HUB_TOKEN" | docker login -u "$HUB_USER" "docker.io" --password-stdin
+  services:
+    - name: 'docker:20.10.12-dind'
   artifacts:
     paths:
       - build
+  script:
+    - docker buildx create --use --name new-builder
+    - docker buildx build --push --platform linux/amd64 --tag argu/libro-server:${CI_COMMIT_SHA}_amd64 .
+    - docker create --name built argu/libro-server:${CI_COMMIT_SHA}_amd64
+    - docker cp built:/app/libro.jar .
+    - docker cp built:/app/server_version.txt .
+    - docker buildx build --push --platform linux/arm64/v8 --tag argu/libro-server:${CI_COMMIT_SHA}_arm64 -f Dockerfile-arm64 .
+    - docker manifest create argu/libro-server:$CI_COMMIT_SHA --amend argu/libro-server:${CI_COMMIT_SHA}_amd64 --amend argu/libro-server:${CI_COMMIT_SHA}_arm64
+    - docker manifest push --purge argu/libro-server:$CI_COMMIT_SHA
+
+tag_latest:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  needs:
+    - build
+  services:
+    - 'docker:20.10.12-dind'
+  script:
+    - docker pull argu/libro-server:${CI_COMMIT_SHA}_amd64
+    - docker pull argu/libro-server:${CI_COMMIT_SHA}_arm64
+    - docker manifest create argu/libro-server:latest --amend argu/libro-server:${CI_COMMIT_SHA}_amd64 --amend argu/libro-server:${CI_COMMIT_SHA}_arm64
+    - docker manifest push --purge argu/libro-server:latest
 
 test:
   services:

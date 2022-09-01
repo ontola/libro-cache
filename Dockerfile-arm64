@@ -1,0 +1,10 @@
+FROM ghcr.io/graalvm/graalvm-ce:22
+
+EXPOSE 3080:3080
+
+WORKDIR /app
+
+COPY ./libro.jar /app/libro.jar
+COPY ./server_version.txt /app/server_version.txt
+
+CMD ["java", "-jar", "libro.jar"]
