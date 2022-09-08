@@ -57,18 +57,18 @@ internal fun BODY.bodyTracking(nonce: String, tracking: List<Tracking>, isUser: 
                     unsafe {
                         raw(
                             """
-                            var _paq = window._paq || [];
+                            var _paq = window._paq = window._paq || [];
                             ${if (isUser) "" else "_paq.push(['disableCookies']);"}
                             _paq.push(['trackPageView']);
                             _paq.push(['enableLinkTracking']);
                             (function() {
                               var u="https://${it.host}/";
                               _paq.push(['setTrackerUrl', u+'$trackerName.php']);
-                              _paq.push(['setSiteId', ${it.containerId}]);
+                              _paq.push(['setSiteId', '${it.containerId}']);
                               var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-                              g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'$trackerName.js'; s.parentNode.insertBefore(g,s);
+                              g.type='text/javascript'; g.async=true; g.defer=true; g.src='${it.cdn}'+'$trackerName.js'; s.parentNode.insertBefore(g,s);
                             })();
-                            """.trimIndent()
+                            """.trimIndent(),
                         )
                     }
                 }
