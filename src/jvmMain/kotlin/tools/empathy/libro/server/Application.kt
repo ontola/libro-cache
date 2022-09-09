@@ -19,6 +19,7 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.OAuthServerSettings
 import io.ktor.server.auth.oauth
+import io.ktor.server.dynamicCookie.dynamicCookie
 import io.ktor.server.html.respondHtml
 import io.ktor.server.locations.Locations
 import io.ktor.server.logging.toLogString
@@ -99,6 +100,7 @@ import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.server.tenantization.Tenantization
 import tools.empathy.libro.server.util.KeyManager
 import tools.empathy.libro.server.util.LibroHttpHeaders
+import tools.empathy.libro.server.util.configure
 import tools.empathy.libro.server.util.configureCallLogging
 import tools.empathy.libro.server.util.configureClientLogging
 import tools.empathy.libro.server.util.isHtmlAccept
@@ -284,14 +286,65 @@ fun Application.module(
     install(ForwardedHeaderSupport)
     install(XForwardedHeaderSupport)
 
+    install(Blacklist) {
+        blacklist = listOf(
+            cspReportEndpointPath,
+            "/favicon.ico",
+            "/link-lib/cache/clear",
+            "/link-lib/cache/status",
+            "/link-lib/cache/metrics",
+            "/api/maps/",
+            "/d/health",
+            "/metrics",
+            "/_testing",
+            "/csp-reports",
+            "/static/",
+            "/assets/",
+            "/photos/",
+            "/f_assets/",
+            "/libro/docs/",
+            "/__webpack_hmr",
+            "/.well-known/openid-configuration",
+            "/oauth/authorize",
+            "/oauth/discovery/keys",
+            "/oauth/introspect",
+            "/oauth/register",
+            "/oauth/revoke",
+            "/oauth/token",
+            "/oauth/userinfo",
+        )
+    }
+
+    install(Tenantization) {
+        val management = managementTenant(
+            libroConfig.management.origin,
+            libroConfig.devClientPort,
+        )
+
+        staticTenants = mapOf(
+            management.websiteOrigin.host to management,
+            config.studio.domain to TenantData.Local(
+                name = "Studio",
+                websiteIRI = config.studio.origin,
+                websiteOrigin = config.studio.origin,
+                manifest = studioManifest(config.studio.origin),
+                context = { attributes[StudioDeploymentKey] },
+            ),
+        )
+    }
+
+    install(Studio) {
+        blacklist = listOf(
+            "/f_assets/",
+        )
+    }
+
     install(Sessions) {
-        cookie<SessionData>(
+        dynamicCookie<SessionData>(
             name = "identity",
             storage = RedisSessionStorage(persistentAdapter, libroConfig.redis),
         ) {
-            cookie.httpOnly = true
-            cookie.secure = true
-            cookie.extensions["SameSite"] = "Lax"
+            cookie.configure()
             if (!testing && !config.isDev) {
                 transform(
                     signedTransformer(signingSecret = config.sessions.sessionSecret),
@@ -364,66 +417,13 @@ fun Application.module(
         }
     }
 
-    install(Blacklist) {
-        blacklist = listOf(
-            cspReportEndpointPath,
-            "/favicon.ico",
-            "/link-lib/cache/clear",
-            "/link-lib/cache/status",
-            "/link-lib/cache/metrics",
-            "/api/maps/",
-            "/d/health",
-            "/metrics",
-            "/_testing",
-            "/csp-reports",
-            "/static/",
-            "/assets/",
-            "/photos/",
-            "/f_assets/",
-            "/libro/docs/",
-            "/__webpack_hmr",
-            "/.well-known/openid-configuration",
-            "/oauth/authorize",
-            "/oauth/discovery/keys",
-            "/oauth/introspect",
-            "/oauth/register",
-            "/oauth/revoke",
-            "/oauth/token",
-            "/oauth/userinfo",
-        )
-    }
-
-    install(Studio) {
-        blacklist = listOf(
-            "/f_assets/",
-        )
-    }
-
-    install(Tenantization) {
-        val management = managementTenant(
-            libroConfig.management.origin,
-            libroConfig.devClientPort,
-        )
-
-        staticTenants = mapOf(
-            management.websiteOrigin.host to management,
-            config.studio.domain to TenantData.Local(
-                name = "Studio",
-                websiteIRI = config.studio.origin,
-                websiteOrigin = config.studio.origin,
-                manifest = studioManifest(config.studio.origin),
-                context = { attributes[StudioDeploymentKey] },
-            ),
-        )
-    }
-
     install(CSP)
 
     install(CsrfProtection) {
         blackList = listOf(
             Regex("^/_testing"),
             Regex("^/csp-reports"),
-            Regex("^/link-lib/bulk"),
+            Regex("^/([\\w/]*/)?link-lib/bulk"),
             Regex("^/_studio/"),
             Regex("^/([\\w/]*/)?follows/"),
             Regex("^/oauth/register"),
@@ -475,7 +475,7 @@ fun Application.module(
             ProxyRule(Regex("^$cspReportEndpointPath"), exclude = true),
             ProxyRule(Regex("^/d/health"), exclude = true),
             ProxyRule(Regex("^/_studio/"), exclude = true),
-            ProxyRule(Regex("^/link-lib/bulk"), exclude = true),
+            ProxyRule(Regex("^/([\\w/]*/)?link-lib/bulk"), exclude = true),
             ProxyRule(Regex("^/([\\w/]*/)?libro/login"), exclude = true),
             ProxyRule(Regex("^/([\\w/]*/)?logout"), exclude = true),
             ProxyRule(Regex("/static/"), exclude = true),

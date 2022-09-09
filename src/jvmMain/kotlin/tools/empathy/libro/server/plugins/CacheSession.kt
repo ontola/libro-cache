@@ -6,11 +6,14 @@ import io.ktor.http.Url
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.plugin
+import io.ktor.server.dynamicCookie.overrideCookie
 import io.ktor.util.AttributeKey
 import tools.empathy.libro.server.configuration.LibroConfig
 import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.sessions.SessionManager
 import tools.empathy.libro.server.sessions.oidc.OIDCSettingsManager
+import tools.empathy.libro.server.tenantization.tenantOrNull
+import tools.empathy.libro.server.util.configure
 
 class CacheSessionConfiguration {
     lateinit var client: HttpClient
@@ -34,6 +37,10 @@ val CacheSession = createApplicationPlugin(name = "CacheSession", ::CacheSession
     pluginConfig.complete(application.libroConfig)
 
     onCall { call ->
+        call.overrideCookie {
+            configure()
+            path = call.tenantOrNull?.websiteIRI?.encodedPath ?: "/"
+        }
         call.attributes.put(CacheSessionKey, SessionManager(call, pluginConfig))
     }
 }

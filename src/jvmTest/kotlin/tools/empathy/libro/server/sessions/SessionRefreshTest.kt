@@ -29,7 +29,7 @@ class SessionRefreshTest {
             handleRequest(HttpMethod.Post, "/link-lib/bulk") {
                 addHeader("authority", "mysite.local")
                 addHeader(HttpHeaders.XForwardedProto, "https")
-                addHeader(HttpHeaders.Accept, "application/hex+x-ndjson")
+                addHeader(HttpHeaders.Accept, "application/empathy+x-ndjson")
                 addHeader(HttpHeaders.ContentType, "application/x-www-form-urlencoded")
                 addHeader(LibroHttpHeaders.XCsrfToken, csrfToken)
 

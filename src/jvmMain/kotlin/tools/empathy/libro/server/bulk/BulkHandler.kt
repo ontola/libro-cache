@@ -9,6 +9,7 @@ import io.ktor.server.response.respondOutputStream
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
 import io.ktor.util.AttributeKey
+import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filter
@@ -50,26 +51,34 @@ suspend fun ApplicationCall.coldHandler(updatedEntries: List<CacheEntry>?) = mea
     }
 }
 
+private suspend fun PipelineContext<Unit, ApplicationCall>.handleBulk() {
+    if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
+        return
+    }
+
+    val updatedEntries: List<CacheEntry> = call.measured("handler hot") {
+        val requested = requestedResources()
+        call.logger.debug { "Fetching ${requested.size} resources from cache" }
+
+        call.collectResources(requested)
+            .also {
+                call.respondOutputStream(ndEmpJson, HttpStatusCode.OK) {
+                    entriesToOutputStream(it, this)
+                }
+            }
+            .filter { it.cacheControl != CacheControl.Private && it.status == HttpStatusCode.OK }
+            .toList()
+    }
+
+    call.coldHandler(updatedEntries)
+}
+
 fun Routing.mountBulkHandler() {
     post("/link-lib/bulk") {
-        if (call.attributes.contains(AttributeKey<Unit>("StatusPagesTriggered"))) {
-            return@post
-        }
+        handleBulk()
+    }
 
-        val updatedEntries: List<CacheEntry>? = call.measured("handler hot") {
-            val requested = requestedResources()
-            call.logger.debug { "Fetching ${requested.size} resources from cache" }
-
-            call.collectResources(requested)
-                .also {
-                    call.respondOutputStream(ndEmpJson, HttpStatusCode.OK) {
-                        entriesToOutputStream(it, this)
-                    }
-                }
-                .filter { it.cacheControl != CacheControl.Private && it.status == HttpStatusCode.OK }
-                .toList()
-        }
-
-        call.coldHandler(updatedEntries)
+    post("/{site}/link-lib/bulk") {
+        handleBulk()
     }
 }
