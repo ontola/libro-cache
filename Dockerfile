@@ -12,7 +12,7 @@ COPY ./settings.gradle.kts /app/
 COPY . /app
 RUN /app/gradlew --no-daemon stage
 
-FROM ghcr.io/graalvm/graalvm-ce:22
+FROM eclipse-temurin:17-jre
 
 EXPOSE 3080:3080
 
