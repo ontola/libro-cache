@@ -8,6 +8,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 import io.ktor.http.encodedPath
+import io.ktor.http.fullPath
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.html.respondHtml
@@ -99,8 +100,8 @@ private suspend fun ApplicationCall.indexHandler() {
 
 private suspend fun ApplicationCall.localIndexHandler(tenant: TenantData.Local) {
     val context = tenant.context.invoke(this)
-    val requestedId = URLBuilder(tenant.websiteIRI).apply { encodedPath = request.uri }.buildString()
-    val idInData = context.data?.containsKey(requestedId) == true
+    val requestedId = URLBuilder(tenant.websiteIRI).apply { encodedPath = request.uri }.build()
+    val idInData = context.data?.containsKey(requestedId.toString()) == true || context.data?.containsKey(requestedId.fullPath) == true
     val status = if (idInData) HttpStatusCode.OK else HttpStatusCode.NotFound
     val ctx = context.apply {
         this.nonce = this@localIndexHandler.nonce
