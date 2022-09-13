@@ -41,7 +41,7 @@ class SessionRefreshTest {
                 )
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
-                assertNotNull(response.cookies["identity"])
+                assertNotNull(response.cookies["libro_id"])
             }
         }
     }

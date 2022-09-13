@@ -341,7 +341,7 @@ fun Application.module(
 
     install(Sessions) {
         dynamicCookie<SessionData>(
-            name = "identity",
+            name = config.sessions.cookieName,
             storage = RedisSessionStorage(persistentAdapter, libroConfig.redis),
         ) {
             cookie.configure()

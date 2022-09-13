@@ -4,6 +4,10 @@ import io.ktor.http.Url
 
 data class SessionsConfig(
     /**
+     * The name of the session cookie.
+     */
+    val cookieName: String,
+    /**
      * The secret used for verifying session signatures.
      */
     val sessionSecret: String,
@@ -22,6 +26,7 @@ data class SessionsConfig(
 ) {
     companion object {
         fun forTesting(): SessionsConfig = SessionsConfig(
+            cookieName = "libro_id",
             sessionSecret = "secret",
             jwtEncryptionToken = "jwtEncryptionToken",
             clientName = "Libro",

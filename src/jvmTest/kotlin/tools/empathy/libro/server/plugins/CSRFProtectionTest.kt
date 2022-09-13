@@ -32,7 +32,7 @@ class CSRFProtectionTest {
             }.apply {
                 val session = sessions.get<SessionData>()
                 val csrfToken = session?.csrfToken
-                val identity = response.cookies["identity"]?.value
+                val identity = response.cookies["libro_id"]?.value
 
                 assertNotNull(csrfToken, "No csrf token generated")
                 assertNotNull(identity, "No session set")

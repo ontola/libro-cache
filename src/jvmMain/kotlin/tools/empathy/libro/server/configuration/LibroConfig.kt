@@ -290,6 +290,7 @@ data class LibroConfig constructor(
                 val oidcConfig = services.config("oidc")
 
                 SessionsConfig(
+                    cookieName = libroSession.property("cookieName").getString(),
                     sessionSecret = libroSession.property("secret").getString(),
                     jwtEncryptionToken = libroSession.property("jwtEncryptionToken").getString(),
                     clientName = oidcConfig.property("clientName").getString(),
