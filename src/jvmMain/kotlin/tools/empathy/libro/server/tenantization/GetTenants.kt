@@ -21,7 +21,9 @@ import tools.empathy.libro.server.util.proxySafeHeaders
 
 @Serializable
 data class TenantDescription(
+    /** A human-readable name for the tenant. */
     val name: String,
+    /** The website iri of the tenant. */
     val location: Url,
 )
 
