@@ -9,6 +9,7 @@ import io.ktor.server.testing.setBody
 import org.junit.Test
 import tools.empathy.libro.server.bulk.CacheControl
 import tools.empathy.libro.server.bulk.isA
+import tools.empathy.libro.server.bulk.ndEmpJson
 import tools.empathy.libro.server.bulk.statusCode
 import withCacheTestApplication
 import kotlin.test.assertEquals
@@ -45,7 +46,7 @@ class ApplicationTest {
             handleRequest(HttpMethod.Post, "/link-lib/bulk") {
                 addHeader("authority", "mysite.local")
                 addHeader("X-Forwarded-Proto", "https")
-                addHeader("Accept", "application/hex+x-ndjson")
+                addHeader("Accept", ndEmpJson.toString())
                 addHeader("Content-Type", "application/x-www-form-urlencoded")
 
                 setBody(

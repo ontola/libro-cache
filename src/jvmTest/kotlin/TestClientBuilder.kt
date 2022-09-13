@@ -14,7 +14,6 @@ import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.http.headersOf
 import kotlinx.datetime.Clock
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -27,6 +26,7 @@ import tools.empathy.libro.server.sessions.LogoutRequest
 import tools.empathy.libro.server.sessions.OIDCRequest
 import tools.empathy.libro.server.sessions.OIDCTokenResponse
 import tools.empathy.libro.server.tenantization.TenantFinderResponse
+import tools.empathy.libro.server.tenantization.TenantsResponse
 import tools.empathy.libro.server.util.LibroHttpHeaders
 import tools.empathy.libro.webmanifest.Manifest
 import tools.empathy.url.fullUrl
@@ -85,6 +85,7 @@ data class TestClientBuilder(
 
                 when (request.url.encodedPath) {
                     "/_public/spi/find_tenant" -> handleFindTenantRequest(request)
+                    "/_public/spi/tenants" -> handleTenantsRequest(request)
                     "/spi/bulk" -> handleBulkRequest(request, config.resources, config.newToken)
                     "/oauth/token" -> handleTokenRequest(request, config)
                     "/oauth/revoke" -> handleTokenRevocation(request)
@@ -132,7 +133,6 @@ fun MockRequestHandleScope.handleHeadRequest(request: HttpRequestData, headRespo
     return respond("", response.statusCode, headersOf(*test.toList().toTypedArray()))
 }
 
-@OptIn(ExperimentalSerializationApi::class)
 private fun MockRequestHandleScope.handleFindTenantRequest(request: HttpRequestData): HttpResponseData {
     val iri = request.url.parameters["iri"] ?: throw Exception("Tenant finder request without IRI")
     val payload = TenantFinderResponse(
@@ -146,7 +146,18 @@ private fun MockRequestHandleScope.handleFindTenantRequest(request: HttpRequestD
     )
 }
 
-@OptIn(ExperimentalSerializationApi::class)
+private fun MockRequestHandleScope.handleTenantsRequest(request: HttpRequestData): HttpResponseData {
+    val payload = TenantsResponse(
+        sites = emptyList()
+    )
+
+    return respond(
+        Json.encodeToString(payload),
+        HttpStatusCode.OK,
+        headers = jsonContentTypeHeaders,
+    )
+}
+
 private suspend fun MockRequestHandleScope.handleBulkRequest(
     request: HttpRequestData,
     resources: List<Triple<String, String, CacheControl>>,

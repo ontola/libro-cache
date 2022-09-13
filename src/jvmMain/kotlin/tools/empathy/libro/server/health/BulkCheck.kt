@@ -27,7 +27,7 @@ class BulkCheck : Check() {
 
         val response = HttpClient(CIO).post("$origin/link-lib/bulk") {
             headers {
-                header(HttpHeaders.Accept, "application/hex+x-ndjson")
+                header(HttpHeaders.Accept, ndEmpJson)
                 header(HttpHeaders.ContentType, "application/x-www-form-urlencoded")
                 header(HttpHeaders.Cookie, call.request.header(HttpHeaders.Cookie))
                 header(LibroHttpHeaders.WebsiteIri, tenant)
