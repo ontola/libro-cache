@@ -8,13 +8,19 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Url
 import io.ktor.http.authority
 import io.ktor.http.formUrlEncode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.header
+import tools.empathy.libro.server.bulk.ndEmpJson
 import tools.empathy.libro.server.configuration.libroConfig
+import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.server.tenantization.getExternalTenants
+import tools.empathy.libro.server.tenantization.tenant
+import tools.empathy.libro.server.tenantization.tenantOrNull
 import tools.empathy.libro.server.util.LibroHttpHeaders
+import tools.empathy.url.appendPath
 
 class BulkCheck : Check() {
     init {
@@ -22,10 +28,14 @@ class BulkCheck : Check() {
     }
 
     override suspend fun runTest(call: ApplicationCall): Exception? {
-        val tenant = call.getExternalTenants().first().location
-        val origin = "http://localhost:${call.application.libroConfig.port}"
+        val tenant = if (call.tenantOrNull is TenantData.External) {
+            call.tenant.websiteIRI
+        } else {
+            call.getExternalTenants().first().location
+        }
+        val internal = Url("http://localhost:${call.application.libroConfig.port}")
 
-        val response = HttpClient(CIO).post("$origin/link-lib/bulk") {
+        val response = HttpClient(CIO).post(internal.appendPath("link-lib", "bulk")) {
             headers {
                 header(HttpHeaders.Accept, ndEmpJson)
                 header(HttpHeaders.ContentType, "application/x-www-form-urlencoded")
