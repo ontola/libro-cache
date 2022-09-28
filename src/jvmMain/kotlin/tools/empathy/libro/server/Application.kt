@@ -312,6 +312,7 @@ fun Application.module(
             "/oauth/revoke",
             "/oauth/token",
             "/oauth/userinfo",
+            "/_public/sidekiq",
         )
     }
 
@@ -467,6 +468,7 @@ fun Application.module(
 
             ProxyRule(Regex("/media_objects/\\w+/content"), client = ProxyClient.RedirectingBackend),
             ProxyRule(Regex("/active_storage/"), client = ProxyClient.RedirectingBackend),
+            ProxyRule(Regex("/_public/sidekiq"), client = ProxyClient.VerbatimBackend),
 
             ProxyRule(Regex("/assets/"), client = ProxyClient.Binary, includeCredentials = false),
             ProxyRule(Regex("/photos/"), client = ProxyClient.Binary),
