@@ -334,12 +334,6 @@ fun Application.module(
         )
     }
 
-    install(Studio) {
-        blacklist = listOf(
-            "/f_assets/",
-        )
-    }
-
     install(Sessions) {
         dynamicCookie<SessionData>(
             name = config.sessions.cookieName,
@@ -391,6 +385,12 @@ fun Application.module(
         this.oidcSettingsManager = oidcManager
         val jwtToken = Algorithm.HMAC512(config.sessions.jwtEncryptionToken)
         jwtValidator = JWT.require(jwtToken).build()
+    }
+
+    install(Studio) {
+        blacklist = listOf(
+            "/f_assets/",
+        )
     }
 
     install(Authentication) {
