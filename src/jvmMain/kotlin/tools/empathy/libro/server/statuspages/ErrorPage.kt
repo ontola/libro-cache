@@ -5,6 +5,7 @@ import kotlinx.css.Visibility
 import kotlinx.css.visibility
 import kotlinx.html.HTML
 import kotlinx.html.body
+import kotlinx.html.br
 import kotlinx.html.h1
 import kotlinx.html.head
 import kotlinx.html.meta
@@ -210,7 +211,7 @@ fun bodyForStatus(status: HttpStatusCode): LangStringSet = when (status) {
     )
 }
 
-fun HTML.errorPage(status: HttpStatusCode, cause: Exception, language: RenderLanguage) {
+fun HTML.errorPage(status: HttpStatusCode, clarification: String, language: RenderLanguage, websiteBase: String?) {
     head {
         meta(charset = "utf-8")
         title(titleForStatus(status)[language].lexical)
@@ -218,11 +219,11 @@ fun HTML.errorPage(status: HttpStatusCode, cause: Exception, language: RenderLan
     body {
         h1 { +titleForStatus(status)[language].lexical }
         p { +bodyForStatus(status)[language].lexical }
-        span {
-            styleCss {
-                visibility = Visibility.hidden
-            }
-            +cause.javaClass.name
+
+        span { +"Details: $clarification" }
+        br {}
+        if (websiteBase != null) {
+            span { +"Site: $websiteBase" }
         }
     }
 }

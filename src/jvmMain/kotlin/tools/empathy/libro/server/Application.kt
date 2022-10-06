@@ -98,6 +98,7 @@ import tools.empathy.libro.server.statuspages.RenderLanguage
 import tools.empathy.libro.server.statuspages.errorPage
 import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.server.tenantization.Tenantization
+import tools.empathy.libro.server.tenantization.getWebsiteBaseOrNull
 import tools.empathy.libro.server.util.KeyManager
 import tools.empathy.libro.server.util.LibroHttpHeaders
 import tools.empathy.libro.server.util.configure
@@ -191,30 +192,28 @@ fun Application.module(
             else -> RenderLanguage.NL
         }
 
-        exception<TenantNotFoundException> { call, cause ->
-            call.respondHtml(HttpStatusCode.NotFound) {
-                errorPage(HttpStatusCode.NotFound, cause, call.renderLanguage())
+        suspend fun renderPage(call: ApplicationCall, status: HttpStatusCode, message: String) {
+            val websiteBase = call.getWebsiteBaseOrNull()
+
+            call.respondHtml(status) {
+                errorPage(status, message, call.renderLanguage(), websiteBase)
             }
+        }
+
+        exception<TenantNotFoundException> { call, cause ->
+            renderPage(call, HttpStatusCode.NotFound, cause.message)
         }
         exception<BadGatewayException> { call, cause ->
-            call.respondHtml(HttpStatusCode.BadGateway) {
-                errorPage(HttpStatusCode.BadGateway, cause, call.renderLanguage())
-            }
+            renderPage(call, HttpStatusCode.BadGateway, cause.javaClass.name)
         }
         exception<AuthenticationException> { call, cause ->
-            call.respondHtml(HttpStatusCode.Unauthorized) {
-                errorPage(HttpStatusCode.Unauthorized, cause, call.renderLanguage())
-            }
+            renderPage(call, HttpStatusCode.Unauthorized, cause.javaClass.name)
         }
         exception<AuthorizationException> { call, cause ->
-            call.respondHtml(HttpStatusCode.Forbidden) {
-                errorPage(HttpStatusCode.Forbidden, cause, call.renderLanguage())
-            }
+            renderPage(call, HttpStatusCode.Forbidden, cause.javaClass.name)
         }
         exception<CSRFVerificationException> { call, cause ->
-            call.respondHtml(HttpStatusCode.Forbidden) {
-                errorPage(HttpStatusCode.Forbidden, cause, call.renderLanguage())
-            }
+            renderPage(call, HttpStatusCode.Forbidden, cause.javaClass.name)
         }
     }
 

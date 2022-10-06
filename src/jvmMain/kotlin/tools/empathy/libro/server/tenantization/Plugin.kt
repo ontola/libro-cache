@@ -67,7 +67,8 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
 
     @Throws(TenantNotFoundException::class)
     suspend fun getManifest(call: ApplicationCall, websiteBase: String): Manifest {
-        val manifest = application.persistentStorage.getHashValue(LookupKeys.Manifest.name, hashKey = websiteBase) ?: throw TenantNotFoundException()
+        val manifest = application.persistentStorage.getHashValue(LookupKeys.Manifest.name, hashKey = websiteBase)
+            ?: throw TenantNotFoundException("not in storage")
 
         return call.application.libroConfig.serializer.decodeFromString(manifest)
     }
@@ -121,7 +122,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
             )
 
             when (val status = e.response.status) {
-                HttpStatusCode.NotFound -> throw TenantNotFoundException()
+                HttpStatusCode.NotFound -> throw TenantNotFoundException("bad status")
                 HttpStatusCode.BadGateway -> throw BadGatewayException()
                 else -> {
                     logger.debug { "Unexpected status $status while getting tenant ($e)" }

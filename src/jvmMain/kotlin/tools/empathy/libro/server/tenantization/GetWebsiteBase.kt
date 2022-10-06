@@ -57,6 +57,9 @@ internal suspend fun ApplicationRequest.websiteBaseFromUrl(): String? {
 }
 
 @Throws(TenantNotFoundException::class)
-internal suspend fun ApplicationCall.getWebsiteBase(): String = request.websiteBaseFromHeader()
-    ?: request.websiteBaseFromUrl()
-    ?: throw TenantNotFoundException()
+internal suspend fun ApplicationCall.getWebsiteBaseOrNull(): String? =
+    request.websiteBaseFromHeader() ?: request.websiteBaseFromUrl()
+
+@Throws(TenantNotFoundException::class)
+internal suspend fun ApplicationCall.getWebsiteBase(): String =
+    getWebsiteBaseOrNull() ?: throw TenantNotFoundException("not registered")

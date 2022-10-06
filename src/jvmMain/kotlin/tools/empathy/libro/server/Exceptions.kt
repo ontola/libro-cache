@@ -6,9 +6,9 @@ class AuthorizationException : RuntimeException()
 
 class BadGatewayException : RuntimeException()
 
-class TenantNotFoundException : RuntimeException() {
-    override val message: String?
-        get() = "Website not found"
+class TenantNotFoundException(private val additional: String) : RuntimeException() {
+    override val message: String
+        get() = "Website not found ($additional)"
 }
 
 class WrongWebsiteIRIException : RuntimeException() {
