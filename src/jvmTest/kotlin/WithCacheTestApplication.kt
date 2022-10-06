@@ -1,3 +1,4 @@
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
@@ -81,13 +82,13 @@ fun <R> withCacheTestApplication(
                 client = client,
             )
 
-            var foo: R? = null
+            var result: R? = null
 
             cookiesSession {
                 mockConfig.initialAccessTokens?.let {
                     handleRequest(HttpMethod.Post, "/_testing/setSession") {
-                        addHeader("Accept", "application/json")
-                        addHeader("Content-Type", "application/json")
+                        addHeader(HttpHeaders.Accept, ContentType.Application.Json.toString())
+                        addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                         addHeader(HttpHeaders.XForwardedProto, "https")
 
                         setBody(Json.encodeToString(SessionData(credentials = TokenPair(it.first, it.second))))
@@ -96,10 +97,10 @@ fun <R> withCacheTestApplication(
                     }
                 }
 
-                foo = test(context)
+                result = test(context)
             }
 
-            foo
+            result
         },
     )
 }

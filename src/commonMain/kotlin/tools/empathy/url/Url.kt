@@ -11,10 +11,12 @@ fun Url.appendPath(path: String): Url = appendPath(*path.split("/").toTypedArray
 fun Url.appendPath(vararg segments: String): Url {
     return URLBuilder(this).apply {
         pathSegments = pathSegments
-            // TODO: Remove after https://youtrack.jetbrains.com/issue/KTOR-3618 is fixed
-            .filter { it.isNotBlank() }
             .toMutableList()
             .apply { addAll(segments.filter { it.isNotBlank() }) }
+
+        if (pathSegments.isEmpty()) {
+            pathSegments = listOf("")
+        }
     }.build()
 }
 
@@ -48,17 +50,23 @@ fun Url?.absolutize(other: String): String {
 
     val prefix = withoutTrailingSlash
 
-    if (other == prefix)
+    if (other == prefix) {
         return "/"
-    if (other.startsWith(prefix))
+    }
+    if (other.startsWith(prefix)) {
         return other.removePrefix(prefix)
+    }
 
     return other
 }
 
 /** Ensures a path is present and trailing paths are trimmed */
 val Url.asHref
-    get() = if (this.pathSegments.size > 1) Url(this.withoutTrailingSlash) else this
+    get() = if (this.pathSegments.size <= 1 && this.pathSegments.firstOrNull().isNullOrEmpty()) {
+        Url(this.withTrailingSlash)
+    } else {
+        Url(this.withoutTrailingSlash)
+    }
 
 /** Ensures a path is present and trailing paths are trimmed */
 val Url.asHrefString

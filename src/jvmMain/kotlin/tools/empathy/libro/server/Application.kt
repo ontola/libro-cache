@@ -21,21 +21,21 @@ import io.ktor.server.auth.OAuthServerSettings
 import io.ktor.server.auth.oauth
 import io.ktor.server.dynamicCookie.dynamicCookie
 import io.ktor.server.html.respondHtml
+import io.ktor.server.locations.KtorExperimentalLocationsAPI
 import io.ktor.server.locations.Locations
 import io.ktor.server.logging.toLogString
 import io.ktor.server.metrics.micrometer.MicrometerMetrics
-import io.ktor.server.plugins.CachingHeaders
-import io.ktor.server.plugins.CallId
-import io.ktor.server.plugins.CallLogging
-import io.ktor.server.plugins.Compression
-import io.ktor.server.plugins.DefaultHeaders
-import io.ktor.server.plugins.ForwardedHeaderSupport
-import io.ktor.server.plugins.StatusPages
-import io.ktor.server.plugins.XForwardedHeaderSupport
-import io.ktor.server.plugins.callId
-import io.ktor.server.plugins.deflate
-import io.ktor.server.plugins.gzip
-import io.ktor.server.plugins.minimumSize
+import io.ktor.server.plugins.cachingheaders.CachingHeaders
+import io.ktor.server.plugins.callid.CallId
+import io.ktor.server.plugins.callid.callId
+import io.ktor.server.plugins.callloging.CallLogging
+import io.ktor.server.plugins.compression.Compression
+import io.ktor.server.plugins.compression.deflate
+import io.ktor.server.plugins.compression.gzip
+import io.ktor.server.plugins.compression.minimumSize
+import io.ktor.server.plugins.defaultheaders.DefaultHeaders
+import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
+import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.header
 import io.ktor.server.request.path
@@ -98,7 +98,9 @@ import tools.empathy.libro.server.statuspages.RenderLanguage
 import tools.empathy.libro.server.statuspages.errorPage
 import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.server.tenantization.Tenantization
+import tools.empathy.libro.server.tenantization.checkUrls
 import tools.empathy.libro.server.tenantization.getWebsiteBaseOrNull
+import tools.empathy.libro.server.tenantization.websiteBaseFromHeader
 import tools.empathy.libro.server.util.KeyManager
 import tools.empathy.libro.server.util.LibroHttpHeaders
 import tools.empathy.libro.server.util.configure
@@ -112,6 +114,7 @@ import tools.empathy.studio.StudioDeploymentKey
 import tools.empathy.studio.mountStudio
 import tools.empathy.studio.studioManifest
 import tools.empathy.url.appendPath
+import tools.empathy.url.asHref
 import tools.empathy.url.disableCertValidation
 import java.util.UUID
 import kotlin.collections.set
@@ -127,7 +130,7 @@ fun ApplicationRequest.isHTML(): Boolean {
     return accept.isHtmlAccept() || contentType.contains("text/html")
 }
 
-@OptIn(ExperimentalLettuceCoroutinesApi::class, ExperimentalTime::class)
+@OptIn(ExperimentalLettuceCoroutinesApi::class, ExperimentalTime::class, KtorExperimentalLocationsAPI::class)
 // Referenced in application.conf
 @Suppress("unused")
 @JvmOverloads
@@ -143,7 +146,8 @@ fun Application.module(
     val adapter = storage ?: RedisAdapter(RedisClient.create(config.redis.uri).connect().coroutines())
     val persistentAdapter =
         persistentStorage ?: RedisAdapter(RedisClient.create(config.persistentRedisURI).connect().coroutines())
-    val oidcManager = OIDCSettingsManager(config, Storage(persistentAdapter, KeyManager(config.redis), expiration = null))
+    val oidcManager =
+        OIDCSettingsManager(config, Storage(persistentAdapter, KeyManager(config.redis), expiration = null))
 
     install(MicrometerMetrics) {
         registry = Metrics.metricsRegistry
@@ -201,6 +205,10 @@ fun Application.module(
         }
 
         exception<TenantNotFoundException> { call, cause ->
+            call.logger.debug {
+                "${cause.message}: headers=${call.request.websiteBaseFromHeader()}, urls=${call.request.checkUrls().joinToString()}"
+            }
+
             renderPage(call, HttpStatusCode.NotFound, cause.message)
         }
         exception<BadGatewayException> { call, cause ->
@@ -256,7 +264,7 @@ fun Application.module(
     }
 
     install(CachingHeaders) {
-        options { outgoingContent ->
+        options { _, outgoingContent ->
             when (outgoingContent.contentType?.withoutParameters()) {
                 ContentType.Text.CSS,
                 ContentType.Application.JavaScript,
@@ -264,6 +272,7 @@ fun Application.module(
                 -> CachingOptions(
                     CacheControl.MaxAge(maxAgeSeconds = 365.days.inWholeSeconds.toInt()),
                 )
+
                 else -> null
             }
         }
@@ -282,8 +291,7 @@ fun Application.module(
         }
     }
 
-    install(ForwardedHeaderSupport)
-    install(XForwardedHeaderSupport)
+    install(XForwardedHeaders) // WARNING: for security, do not include this if not behind a reverse proxy
 
     install(Blacklist) {
         blacklist = listOf(
@@ -325,7 +333,7 @@ fun Application.module(
             management.websiteOrigin.host to management,
             config.studio.domain to TenantData.Local(
                 name = "Studio",
-                websiteIRI = config.studio.origin,
+                websiteIRI = config.studio.origin.asHref,
                 websiteOrigin = config.studio.origin,
                 manifest = studioManifest(config.studio.origin),
                 context = { attributes[StudioDeploymentKey] },
@@ -336,7 +344,7 @@ fun Application.module(
     install(Sessions) {
         dynamicCookie<SessionData>(
             name = config.sessions.cookieName,
-            storage = RedisSessionStorage(persistentAdapter, libroConfig.redis),
+            storage = RedisSessionStorage(persistentAdapter, this@module.libroConfig.redis),
         ) {
             cookie.configure()
             if (!testing && !config.isDev) {
@@ -347,7 +355,7 @@ fun Application.module(
         }
         cookie<OIDCSession>(name = "oidc_identity") {
             cookie.httpOnly = true
-            cookie.secure = true
+            cookie.secure = !testing
             cookie.extensions["SameSite"] = "Lax"
             if (!testing && !config.isDev) {
                 transform(
@@ -357,7 +365,7 @@ fun Application.module(
         }
         cookie<String>("deviceId") {
             cookie.httpOnly = true
-            cookie.secure = true
+            cookie.secure = !testing
             cookie.extensions["SameSite"] = "Lax"
             cookie.maxAge = 365.days
             transform(

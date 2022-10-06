@@ -12,7 +12,7 @@ import io.ktor.server.sessions.SessionSerializer
 import io.ktor.server.sessions.SessionStorage
 import io.ktor.server.sessions.SessionTrackerById
 import io.ktor.server.sessions.SessionTransportTransformer
-import io.ktor.server.sessions.Sessions
+import io.ktor.server.sessions.SessionsConfig
 import io.ktor.server.sessions.defaultSessionSerializer
 import io.ktor.server.sessions.generateSessionId
 import kotlin.reflect.KClass
@@ -21,7 +21,7 @@ import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.typeOf
 
 @PublishedApi
-internal fun <S : Any> Sessions.Configuration.dynamicCookie(
+internal fun <S : Any> SessionsConfig.dynamicCookie(
     name: String,
     builder: CookieIdSessionBuilder<S>,
     sessionType: KClass<S>,
@@ -33,7 +33,7 @@ internal fun <S : Any> Sessions.Configuration.dynamicCookie(
     register(provider)
 }
 
-public inline fun <reified S : Any> Sessions.Configuration.dynamicCookie(
+public inline fun <reified S : Any> SessionsConfig.dynamicCookie(
     name: String,
     storage: SessionStorage,
     block: CookieIdSessionBuilder<S>.() -> Unit

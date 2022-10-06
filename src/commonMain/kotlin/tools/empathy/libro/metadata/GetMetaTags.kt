@@ -1,6 +1,7 @@
 package tools.empathy.libro.metadata
 
 import tools.empathy.libro.webmanifest.Icon
+import tools.empathy.url.asHrefString
 
 /**
  * Converts a [MetaData] object to HTML headers used by search engines and social media.
@@ -34,7 +35,7 @@ fun getMetaTags(data: MetaData): List<TagProps> = buildList {
     )
     add(
         TagProps(
-            content = data.url.toString(),
+            content = data.url.asHrefString,
             property = "og:url",
             type = "meta",
         )

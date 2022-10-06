@@ -5,6 +5,7 @@ import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import tools.empathy.url.asHref
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
@@ -40,7 +41,7 @@ data class Manifest(
     companion object {
         fun forWebsite(websiteIRI: Url): Manifest = Manifest(
             ontola = LibroManifest(
-                websiteIRI = websiteIRI,
+                websiteIRI = websiteIRI.asHref,
             ),
             scope = websiteIRI.encodedPath,
             serviceworker = ServiceWorker(

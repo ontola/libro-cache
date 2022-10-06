@@ -21,6 +21,7 @@ import tools.empathy.serialization.dataSlice
 import tools.empathy.serialization.field
 import tools.empathy.serialization.record
 import tools.empathy.serialization.s
+import tools.empathy.url.asHref
 import withCacheTestApplication
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -31,10 +32,10 @@ class RenderTest {
     @Test
     fun testRoot() {
         runBlocking {
-            val websiteIRI = Url("https://mysite.local")
+            val websiteIRI = Url("https://mysite.local/")
 
             withCacheTestApplication({
-                clientBuilder.setHeadResponse(Url("$websiteIRI/"), HeadResponse(HttpStatusCode.OK))
+                clientBuilder.setHeadResponse(websiteIRI.asHref, HeadResponse(HttpStatusCode.OK))
                 initTenant(websiteIRI)
             }) {
                 handleRequest(HttpMethod.Get, "/") {

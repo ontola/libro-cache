@@ -6,23 +6,10 @@ import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.path
 import tools.empathy.libro.server.TenantNotFoundException
 import tools.empathy.libro.server.WrongWebsiteIRIException
-import tools.empathy.libro.server.plugins.LookupKeys
-import tools.empathy.libro.server.plugins.persistentStorage
 import tools.empathy.libro.server.util.LibroHttpHeaders
 import tools.empathy.libro.server.util.origin
 import tools.empathy.url.asHrefString
 import tools.empathy.url.origin
-
-/**
- * Returns the websiteIRI when found in storage.
- */
-internal suspend fun ApplicationRequest.lookupWebsiteBase(websiteIRI: String): Boolean {
-    if (call.application.persistentStorage.hexists(LookupKeys.Manifest.name, hashKey = websiteIRI)) {
-        return true
-    }
-
-    return false
-}
 
 /**
  * Returns the WebsiteIRI header when present
@@ -39,7 +26,7 @@ internal fun ApplicationRequest.websiteBaseFromHeader(): String? {
     }
 }
 
-internal suspend fun ApplicationRequest.websiteBaseFromUrl(): String? {
+internal fun ApplicationRequest.checkUrls(): Set<String> {
     val requestPath = path()
         .removeSuffix("link-lib/bulk")
         .split("/")
@@ -48,13 +35,14 @@ internal suspend fun ApplicationRequest.websiteBaseFromUrl(): String? {
         .removeSuffix("/")
     val authoritativeOrigin = origin()
 
-    val checkUrls = setOf(
+    return setOf(
         Url("$authoritativeOrigin$requestPath".removeSuffix("/")).asHrefString,
         Url(authoritativeOrigin).asHrefString
     )
-
-    return checkUrls.find { lookupWebsiteBase(it) }
 }
+
+internal suspend fun ApplicationRequest.websiteBaseFromUrl(): String? =
+    checkUrls().find { manifestExists(it) }
 
 @Throws(TenantNotFoundException::class)
 internal suspend fun ApplicationCall.getWebsiteBaseOrNull(): String? =

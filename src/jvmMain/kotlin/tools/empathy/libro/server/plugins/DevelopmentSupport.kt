@@ -14,12 +14,13 @@ import tools.empathy.libro.server.landing.landingSite
 import tools.empathy.libro.server.tenantization.TenantData
 import tools.empathy.libro.webmanifest.Icon
 import tools.empathy.libro.webmanifest.Manifest
+import tools.empathy.url.asHref
 import tools.empathy.vocabularies.LibroData
 import tools.empathy.vocabularies.OntolaData
 import tools.empathy.vocabularies.SchemaData
 
 fun managementTenant(origin: Url, port: Int): TenantData.Local {
-    val managementManifest = Manifest.forWebsite(origin).let {
+    val managementManifest = Manifest.forWebsite(origin.asHref).let {
         it.copy(
             name = "Local",
             icons = arrayOf(
@@ -38,7 +39,7 @@ fun managementTenant(origin: Url, port: Int): TenantData.Local {
 
     return TenantData.Local(
         name = "Libro Management",
-        websiteIRI = origin,
+        websiteIRI = origin.asHref,
         websiteOrigin = origin,
         allowUnsafe = true,
         unsafePort = port,

@@ -115,13 +115,13 @@ class RedirectTest {
                 initTenant(websiteIRI)
             }
         ) { ctx ->
-            var request = handleRequest(HttpMethod.Get, path) {
+            val request = handleRequest(HttpMethod.Get, path) {
                 addHeader("authority", host)
                 addHeader(HttpHeaders.Host, host)
-                addHeader("X-Forwarded-Proto", "https")
+                addHeader(HttpHeaders.XForwardedProto, "https")
             }
 
-            request.response.headers.get("location")
+            request.response.headers[HttpHeaders.Location]
         }
     }
 }

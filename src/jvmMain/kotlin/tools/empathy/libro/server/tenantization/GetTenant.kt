@@ -3,15 +3,19 @@ package tools.empathy.libro.server.tenantization
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
+import io.ktor.client.utils.EmptyContent.headers
 import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.Url
 import io.ktor.http.takeFrom
 import io.ktor.server.application.ApplicationCall
 import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.plugins.services
 import tools.empathy.libro.server.util.copy
+import tools.empathy.libro.server.util.forwardedProto
 
-internal fun Headers.proto(): String = get("X-Forwarded-Proto")?.split(',')?.firstOrNull()
+internal fun Headers.proto(): String = get(HttpHeaders.Forwarded)?.forwardedProto()
+    ?: get("X-Forwarded-Proto")?.split(',')?.firstOrNull()
     ?: get("scheme")
     ?: get("origin")?.let { Url(it).protocol.name }
     ?: "http"

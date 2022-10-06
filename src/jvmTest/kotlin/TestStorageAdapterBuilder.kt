@@ -20,6 +20,7 @@ import tools.empathy.libro.server.plugins.StorageAdapter
 import tools.empathy.libro.server.sessions.oidc.OIDCServerSettings
 import tools.empathy.libro.server.util.KeyManager
 import tools.empathy.libro.webmanifest.Manifest
+import tools.empathy.url.withoutTrailingSlash
 
 data class TestStorageAdapterBuilder(
     val libroConfig: LibroConfig,
@@ -33,7 +34,7 @@ data class TestStorageAdapterBuilder(
     private val hValues = mutableListOf<MutableMap<String, String>>()
 
     fun addManifest(website: Url, manifest: Manifest) {
-        memoizedManifests[website.toString()] = manifest
+        memoizedManifests[website.withoutTrailingSlash] = manifest
     }
 
     fun registerOIDCServerSettings(settings: OIDCServerSettings) {

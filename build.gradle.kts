@@ -15,9 +15,9 @@ val serialization_version: String by project
 plugins {
     application
 
-    kotlin("multiplatform") version "1.7.0"
-    kotlin("plugin.serialization") version "1.7.0"
-    id("org.jetbrains.dokka") version "1.7.0"
+    kotlin("multiplatform") version "1.7.20"
+    kotlin("plugin.serialization") version "1.7.20"
+    id("org.jetbrains.dokka") version "1.7.10"
     id("org.jlleitschuh.gradle.ktlint") version "10.2.1"
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
@@ -222,4 +222,8 @@ task("dokkaServe", type = Exec::class) {
 
     logger.warn("Serving documentation on http://localhost:36552")
     commandLine("python3", "-m", "http.server", "36552", "--directory", "./build/dokka/html")
+}
+dependencies {
+    implementation("io.ktor:ktor-server-compression-jvm:2.1.2")
+    implementation("io.ktor:ktor-server-forwarded-header-jvm:2.1.2")
 }

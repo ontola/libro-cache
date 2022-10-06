@@ -1,5 +1,6 @@
 package tools.empathy.libro.server.util
 
+import io.ktor.http.HttpHeaders
 import io.ktor.server.request.ApplicationRequest
 
 /**
@@ -7,16 +8,18 @@ import io.ktor.server.request.ApplicationRequest
  * Uses security headers to verify other information when present.
  */
 internal fun ApplicationRequest.origin(): String {
-    val authority = listOf("X-Forwarded-Host", "origin", "host", "authority")
-        .find { header -> headers[header] != null }
-        ?.let { header -> headers[header]!! }
+    val authority = headers[HttpHeaders.Forwarded]?.forwardedHost()
+        ?: listOf("X-Forwarded-Host", "origin", "host", "authority")
+            .find { header -> headers[header] != null }
+            ?.let { header -> headers[header]!! }
         ?: throw Exception("No header usable for authority present")
 
     if (authority == "localhost" && call.application.developmentMode) {
         return "http://$authority"
     }
 
-    val proto = headers["X-Forwarded-Proto"]?.split(',')?.firstOrNull()
+    val proto = headers[HttpHeaders.Forwarded]?.forwardedProto()
+        ?: headers["X-Forwarded-Proto"]?.split(',')?.firstOrNull()
         ?: headers["origin"]?.split(":")?.firstOrNull()
         ?: throw Exception("No Forwarded host nor authority scheme")
 

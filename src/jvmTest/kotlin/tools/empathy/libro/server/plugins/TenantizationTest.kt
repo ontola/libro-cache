@@ -1,5 +1,6 @@
 package tools.empathy.libro.server.plugins
 
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import kotlinx.coroutines.runBlocking
 import tools.empathy.libro.server.TenantNotFoundException
@@ -25,7 +26,7 @@ class TenantizationTest {
     @Test
     fun getWebsiteBaseRaisedWithoutProtocol() {
         val headers = mapOf(
-            "X-Forwarded-Host" to "example.test"
+            HttpHeaders.XForwardedHost to "example.test"
         )
         assertFailsWith<Exception>("No header usable for authority present") {
             getWebsiteBaseFromRequest(headers)
@@ -38,8 +39,8 @@ class TenantizationTest {
     @Test
     fun getWebsiteBaseShouldUseWebsiteIRIHeader() {
         val headers = mapOf(
-            "X-Forwarded-Host" to "example.test",
-            "X-Forwarded-Proto" to "https",
+            HttpHeaders.XForwardedHost to "example.test",
+            HttpHeaders.XForwardedProto to "https",
             "Website-IRI" to "https://example.test/mypath"
         )
 
@@ -53,8 +54,8 @@ class TenantizationTest {
     @Test
     fun getWebsiteBaseShouldNotBeForged() {
         val headers = mapOf(
-            "X-Forwarded-Host" to "example.test",
-            "X-Forwarded-Proto" to "https",
+            HttpHeaders.XForwardedHost to "example.test",
+            HttpHeaders.XForwardedProto to "https",
             "Website-IRI" to "https://forged.test/mypath"
         )
         assertFailsWith<WrongWebsiteIRIException> {
@@ -68,8 +69,8 @@ class TenantizationTest {
     @Test
     fun getWebsiteBaseShouldBuildFromXForwardedSet() {
         val headers = mapOf(
-            "X-Forwarded-Host" to "example.test",
-            "X-Forwarded-Proto" to "https"
+            HttpHeaders.XForwardedHost to "example.test",
+            HttpHeaders.XForwardedProto to "https"
         )
 
         val iri = getWebsiteBaseFromRequest(headers)
@@ -81,8 +82,8 @@ class TenantizationTest {
     @Test
     fun getWebsiteBaseShouldBuildWithPathFromXForwardedSet() {
         val headers = mapOf(
-            "X-Forwarded-Host" to "exam.ple",
-            "X-Forwarded-Proto" to "https"
+            HttpHeaders.XForwardedHost to "exam.ple",
+            HttpHeaders.XForwardedProto to "https"
         )
 
         assertFailsWith<TenantNotFoundException> {
@@ -96,8 +97,8 @@ class TenantizationTest {
     @Test
     fun getWebsiteBaseShouldBuildIgnoreBulkRoute() {
         val headers = mapOf(
-            "X-Forwarded-Host" to "example.test",
-            "X-Forwarded-Proto" to "https"
+            HttpHeaders.XForwardedHost to "example.test",
+            HttpHeaders.XForwardedProto to "https"
         )
 
         val iri = getWebsiteBaseFromRequest(headers, "/link-lib/bulk")
@@ -107,7 +108,7 @@ class TenantizationTest {
     @Test
     fun getWebsiteBaseShouldBuildFromOrigin() {
         val headers = mapOf(
-            "Origin" to "https://example.test"
+            HttpHeaders.Origin to "https://example.test"
         )
 
         val iri = getWebsiteBaseFromRequest(headers)
@@ -119,7 +120,7 @@ class TenantizationTest {
     @Test
     fun getWebsiteBaseWithoutSlash() {
         val headers = mapOf(
-            "Origin" to "https://example.test"
+            HttpHeaders.Origin to "https://example.test"
         )
 
         val iri = getWebsiteBaseFromRequest(headers, "")
@@ -129,7 +130,7 @@ class TenantizationTest {
     @Test
     fun getWebsiteBaseWithPathShouldIgnoreSlash() {
         val headers = mapOf(
-            "Origin" to "https://exam.ple"
+            HttpHeaders.Origin to "https://exam.ple"
         )
 
         val iriWithPath = getWebsiteBaseFromRequest(headers, "/path/")
@@ -139,7 +140,7 @@ class TenantizationTest {
     @Test
     fun getWebsiteBaseShouldBuildWithPathFromOrigin() {
         val headers = mapOf(
-            "Origin" to "https://exam.ple"
+            HttpHeaders.Origin to "https://exam.ple"
         )
 
         assertFailsWith<TenantNotFoundException> {
@@ -154,7 +155,7 @@ class TenantizationTest {
         return withCacheTestApplication(
             {
                 storage.addHashKey(LookupKeys.Manifest.name, field = "https://exam.ple/path", value = "")
-                storage.addHashKey(LookupKeys.Manifest.name, field = "https://example.test/", value = "")
+                storage.addHashKey(LookupKeys.Manifest.name, field = "https://example.test", value = "")
             }
         ) { ctx ->
             runBlocking {

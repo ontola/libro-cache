@@ -2,7 +2,7 @@ package tools.empathy.libro.server.plugins
 
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.ApplicationCallPipeline
-import io.ktor.server.application.RouteScopedPlugin
+import io.ktor.server.application.BaseRouteScopedPlugin
 import io.ktor.server.application.call
 import io.ktor.server.response.ApplicationSendPipeline
 import io.ktor.server.response.header
@@ -16,7 +16,7 @@ import kotlin.system.measureTimeMillis
  * Application-broad feature.
  */
 class Logging {
-    companion object Plugin : RouteScopedPlugin<Unit, KLogger> {
+    companion object Plugin : BaseRouteScopedPlugin<Unit, KLogger> {
         override val key = AttributeKey<KLogger>("KLogger")
 
         override fun install(pipeline: ApplicationCallPipeline, configure: Unit.() -> Unit): KLogger {

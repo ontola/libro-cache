@@ -1,5 +1,6 @@
 package tools.empathy.libro.server
 
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
@@ -20,7 +21,7 @@ class ApplicationTest {
         withCacheTestApplication {
             handleRequest(HttpMethod.Get, "/link-lib/cache/status") {
                 addHeader("authority", "mysite.local")
-                addHeader("X-Forwarded-Proto", "https")
+                addHeader(HttpHeaders.XForwardedProto, "https")
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertEquals("UP", response.content)
@@ -45,7 +46,7 @@ class ApplicationTest {
         }) {
             handleRequest(HttpMethod.Post, "/link-lib/bulk") {
                 addHeader("authority", "mysite.local")
-                addHeader("X-Forwarded-Proto", "https")
+                addHeader(HttpHeaders.XForwardedProto, "https")
                 addHeader("Accept", ndEmpJson.toString())
                 addHeader("Content-Type", "application/x-www-form-urlencoded")
 

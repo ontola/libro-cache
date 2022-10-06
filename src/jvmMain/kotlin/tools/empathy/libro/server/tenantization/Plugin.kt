@@ -14,16 +14,13 @@ import io.ktor.server.application.plugin
 import io.ktor.server.request.uri
 import io.ktor.util.AttributeKey
 import kotlinx.serialization.UseSerializers
-import kotlinx.serialization.decodeFromString
 import mu.KotlinLogging
 import tools.empathy.libro.server.BadGatewayException
 import tools.empathy.libro.server.TenantNotFoundException
 import tools.empathy.libro.server.configuration.LibroConfig
 import tools.empathy.libro.server.configuration.libroConfig
 import tools.empathy.libro.server.document.PageRenderContext
-import tools.empathy.libro.server.plugins.LookupKeys
 import tools.empathy.libro.server.plugins.blacklisted
-import tools.empathy.libro.server.plugins.persistentStorage
 import tools.empathy.libro.server.plugins.setManifestLanguage
 import tools.empathy.libro.server.util.UrlSerializer
 import tools.empathy.libro.server.util.origin
@@ -66,11 +63,8 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
     application.attributes.put(StaticTenantsKey, pluginConfig.staticTenants.values.toList())
 
     @Throws(TenantNotFoundException::class)
-    suspend fun getManifest(call: ApplicationCall, websiteBase: String): Manifest {
-        val manifest = application.persistentStorage.getHashValue(LookupKeys.Manifest.name, hashKey = websiteBase)
-            ?: throw TenantNotFoundException("not in storage")
-
-        return call.application.libroConfig.serializer.decodeFromString(manifest)
+    suspend fun getManifest(websiteBase: String): Manifest {
+        return application.getManifestOrNull(websiteBase) ?: throw TenantNotFoundException("not in storage")
     }
 
     fun interceptDeployment(call: ApplicationCall, deployment: PageRenderContext) {
@@ -96,7 +90,7 @@ val Tenantization = createApplicationPlugin(name = "Tenantization", ::Tenantizat
             val websiteBase = call.getWebsiteBase()
 
             val baseOrigin = URLBuilder(Url(websiteBase)).apply { encodedPathSegments = emptyList() }.build()
-            val manifest = getManifest(call, websiteBase)
+            val manifest = getManifest(websiteBase)
 
             call.setManifestLanguage(manifest.lang)
             call.attributes.put(

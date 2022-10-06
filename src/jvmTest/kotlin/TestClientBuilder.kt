@@ -29,6 +29,8 @@ import tools.empathy.libro.server.tenantization.TenantFinderResponse
 import tools.empathy.libro.server.tenantization.TenantsResponse
 import tools.empathy.libro.server.util.LibroHttpHeaders
 import tools.empathy.libro.webmanifest.Manifest
+import tools.empathy.url.appendPath
+import tools.empathy.url.asHref
 import tools.empathy.url.fullUrl
 import tools.empathy.url.withoutProto
 import java.nio.charset.Charset
@@ -63,7 +65,7 @@ data class TestClientBuilder(
     }
 
     fun addManifest(website: Url, manifest: Manifest) {
-        config.manifests[website] = manifest
+        config.manifests[website.asHref] = manifest
     }
 
     fun setNewAuthorization(accessToken: String, refreshToken: String) {
@@ -81,7 +83,7 @@ data class TestClientBuilder(
                 if (request.method == HttpMethod.Head) {
                     return@addHandler handleHeadRequest(request, config.headResponses)
                 }
-                val websitePaths = config.manifests.keys.map { "${it.encodedPath}/manifest.json" }.toSet()
+                val websitePaths = config.manifests.keys.map { it.appendPath("manifest.json").encodedPath }.toSet()
 
                 when (request.url.encodedPath) {
                     "/_public/spi/find_tenant" -> handleFindTenantRequest(request)

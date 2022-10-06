@@ -1,8 +1,6 @@
 package tools.empathy.libro.server.statuspages
 
 import io.ktor.http.HttpStatusCode
-import kotlinx.css.Visibility
-import kotlinx.css.visibility
 import kotlinx.html.HTML
 import kotlinx.html.body
 import kotlinx.html.br
@@ -12,7 +10,6 @@ import kotlinx.html.meta
 import kotlinx.html.p
 import kotlinx.html.span
 import kotlinx.html.title
-import tools.empathy.libro.server.health.styleCss
 import tools.empathy.serialization.Value
 
 enum class RenderLanguage(val lexical: String) {

@@ -96,7 +96,7 @@ private fun HEAD.contentMetaTags(
     for (tag in tags) {
         when (tag.type) {
             "title" -> title { +tag.children!! }
-            "link" -> link(href = tag.href.toString(), rel = tag.rel) {
+            "link" -> link(href = tag.href?.asHrefString, rel = tag.rel) {
                 tag.itemProp?.let { itemProp = it }
             }
             "meta" -> meta(name = tag.name, content = tag.content) {
@@ -119,10 +119,11 @@ private fun HEAD.preloader(nonce: String) {
 
 private fun HEAD.appIcons(manifest: Manifest) {
     manifest.icons?.forEach { icon ->
-        if (icon.purpose?.contains("favicon") == true)
+        if (icon.purpose?.contains("favicon") == true) {
             link(rel = "icon", href = icon.src, type = icon.type) {
                 attributes["sizes"] = icon.sizes
             }
+        }
 
         when {
             icon.src.contains("favicon") -> {
