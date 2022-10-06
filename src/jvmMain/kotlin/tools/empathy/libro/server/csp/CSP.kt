@@ -13,7 +13,7 @@ import kotlinx.serialization.json.Json
 import tools.empathy.libro.server.csp.CSPSettings.toCSPHeader
 import tools.empathy.libro.server.plugins.CacheSession
 import tools.empathy.libro.server.plugins.blacklisted
-import tools.empathy.libro.server.tenantization.tenant
+import tools.empathy.libro.server.tenantization.tenantOrNull
 import java.util.UUID
 
 @Serializable
@@ -50,7 +50,7 @@ val CSP = createApplicationPlugin("CSP") {
             isDevelopment,
             nonce,
             call.request.host(),
-            if (call.blacklisted) null else call.tenant.manifest,
+            if (call.blacklisted) null else call.tenantOrNull?.manifest,
         )
 
         call.response.header("Content-Security-Policy", ctx.toCSPHeader())

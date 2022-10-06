@@ -40,7 +40,7 @@ internal val Application.staticTenants: List<TenantData.Local>
     get() = attributes.getOrNull(StaticTenantsKey) ?: throw TenantizationNotYetConfiguredException()
 
 internal val ApplicationCall.tenant: TenantData
-    get() = attributes.getOrNull(TenantizationKey) ?: reportMissingTenantization()
+    get() = tenantOrNull ?: reportMissingTenantization()
 
 internal val ApplicationCall.tenantOrNull: TenantData?
     get() = attributes.getOrNull(TenantizationKey)
