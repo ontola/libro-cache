@@ -138,7 +138,7 @@ fun BODY.themeBlock(manifest: Manifest) {
     }
 }
 
-private val JsonInHtmlEscaper = AggregateTranslator(
+internal val JsonInHtmlEscaper = AggregateTranslator(
     LookupTranslator(
         mapOf(
             "<" to "&lt;",
