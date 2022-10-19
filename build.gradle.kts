@@ -104,7 +104,7 @@ kotlin {
                 implementation("io.ktor:ktor-client-gson:$ktor_version")
 
                 implementation("commons-codec:commons-codec:1.15")
-                implementation("org.apache.commons:commons-text:1.9")
+                implementation("org.apache.commons:commons-text:1.10.0")
 
                 implementation("io.lettuce:lettuce-core:$lettuce_version")
 
